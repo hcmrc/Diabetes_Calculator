@@ -436,7 +436,7 @@ DRC.UIController = (() => {
     // ─── Rendering: Causality chains ────────────────────────────────────
 
     const CAUSALITY_CHAINS = [
-        { factors: ['waist'],   nodes: ['Waist Size', 'Insulin Resistance \u2191', 'Blood Sugar \u2191', 'Diabetes Risk \u2191'] },
+        { factors: ['waist'],   nodes: ['Waist', 'Insulin Resistance \u2191', 'Blood Sugar \u2191', 'Diabetes Risk \u2191'] },
         { factors: ['cholHDL'], nodes: ['HDL Cholesterol \u2193', 'Lipid Metabolism \u2193', 'Vascular Health \u2193', 'Diabetes Risk \u2191'] },
         { factors: ['fastGlu'], nodes: ['Fasting Glucose \u2191', 'Pancreatic Beta Cell Stress', 'Insulin Secretion \u2193', 'Diabetes Risk \u2191'] },
         { factors: ['sbp'],     nodes: ['Blood Pressure \u2191', 'Vascular Dysfunction', 'Endothelial Damage', 'Diabetes Risk \u2191'] }

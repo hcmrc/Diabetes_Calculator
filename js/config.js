@@ -78,14 +78,14 @@ DRC.CONFIG = Object.freeze({
 
     /** Human-readable factor labels for charts and UI. */
     LABELS: {
-        age: 'Age', race: 'Race', parentHist: 'Parental History',
-        sbp: 'Blood Pressure', waist: 'Waist Size', height: 'Height',
-        fastGlu: 'Glucose', cholHDL: 'HDL Cholesterol', cholTri: 'Triglycerides'
+        age: 'Age', race: 'Ethnicity', parentHist: 'Parental Diabetes',
+        sbp: 'Blood Pressure', waist: 'Waist', height: 'Height',
+        fastGlu: 'Fasting Glucose', cholHDL: 'HDL Cholesterol', cholTri: 'Blood Fats (Triglycerides)'
     },
 
     /** Short labels for radar chart axes. */
     RADAR_LABELS: {
-        fastGlu: 'Glucose', sbp: 'BP', cholTri: 'Triglyc.',
+        fastGlu: 'Glucose', sbp: 'BP', cholTri: 'Blood Fats',
         waist: 'Waist', cholHDL: 'HDL', age: 'Age'
     },
 
@@ -121,7 +121,7 @@ DRC.CONFIG = Object.freeze({
         },
         cholHDL: {
             id: 'hdl-treatment', icon: 'water_drop',
-            title: 'Good Cholesterol (HDL) Improvement',
+            title: 'HDL Improvement',
             therapies: [
                 { name: 'Regular Exercise', desc: 'Aim for 150 minutes per week of activity like brisk walking, or 75 minutes of intense exercise.' },
                 { name: 'Healthy Lifestyle', desc: 'Stopping smoking, limiting alcohol, and eating healthy fats (olive oil, nuts, fish) all help.' }
@@ -129,7 +129,7 @@ DRC.CONFIG = Object.freeze({
         },
         cholTri: {
             id: 'tri-treatment', icon: 'science',
-            title: 'Blood Fats (Triglycerides)',
+            title: 'Blood Fats (Triglycerides) Treatment',
             therapies: [
                 { name: 'Prescription Fish Oil', desc: 'If blood fats (triglycerides) remain high, special prescription fish oil (icosapent ethyl) might be considered.' },
                 { name: 'Cholesterol Medication', desc: 'Cholesterol-lowering medication (Statins) is usually recommended to protect your blood vessels.' }
@@ -160,7 +160,7 @@ DRC.CONFIG = Object.freeze({
         fastGlu: { us: -20,  si: -1.1,  label: 'Blood Sugar Management' },
         sbp:     { us: -10,  si: -10,   label: 'Blood Pressure Control' },
         cholHDL: { us: +5,   si: +0.13, label: 'HDL Improvement' },
-        cholTri: { us: -30,  si: -0.34, label: 'Triglyceride Treatment' },
+        cholTri: { us: -30,  si: -0.34, label: 'Blood Fats (Triglycerides) Treatment' },
         waist:   { us: -2,   si: -5,    label: 'Weight Management' }
     },
 

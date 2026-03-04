@@ -65,11 +65,11 @@ DRC.TimelineChart = (() => {
      * Maps treatment labels to distinct colors for preattentive discrimination.
      */
     const TREATMENT_COLORS = {
-        'Blood Sugar Management': '#e74c3c',
-        'Blood Pressure Control': '#2ecc71',
-        'HDL Improvement':        '#f39c12',
-        'Triglyceride Treatment':  '#9b59b6',
-        'Weight Management':       '#1abc9c'
+        'Blood Sugar Management':              '#e74c3c',
+        'Blood Pressure Control':              '#2ecc71',
+        'HDL Improvement':                     '#f39c12',
+        'Blood Fats (Triglycerides) Treatment': '#9b59b6',
+        'Weight Management':                    '#1abc9c'
     };
 
     /** Get a consistent color for a treatment label. */
