@@ -118,6 +118,13 @@ DRC.App = (() => {
         state.isMetric = document.getElementById('unit-toggle').checked;
         if (prev === state.isMetric) return;
 
+        // Capture precise SI values BEFORE the switch to avoid rounding drift.
+        // When switching units, slider values are rounded to the target unit's
+        // step size (e.g. 5.5556 mmol/L → 5.6). Computing the model from the
+        // pre-switch values ensures the risk percentage stays identical.
+        const rawBefore = UI().readInputs();
+        const preciseSI = Model().toSI(rawBefore, prev);
+
         const snapshot = {};
         CFG.CONVERTIBLE_FIELDS.forEach(f => {
             snapshot[f] = parseFloat(document.getElementById(`${f}-value`).value);
@@ -127,7 +134,26 @@ DRC.App = (() => {
         UI().updateSliderRanges(state.isMetric ? 'si' : 'us');
         UI().applyConvertedValues(snapshot, state.isMetric);
         UI().updateAllSliderFills();
-        calculate();
+
+        // Use the precise pre-switch SI values for the model calculation
+        // instead of reading rounded values from the DOM.
+        const riskPct       = Model().computeProbability(preciseSI) * 100;
+        const contributions = Model().computeContributions(preciseSI);
+        const treatStatus   = Model().getElevatedFactors(preciseSI, rawBefore, prev);
+
+        UI().renderRisk(riskPct);
+        UI().updateNonModSummary();
+        UI().renderIconArray(riskPct);
+        UI().renderContributionChart(contributions);
+        UI().renderHeatmapPointer(contributions);
+        UI().renderTreatmentOverview(treatStatus, contributions);
+        UI().renderTreatmentRecommendations(treatStatus, contributions);
+        UI().renderCausalityChains(preciseSI, treatStatus.elevatedFactors);
+        Radar().render(preciseSI, treatStatus.elevatedFactors);
+
+        if (state.isComparingScenario && state.baselineRisk !== null) {
+            UI().renderScenarioComparison(state.baselineRisk, riskPct);
+        }
     };
 
     // ─── Reset ──────────────────────────────────────────────────────────

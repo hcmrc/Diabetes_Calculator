@@ -115,20 +115,20 @@ DRC.PatientManager = (() => {
 
     /** Column mappings for Excel (column name → field key). */
     const EXCEL_COLUMNS = {
-        Name: 'name', Age: 'age', Race_African_American: 'race',
-        Parent_History: 'parentHist', Systolic_BP: 'sbp', Height: 'height',
+        Name: 'name', Age: 'age', Ethnicity_African_American: 'race',
+        Parental_Diabetes: 'parentHist', Systolic_BP: 'sbp', Height: 'height',
         Waist: 'waist', Fasting_Glucose: 'fastGlu', HDL_Cholesterol: 'cholHDL',
-        Triglycerides: 'cholTri', Risk_Pct: 'riskPct', Saved_At: 'savedAt'
+        Blood_Fats_Triglycerides: 'cholTri', Risk_Pct: 'riskPct', Saved_At: 'savedAt'
     };
 
     const exportToExcel = () => {
         if (patients.length === 0) { alert('No patients to export.'); return; }
         const rows = patients.map(p => ({
-            Name: p.name, Age: p.data.age, Race_African_American: p.data.race,
-            Parent_History: p.data.parentHist, Systolic_BP: p.data.sbp,
+            Name: p.name, Age: p.data.age, Ethnicity_African_American: p.data.race,
+            Parental_Diabetes: p.data.parentHist, Systolic_BP: p.data.sbp,
             Height: p.data.height, Waist: p.data.waist,
             Fasting_Glucose: p.data.fastGlu, HDL_Cholesterol: p.data.cholHDL,
-            Triglycerides: p.data.cholTri, Risk_Pct: p.riskPct, Saved_At: p.savedAt
+            Blood_Fats_Triglycerides: p.data.cholTri, Risk_Pct: p.riskPct, Saved_At: p.savedAt
         }));
         const ws = XLSX.utils.json_to_sheet(rows);
         const wb = XLSX.utils.book_new();
@@ -146,14 +146,14 @@ DRC.PatientManager = (() => {
                     const name = row.Name || row.name || 'Imported Patient';
                     const data = {
                         age: parseFloat(row.Age || row.age) || 50,
-                        race: parseInt(row.Race_African_American || row.race) || 0,
-                        parentHist: parseInt(row.Parent_History || row.parentHist) || 0,
+                        race: parseInt(row.Ethnicity_African_American || row.Race_African_American || row.race) || 0,
+                        parentHist: parseInt(row.Parental_Diabetes || row.Parent_History || row.parentHist) || 0,
                         sbp: parseFloat(row.Systolic_BP || row.sbp) || 120,
                         height: parseFloat(row.Height || row.height) || 170,
                         waist: parseFloat(row.Waist || row.waist) || 90,
                         fastGlu: parseFloat(row.Fasting_Glucose || row.fastGlu) || 100,
                         cholHDL: parseFloat(row.HDL_Cholesterol || row.cholHDL) || 50,
-                        cholTri: parseFloat(row.Triglycerides || row.cholTri) || 150,
+                        cholTri: parseFloat(row.Blood_Fats_Triglycerides || row.Triglycerides || row.cholTri) || 150,
                         _riskPct: parseFloat(row.Risk_Pct || 0) || 0
                     };
                     patients.push({
