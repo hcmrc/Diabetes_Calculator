@@ -9,7 +9,7 @@ The interface implements the validated risk model from the **Atherosclerosis Ris
 
 **Model equation:**
 
-P(Diabetes) = 1 / (1 + e^(−LP))
+P(Diabetes) = 1 / (1 + e^(-LP))
 
 where LP = σ + Σ βᵢ · xᵢ with the following coefficients:
 
@@ -20,30 +20,30 @@ where LP = σ + Σ βᵢ · xᵢ with the following coefficients:
 | Family history | 0.4981 | binary | Non-modifiable |
 | Systolic blood pressure | 0.0111 | mmHg | Modifiable |
 | Waist circumference | 0.0273 | cm | Modifiable |
-| Height | −0.0326 | cm | Non-modifiable |
+| Height | -0.0326 | cm | Non-modifiable |
 | Fasting glucose | 1.5849 | mmol/L | Modifiable (strongest predictor) |
-| HDL cholesterol | −0.4718 | mmol/L | Modifiable (protective) |
+| HDL cholesterol | -0.4718 | mmol/L | Modifiable (protective) |
 | Triglycerides | 0.242 | mmol/L | Modifiable |
 
-Intercept σ = −9.9808
+Intercept σ = -9.9808
 
 ## Features
 
 - **Real-time risk calculation** with animated gauge display (0–100%)
-- **Dual-unit system** — switchable between US customary and SI units
-- **Factor contribution analysis** — shows each predictor's individual contribution to overall risk (deviation from the ARIC cohort population mean)
-- **Radar chart** — multidimensional visualization of modifiable risk factors relative to clinical thresholds
-- **Risk timeline** — temporal progression across scenarios and treatment simulations, with color-coded treatment markers and baseline reference line
-- **Treatment simulations** — evidence-based intervention scenarios (blood glucose management, blood pressure control, HDL improvement, triglyceride treatment, weight management) with animated slider adjustment
-- **Treatment zone map** — heatmap visualization of treatment zones
-- **Patient management** — save and load patient profiles via localStorage
-- **Model transparency** — beta vector visualization and causal chains to disclose model structure (EID Abstraction Hierarchy)
+- **Dual-unit system** - switchable between US customary and SI units
+- **Factor contribution analysis** - shows each predictor's individual contribution to overall risk (deviation from the ARIC cohort population mean)
+- **Radar chart** - multidimensional visualization of modifiable risk factors relative to clinical thresholds
+- **Risk timeline** - temporal progression across scenarios and treatment simulations, with color-coded treatment markers and baseline reference line
+- **Treatment simulations** - evidence-based intervention scenarios (blood glucose management, blood pressure control, HDL improvement, triglyceride treatment, weight management) with animated slider adjustment
+- **Treatment zone map** - heatmap visualization of treatment zones
+- **Patient management** - save and load patient profiles via localStorage
+- **Model transparency** - beta vector visualization and causal chains to disclose model structure (EID Abstraction Hierarchy)
 
 ## EID Design Principles
 
 The interface follows the core principles of Ecological Interface Design:
 
-- **Abstraction Hierarchy (AH):** Representation of model structure across multiple levels of abstraction — from raw data (sliders) through functional relationships (contribution bars) to system purpose (risk score)
+- **Abstraction Hierarchy (AH):** Representation of model structure across multiple levels of abstraction - from raw data (sliders) through functional relationships (contribution bars) to system purpose (risk score)
 - **Skills, Rules, Knowledge (SRK) Taxonomy:** Support for all three cognitive processing levels according to Rasmussen (1983)
 - **Proximity Compatibility Principle:** Spatial grouping of related information (Wickens & Carswell, 1995)
 - **Direct Perception / Direct Manipulation:** Slider-based input with immediate visual feedback
@@ -80,7 +80,7 @@ tests/
 
 ## Usage
 
-Open `index.html` directly in the browser — no server required.
+Open `index.html` directly in the browser - no server required.
 
 ```bash
 open index.html
