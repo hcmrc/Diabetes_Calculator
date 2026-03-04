@@ -1,5 +1,5 @@
 # Diabetes_Calculator
-## Diabetes Risk Calculator — Ecological Interface Design
+## Diabetes Risk Calculator - Ecological Interface Design
 
 Ein interaktives, webbasiertes Interface zur Kommunikation des logistischen Regressionsmodells von Schmidt et al. (2005) an medizinische Laien. Das Interface wurde im Rahmen einer Masterarbeit auf Basis der Ecological Interface Design (EID) Methodik (Vicente & Rasmussen, 1992) entwickelt.
 
@@ -30,20 +30,20 @@ Intercept σ = −9.9808
 ## Funktionen
 
 - **Echtzeit-Risikoberechnung** mit animiertem Gauge-Display (0–100%)
-- **Dual-Unit-System** — umschaltbar zwischen US-amerikanischen und SI-Einheiten
-- **Faktor-Beitragsanalyse** — zeigt den individuellen Beitrag jedes Prädiktors zum Gesamtrisiko (Abweichung vom Populationsmittel der ARIC-Kohorte)
-- **Radar-Chart** — multidimensionale Visualisierung der modifizierbaren Risikofaktoren relativ zu klinischen Schwellenwerten
-- **Risk Timeline** — temporale Verlaufsdarstellung über Szenarien und Treatment-Simulationen hinweg, mit farbkodierten Treatment-Markern und Baseline-Referenzlinie
-- **Treatment-Simulationen** — evidenzbasierte Interventionsszenarien (Blutzucker-Management, Blutdruckkontrolle, HDL-Verbesserung, Triglyzerid-Behandlung, Gewichtsmanagement) mit animierter Slider-Anpassung
-- **Treatment Zone Map** — Heatmap-Darstellung der Behandlungszonen
-- **Patientenverwaltung** — Speichern und Laden von Patientenprofilen via localStorage
-- **Modell-Transparenz** — Beta-Vektor-Visualisierung und Kausalitätsketten zur Offenlegung der Modellstruktur (EID Abstraction Hierarchy)
+- **Dual-Unit-System** - umschaltbar zwischen US-amerikanischen und SI-Einheiten
+- **Faktor-Beitragsanalyse** - zeigt den individuellen Beitrag jedes Prädiktors zum Gesamtrisiko (Abweichung vom Populationsmittel der ARIC-Kohorte)
+- **Radar-Chart** - multidimensionale Visualisierung der modifizierbaren Risikofaktoren relativ zu klinischen Schwellenwerten
+- **Risk Timeline** - temporale Verlaufsdarstellung über Szenarien und Treatment-Simulationen hinweg, mit farbkodierten Treatment-Markern und Baseline-Referenzlinie
+- **Treatment-Simulationen** - evidenzbasierte Interventionsszenarien (Blutzucker-Management, Blutdruckkontrolle, HDL-Verbesserung, Triglyzerid-Behandlung, Gewichtsmanagement) mit animierter Slider-Anpassung
+- **Treatment Zone Map** - Heatmap-Darstellung der Behandlungszonen
+- **Patientenverwaltung** - Speichern und Laden von Patientenprofilen via localStorage
+- **Modell-Transparenz** - Beta-Vektor-Visualisierung und Kausalitätsketten zur Offenlegung der Modellstruktur (EID Abstraction Hierarchy)
 
 ## EID-Designprinzipien
 
 Das Interface folgt den Kernprinzipien des Ecological Interface Design:
 
-- **Abstraction Hierarchy (AH):** Darstellung der Modellstruktur auf verschiedenen Abstraktionsebenen — von Rohdaten (Slider) über funktionale Zusammenhänge (Beitragsbalken) bis zum Systemzweck (Risikowert)
+- **Abstraction Hierarchy (AH):** Darstellung der Modellstruktur auf verschiedenen Abstraktionsebenen - von Rohdaten (Slider) über funktionale Zusammenhänge (Beitragsbalken) bis zum Systemzweck (Risikowert)
 - **Skills, Rules, Knowledge (SRK) Taxonomy:** Unterstützung aller drei kognitiven Verarbeitungsebenen nach Rasmussen (1983)
 - **Proximity Compatibility Principle:** Räumliche Gruppierung zusammengehöriger Informationen (Wickens & Carswell, 1995)
 - **Direct Perception / Direct Manipulation:** Slider-basierte Eingabe mit sofortigem visuellem Feedback
@@ -80,7 +80,7 @@ tests/
 
 ## Verwendung
 
-Die `index.html` direkt im Browser öffnen — es wird kein Server benötigt.
+Die `index.html` direkt im Browser öffnen - es wird kein Server benötigt.
 
 ```bash
 open index.html
