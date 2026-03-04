@@ -24,7 +24,13 @@ DRC.App = (() => {
         prevRiskPct: null,
         activeField: null,
         baselineRisk: null,
-        isComparingScenario: false
+        isComparingScenario: false,
+        /**
+         * Precise SI-unit values, updated on every calculation.
+         * Used as the "source of truth" during unit switches to prevent
+         * cumulative rounding drift from repeated conversions.
+         */
+        preciseSI: null
     };
 
     let _highlightedField = null;
@@ -45,6 +51,7 @@ DRC.App = (() => {
     const calculate = () => {
         const rawInputs     = UI().readInputs();
         const siVals        = Model().toSI(rawInputs, state.isMetric);
+        state.preciseSI     = { ...siVals };   // Preserve full-precision SI values
         const riskPct       = Model().computeProbability(siVals) * 100;
         const contributions = Model().computeContributions(siVals);
         const treatStatus   = Model().getElevatedFactors(siVals, rawInputs, state.isMetric);
@@ -118,28 +125,53 @@ DRC.App = (() => {
         state.isMetric = document.getElementById('unit-toggle').checked;
         if (prev === state.isMetric) return;
 
-        // Capture precise SI values BEFORE the switch to avoid rounding drift.
-        // When switching units, slider values are rounded to the target unit's
-        // step size (e.g. 5.5556 mmol/L → 5.6). Computing the model from the
-        // pre-switch values ensures the risk percentage stays identical.
-        const rawBefore = UI().readInputs();
-        const preciseSI = Model().toSI(rawBefore, prev);
+        // ── Rounding-drift prevention ──────────────────────────────────
+        // Convert slider values FROM the stored precise SI values rather
+        // than from the (rounded) DOM values. This eliminates cumulative
+        // rounding errors that occur when converting back and forth:
+        //   US 100 mg/dL → SI 5.6 (rounded) → US 100.8 (drift!)
+        // By always starting from precise SI, the conversion is:
+        //   preciseSI 5.5556 → US: 5.5556 / (1/18) = 100.0 (exact)
+        //   preciseSI 5.5556 → SI: 5.5556 → display 5.6 (only display rounds)
 
-        const snapshot = {};
-        CFG.CONVERTIBLE_FIELDS.forEach(f => {
-            snapshot[f] = parseFloat(document.getElementById(`${f}-value`).value);
-        });
+        const c = CFG.CONVERSIONS;
+        const convMap = {
+            height:  c.heightToCm,
+            waist:   c.waistToCm,
+            fastGlu: c.gluToMmol,
+            cholHDL: c.hdlToMmol,
+            cholTri: c.triToMmol
+        };
 
         UI().updateUnitLabels(state.isMetric);
         UI().updateSliderRanges(state.isMetric ? 'si' : 'us');
-        UI().applyConvertedValues(snapshot, state.isMetric);
+
+        // Convert each convertible field from precise SI to target unit
+        if (state.preciseSI) {
+            const mode = state.isMetric ? 'si' : 'us';
+            CFG.CONVERTIBLE_FIELDS.forEach(f => {
+                const siVal = state.preciseSI[f];
+                if (siVal == null) return;
+                const multiplier = convMap[f];
+                // SI values are the base; to get US, divide by multiplier
+                const converted = state.isMetric ? siVal : siVal / multiplier;
+                const [min, max, step] = CFG.RANGES[f][mode];
+                const display = DRC.UIHelpers.clampAndRound(converted, min, max, step);
+                const input  = document.getElementById(`${f}-value`);
+                const slider = document.getElementById(`${f}-slider`);
+                if (input)  input.value  = display;
+                if (slider) slider.value = display;
+            });
+        }
+
         UI().updateAllSliderFills();
 
-        // Use the precise pre-switch SI values for the model calculation
-        // instead of reading rounded values from the DOM.
+        // Render with precise SI values (no rounding in the model path)
+        const preciseSI     = state.preciseSI || Model().toSI(UI().readInputs(), state.isMetric);
         const riskPct       = Model().computeProbability(preciseSI) * 100;
         const contributions = Model().computeContributions(preciseSI);
-        const treatStatus   = Model().getElevatedFactors(preciseSI, rawBefore, prev);
+        const rawInputs     = UI().readInputs();
+        const treatStatus   = Model().getElevatedFactors(preciseSI, rawInputs, state.isMetric);
 
         UI().renderRisk(riskPct);
         UI().updateNonModSummary();
