@@ -1,92 +1,92 @@
 # Diabetes_Calculator
 ## Diabetes Risk Calculator - Ecological Interface Design
 
-Ein interaktives, webbasiertes Interface zur Kommunikation des logistischen Regressionsmodells von Schmidt et al. (2005) an medizinische Laien. Das Interface wurde im Rahmen einer Masterarbeit auf Basis der Ecological Interface Design (EID) Methodik (Vicente & Rasmussen, 1992) entwickelt.
+An interactive, web-based interface for communicating the logistic regression model by Schmidt et al. (2005) to medical laypersons. The interface was developed as part of a master's thesis based on the Ecological Interface Design (EID) methodology (Vicente & Rasmussen, 1992).
 
-## Wissenschaftlicher Hintergrund
+## Scientific Background
 
-Das Interface implementiert das validierte Risikomodell aus der **Atherosclerosis Risk in Communities (ARIC)** Studie, welches die 9-Jahres-Inzidenz von Typ-2-Diabetes auf Basis von neun Prädiktoren schätzt:
+The interface implements the validated risk model from the **Atherosclerosis Risk in Communities (ARIC)** study, which estimates the 8-year incidence of type 2 diabetes based on nine predictors:
 
-**Modellgleichung:**
+**Model equation:**
 
 P(Diabetes) = 1 / (1 + e^(−LP))
 
-wobei LP = σ + Σ βᵢ · xᵢ mit den folgenden Koeffizienten:
+where LP = σ + Σ βᵢ · xᵢ with the following coefficients:
 
-| Prädiktor | β-Koeffizient | Einheit (SI) | Rolle |
-|-----------|--------------|-------------|-------|
-| Alter | 0.0173 | Jahre | Nicht modifizierbar |
-| Ethnizität | 0.4433 | binär | Nicht modifizierbar |
-| Familiäre Vorbelastung | 0.4981 | binär | Nicht modifizierbar |
-| Systolischer Blutdruck | 0.0111 | mmHg | Modifizierbar |
-| Taillenumfang | 0.0273 | cm | Modifizierbar |
-| Körpergröße | −0.0326 | cm | Nicht modifizierbar |
-| Nüchternglukose | 1.5849 | mmol/L | Modifizierbar (stärkster Prädiktor) |
-| HDL-Cholesterin | −0.4718 | mmol/L | Modifizierbar (protektiv) |
-| Triglyzeride | 0.242 | mmol/L | Modifizierbar |
+| Predictor | β Coefficient | Unit (SI) | Role |
+|-----------|--------------|-----------|------|
+| Age | 0.0173 | years | Non-modifiable |
+| Ethnicity | 0.4433 | binary | Non-modifiable |
+| Family history | 0.4981 | binary | Non-modifiable |
+| Systolic blood pressure | 0.0111 | mmHg | Modifiable |
+| Waist circumference | 0.0273 | cm | Modifiable |
+| Height | −0.0326 | cm | Non-modifiable |
+| Fasting glucose | 1.5849 | mmol/L | Modifiable (strongest predictor) |
+| HDL cholesterol | −0.4718 | mmol/L | Modifiable (protective) |
+| Triglycerides | 0.242 | mmol/L | Modifiable |
 
 Intercept σ = −9.9808
 
-## Funktionen
+## Features
 
-- **Echtzeit-Risikoberechnung** mit animiertem Gauge-Display (0–100%)
-- **Dual-Unit-System** - umschaltbar zwischen US-amerikanischen und SI-Einheiten
-- **Faktor-Beitragsanalyse** - zeigt den individuellen Beitrag jedes Prädiktors zum Gesamtrisiko (Abweichung vom Populationsmittel der ARIC-Kohorte)
-- **Radar-Chart** - multidimensionale Visualisierung der modifizierbaren Risikofaktoren relativ zu klinischen Schwellenwerten
-- **Risk Timeline** - temporale Verlaufsdarstellung über Szenarien und Treatment-Simulationen hinweg, mit farbkodierten Treatment-Markern und Baseline-Referenzlinie
-- **Treatment-Simulationen** - evidenzbasierte Interventionsszenarien (Blutzucker-Management, Blutdruckkontrolle, HDL-Verbesserung, Triglyzerid-Behandlung, Gewichtsmanagement) mit animierter Slider-Anpassung
-- **Treatment Zone Map** - Heatmap-Darstellung der Behandlungszonen
-- **Patientenverwaltung** - Speichern und Laden von Patientenprofilen via localStorage
-- **Modell-Transparenz** - Beta-Vektor-Visualisierung und Kausalitätsketten zur Offenlegung der Modellstruktur (EID Abstraction Hierarchy)
+- **Real-time risk calculation** with animated gauge display (0–100%)
+- **Dual-unit system** — switchable between US customary and SI units
+- **Factor contribution analysis** — shows each predictor's individual contribution to overall risk (deviation from the ARIC cohort population mean)
+- **Radar chart** — multidimensional visualization of modifiable risk factors relative to clinical thresholds
+- **Risk timeline** — temporal progression across scenarios and treatment simulations, with color-coded treatment markers and baseline reference line
+- **Treatment simulations** — evidence-based intervention scenarios (blood glucose management, blood pressure control, HDL improvement, triglyceride treatment, weight management) with animated slider adjustment
+- **Treatment zone map** — heatmap visualization of treatment zones
+- **Patient management** — save and load patient profiles via localStorage
+- **Model transparency** — beta vector visualization and causal chains to disclose model structure (EID Abstraction Hierarchy)
 
-## EID-Designprinzipien
+## EID Design Principles
 
-Das Interface folgt den Kernprinzipien des Ecological Interface Design:
+The interface follows the core principles of Ecological Interface Design:
 
-- **Abstraction Hierarchy (AH):** Darstellung der Modellstruktur auf verschiedenen Abstraktionsebenen - von Rohdaten (Slider) über funktionale Zusammenhänge (Beitragsbalken) bis zum Systemzweck (Risikowert)
-- **Skills, Rules, Knowledge (SRK) Taxonomy:** Unterstützung aller drei kognitiven Verarbeitungsebenen nach Rasmussen (1983)
-- **Proximity Compatibility Principle:** Räumliche Gruppierung zusammengehöriger Informationen (Wickens & Carswell, 1995)
-- **Direct Perception / Direct Manipulation:** Slider-basierte Eingabe mit sofortigem visuellem Feedback
+- **Abstraction Hierarchy (AH):** Representation of model structure across multiple levels of abstraction — from raw data (sliders) through functional relationships (contribution bars) to system purpose (risk score)
+- **Skills, Rules, Knowledge (SRK) Taxonomy:** Support for all three cognitive processing levels according to Rasmussen (1983)
+- **Proximity Compatibility Principle:** Spatial grouping of related information (Wickens & Carswell, 1995)
+- **Direct Perception / Direct Manipulation:** Slider-based input with immediate visual feedback
 
-## Technologie
+## Technology
 
-- Vanilla JavaScript (ES6+, IIFE-Modulpattern, `window.DRC` Namespace)
-- Kein Framework, kein Bundler, kein Build-Schritt
-- SVG für Diagramme (Radar-Chart, Timeline)
-- CSS Custom Properties für konsistentes Theming
-- Google Fonts (Inter) und Material Icons
+- Vanilla JavaScript (ES6+, IIFE module pattern, `window.DRC` namespace)
+- No framework, no bundler, no build step
+- SVG for diagrams (radar chart, timeline)
+- CSS Custom Properties for consistent theming
+- Google Fonts (Inter) and Material Icons
 
-## Projektstruktur
+## Project Structure
 
 ```
-index.html              Hauptdatei des Interfaces
-style.css               Gesamtes Stylesheet
+index.html              Main interface file
+style.css               Complete stylesheet
 js/
-  config.js             Modellkoeffizienten, Schwellenwerte, Behandlungsdaten
-  risk-model.js         Logistische Regression, Beitragsberechnung, Einheitenkonvertierung
-  ui-helpers.js         Hilfsfunktionen (Clamping, Formatierung)
-  ui-controller.js      DOM-Rendering, Slider-Updates, Gauge-Animation
-  radar-chart.js        SVG-Radardiagramm der Risikofaktoren
-  timeline-chart.js     SVG-Zeitverlaufsdiagramm mit Snapshot-Tracking
-  treatment-simulator.js  Animierte Behandlungssimulationen
-  patient-manager.js    Patientenverwaltung (localStorage)
-  app.js                Anwendungslogik, Event-Binding, Zustandsverwaltung
+  config.js             Model coefficients, thresholds, treatment data
+  risk-model.js         Logistic regression, contribution calculation, unit conversion
+  ui-helpers.js         Utility functions (clamping, formatting)
+  ui-controller.js      DOM rendering, slider updates, gauge animation
+  radar-chart.js        SVG radar chart of risk factors
+  timeline-chart.js     SVG timeline chart with snapshot tracking
+  treatment-simulator.js  Animated treatment simulations
+  patient-manager.js    Patient management (localStorage)
+  app.js                Application logic, event binding, state management
   main.js               Bootstrap (DOMContentLoaded)
 tests/
-  test-risk-model.js    Modellvalidierung (62 Tests)
-  test-comparison.js    Refactoring-Vergleich Original vs. Modular (55 Tests)
-  test-ui-helpers.js    UI-Hilfsfunktionen (9 Tests)
+  test-risk-model.js    Model validation (62 tests)
+  test-comparison.js    Refactoring comparison original vs. modular (55 tests)
+  test-ui-helpers.js    UI utility functions (9 tests)
 ```
 
-## Verwendung
+## Usage
 
-Die `index.html` direkt im Browser öffnen - es wird kein Server benötigt.
+Open `index.html` directly in the browser — no server required.
 
 ```bash
 open index.html
 ```
 
-Für GitHub Pages: Alle Dateien (inkl. `js/`-Ordner) in das Root-Verzeichnis des Repositories hochladen.
+For GitHub Pages: Upload all files (including the `js/` directory) to the repository's root directory.
 
 ## Tests
 
@@ -96,12 +96,14 @@ node tests/test-comparison.js
 node tests/test-ui-helpers.js
 ```
 
-Alle 126 Tests validieren die korrekte Implementierung des Schmidt-et-al.-Modells.
+All 126 tests validate the correct implementation of the Schmidt et al. model.
 
-## Literatur
+## References
 
 - Schmidt, M. I., Duncan, B. B., Bang, H., Pankow, J. S., Ballantyne, C. M., Golden, S. H., Folsom, A. R., & Chambless, L. E. (2005). Identifying individuals at high risk for diabetes: The Atherosclerosis Risk in Communities study. *Diabetes Care, 28*(8), 2013–2018. https://doi.org/10.2337/diacare.28.8.2013
 - Vicente, K. J., & Rasmussen, J. (1992). Ecological interface design: Theoretical foundations. *IEEE Transactions on Systems, Man, and Cybernetics, 22*(4), 589–606. https://doi.org/10.1109/21.156574
 - Wickens, C. D., & Carswell, C. M. (1995). The proximity compatibility principle: Its psychological foundation and relevance to display design. *Human Factors, 37*(3), 473–494. https://doi.org/10.1518/001872095779049408
 - Rasmussen, J. (1983). Skills, rules, and knowledge: Signals, signs, and symbols, and other distinctions in human performance models. *IEEE Transactions on Systems, Man, and Cybernetics, SMC-13*(3), 257–266. https://doi.org/10.1109/TSMC.1983.6313160
+
+
 
