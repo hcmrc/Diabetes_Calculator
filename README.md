@@ -5,7 +5,7 @@ Ein interaktives, webbasiertes Interface zur Kommunikation des logistischen Regr
 
 ## Wissenschaftlicher Hintergrund
 
-Das Interface implementiert das validierte Risikomodell aus der **Atherosclerosis Risk in Communities (ARIC)** Studie, welches die 8-Jahres-Inzidenz von Typ-2-Diabetes auf Basis von neun Prädiktoren schätzt:
+Das Interface implementiert das validierte Risikomodell aus der **Atherosclerosis Risk in Communities (ARIC)** Studie, welches die 9-Jahres-Inzidenz von Typ-2-Diabetes auf Basis von neun Prädiktoren schätzt:
 
 **Modellgleichung:**
 
@@ -105,6 +105,3 @@ Alle 126 Tests validieren die korrekte Implementierung des Schmidt-et-al.-Modell
 - Wickens, C. D., & Carswell, C. M. (1995). The proximity compatibility principle: Its psychological foundation and relevance to display design. *Human Factors, 37*(3), 473–494. https://doi.org/10.1518/001872095779049408
 - Rasmussen, J. (1983). Skills, rules, and knowledge: Signals, signs, and symbols, and other distinctions in human performance models. *IEEE Transactions on Systems, Man, and Cybernetics, SMC-13*(3), 257–266. https://doi.org/10.1109/TSMC.1983.6313160
 
-## Autor
-
-Marco Haeckel — Masterarbeit
