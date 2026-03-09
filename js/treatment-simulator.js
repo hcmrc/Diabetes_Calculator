@@ -75,14 +75,43 @@ DRC.TreatmentSimulator = (() => {
         // Disable all simulate buttons during animation
         document.querySelectorAll('.btn-simulate-treatment').forEach(b => b.disabled = true);
 
-        // "Before" snapshot if in compare mode — skip if last snapshot was already a treatment
-        const state = DRC.App._getState?.();
-        if (state?.isComparingScenario) {
-            const last = DRC.TimelineChart.getLastSnapshot?.();
-            if (!last || !last.treatmentLabel) {
-                const raw = DRC.UIController.readInputs();
-                const si  = DRC.RiskModel.toSI(raw, state.isMetric);
-                DRC.TimelineChart.addSnapshot(DRC.RiskModel.computeProbability(si) * 100, si, null);
+        // Auto-set baseline on first simulation
+        if (_simulated.size === 0) {
+            const raw = DRC.UIController.readInputs();
+            const isMetric = document.getElementById('unit-toggle')?.checked || false;
+            const si  = DRC.RiskModel.toSI(raw, isMetric);
+            const risk = DRC.RiskModel.computeProbability(si) * 100;
+
+            // Activate comparison mode in app state
+            const appState = DRC.App._getState?.();
+            if (appState) {
+                appState.isComparingScenario = true;
+                appState.baselineRisk = risk;
+            }
+
+            // Update Set Baseline button UI
+            const baseBtn = document.getElementById('compareScenarioBtn');
+            if (baseBtn) {
+                baseBtn.classList.add('active');
+                baseBtn.innerHTML = '<span class="material-icons-round">flag</span> Reset Baseline';
+            }
+            const panel = document.getElementById('scenario-comparison');
+            if (panel) panel.style.display = 'flex';
+            DRC.UIController.renderScenarioComparison(risk, risk);
+
+            // Add baseline line + unlabelled baseline snapshot — only if not already set manually
+            if (!DRC.TimelineChart.hasBaseline()) {
+                DRC.TimelineChart.setBaseline(risk);
+            }
+            if (DRC.TimelineChart.getLastSnapshot() === null) {
+                DRC.TimelineChart.addSnapshot(risk, si, null);
+            }
+
+            // Auto-open timeline
+            const area = document.getElementById('timeline-expandable');
+            if (area && !area.classList.contains('open')) {
+                area.classList.add('open');
+                document.getElementById('timelineToggleBtn')?.classList.add('active');
             }
         }
 
