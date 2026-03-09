@@ -1,0 +1,55 @@
+/**
+ * @fileoverview Shared DOM utility functions used across UI modules.
+ *
+ * Provides lightweight wrappers around common DOM operations to reduce
+ * boilerplate and enforce consistent null-checking throughout the UI layer.
+ *
+ * @module UIHelpers
+ * @memberof DRC
+ */
+
+'use strict';
+
+DRC.UIHelpers = (() => {
+
+    /**
+     * Get element by ID (cached shorthand).
+     * @param {string} id — DOM element ID.
+     * @returns {HTMLElement|null}
+     */
+    const el = (id) => document.getElementById(id);
+
+    /**
+     * Set text content of an element by ID.
+     * @param {string} id — DOM element ID.
+     * @param {string} text — Text to set.
+     */
+    const setText = (id, text) => {
+        const node = el(id);
+        if (node) node.textContent = text;
+    };
+
+    /**
+     * Clamp a value within [min, max] and round to step precision.
+     * @param {number} value — Raw value.
+     * @param {number} min — Lower bound.
+     * @param {number} max — Upper bound.
+     * @param {number} step — Step size (determines decimal precision).
+     * @returns {number} Clamped and rounded value.
+     */
+    const clampAndRound = (value, min, max, step) => {
+        const clamped = Math.min(Math.max(value, min), max);
+        return step < 1 ? parseFloat(clamped.toFixed(1)) : Math.round(clamped);
+    };
+
+    /**
+     * Format a number for axis display, using one decimal if step < 1.
+     * @param {number} value — Numeric value.
+     * @param {boolean} isFloat — Whether to display as float.
+     * @returns {string}
+     */
+    const formatAxisValue = (value, isFloat) =>
+        isFloat ? parseFloat(value).toFixed(1) : String(value);
+
+    return { el, setText, clampAndRound, formatAxisValue };
+})();
