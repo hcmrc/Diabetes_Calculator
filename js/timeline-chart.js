@@ -103,10 +103,14 @@ DRC.TimelineChart = (() => {
             return;
         }
 
-        // Responsive viewBox dimensions — wider canvas keeps elements small at full-width
-        const VW  = 1100;
-        const VH  = 290;
-        const PAD = { top: 28, right: 28, bottom: 36, left: 52 };
+        // Responsive viewBox — narrower on mobile so labels stay readable
+        const containerW = container.clientWidth || 375;
+        const isMobile = containerW < 500;
+        const VW  = isMobile ? 500 : 1100;
+        const VH  = isMobile ? 300 : 290;
+        const PAD = isMobile
+            ? { top: 30, right: 16, bottom: 40, left: 44 }
+            : { top: 28, right: 28, bottom: 36, left: 52 };
         const plotW = VW - PAD.left - PAD.right;
         const plotH = VH - PAD.top  - PAD.bottom;
 

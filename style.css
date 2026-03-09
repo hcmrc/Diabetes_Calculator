@@ -1795,9 +1795,75 @@ body {
         flex-direction: column;
     }
 
-    .timeline-legend {
-        width: 100%;
+    .timeline-body .timeline-legend {
+        width: calc(100% + 24px);
         max-height: none;
+        padding: 14px 16px;
+        gap: 8px;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        margin-left: -12px;
+        margin-right: -12px;
+    }
+
+    .tl-legend-title {
+        font-size: 13px;
+        gap: 8px;
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+    }
+
+    .tl-legend-item {
+        font-size: 13px;
+        padding: 8px 0;
+        gap: 10px;
+    }
+
+    .tl-legend-dot {
+        width: 10px;
+        height: 10px;
+        margin-top: 4px;
+    }
+
+    .tl-legend-label {
+        font-size: 14px;
+    }
+
+    .tl-legend-risk {
+        font-size: 14px;
+    }
+
+    .tl-legend-delta {
+        font-size: 12px;
+    }
+
+    /* Timeline expandable area – mobile layout */
+    .timeline-expandable-inner {
+        padding: 0 12px;
+    }
+
+    .timeline-expandable-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .timeline-hint {
+        display: none;
+    }
+
+    .timeline-expandable-actions {
+        width: 100%;
+    }
+
+    .timeline-expandable-area .btn-compare-scenario-section,
+    .timeline-expandable-area .btn-snapshot {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .timeline-expandable-area .timeline-chart {
+        min-height: 200px;
     }
 }
 
