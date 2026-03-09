@@ -1580,7 +1580,15 @@ body {
     color: var(--blue);
 }
 
+.timeline-body {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
 .timeline-chart {
+    flex: 1;
+    min-width: 0;
     background: var(--bg-elevated);
     border-radius: var(--radius);
     padding: 12px;
@@ -1590,8 +1598,8 @@ body {
 
 .timeline-chart svg {
     width: 100%;
-    height: 160px;
-    overflow: hidden;
+    height: auto;
+    display: block;
 }
 
 .timeline-empty {
@@ -1599,6 +1607,84 @@ body {
     color: var(--text-tertiary);
     text-align: center;
     padding: 8px;
+}
+
+/* ── SVG element styles (tl-* namespace) ── */
+.tl-area {
+    fill: rgba(0, 122, 255, 0.08);
+}
+
+.tl-line {
+    fill: none;
+    stroke: var(--blue, #007aff);
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+
+.tl-dot {
+    fill: var(--blue, #007aff);
+    stroke: #fff;
+    stroke-width: 2;
+    transition: r 0.15s ease;
+}
+
+.tl-dot-baseline {
+    fill: var(--blue, #007aff);
+    stroke: #fff;
+    stroke-width: 2.5;
+}
+
+.tl-dot-treatment {
+    stroke: #fff;
+    stroke-width: 2.5;
+    filter: drop-shadow(0 1px 3px rgba(0,0,0,0.15));
+}
+
+.tl-axis-y {
+    font-size: 11px;
+    fill: var(--text-tertiary, #999);
+    font-weight: 500;
+    font-family: inherit;
+}
+
+.tl-axis-x {
+    font-size: 11px;
+    fill: var(--text-tertiary, #999);
+    font-weight: 400;
+    font-family: inherit;
+}
+
+.tl-treat-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    font-family: inherit;
+}
+
+.tl-risk-val {
+    font-size: 11px;
+    fill: var(--text-secondary, #666);
+    font-weight: 500;
+    font-family: inherit;
+}
+
+.tl-baseline-label {
+    font-size: 11px;
+    fill: var(--blue, #007aff);
+    font-weight: 600;
+    font-family: inherit;
+    transition: fill 0.25s ease, opacity 0.25s ease;
+}
+
+.timeline-baseline-group.dimmed .tl-baseline-label {
+    fill: var(--text-tertiary, #aaa);
+    opacity: 0.30;
+}
+
+.timeline-baseline-group.dimmed:hover .tl-baseline-label {
+    fill: var(--blue, #007aff);
+    opacity: 0.95;
 }
 
 .btn-snapshot {
@@ -1702,6 +1788,16 @@ body {
 
     .heatmap-grid {
         height: 160px;
+    }
+
+    /* Timeline: stack chart + legend vertically on smaller screens */
+    .timeline-body {
+        flex-direction: column;
+    }
+
+    .timeline-legend {
+        width: 100%;
+        max-height: none;
     }
 }
 
@@ -2332,46 +2428,16 @@ body {
     transition: stroke 0.25s ease, opacity 0.25s ease;
 }
 
-.timeline-baseline-group .timeline-baseline-label {
-    font-size: 8px;
-    fill: var(--blue);
-    font-weight: 600;
-    transition: fill 0.25s ease, opacity 0.25s ease;
-}
-
-/* Dimmed state: >1 snapshot — line fades to light grey */
+/* Dimmed state: >1 snapshot — baseline fades to light grey */
 .timeline-baseline-group.dimmed .timeline-baseline {
     stroke: var(--text-tertiary, #aaaaaa);
     opacity: 0.22;
-}
-
-.timeline-baseline-group.dimmed .timeline-baseline-label {
-    fill: var(--text-tertiary, #aaaaaa);
-    opacity: 0.30;
 }
 
 /* Hover: restore blue highlight when user moves over the baseline */
 .timeline-baseline-group.dimmed:hover .timeline-baseline {
     stroke: var(--blue);
     opacity: 0.75;
-}
-
-.timeline-baseline-group.dimmed:hover .timeline-baseline-label {
-    fill: var(--blue);
-    opacity: 0.95;
-}
-
-.timeline-dot.baseline-dot {
-    fill: var(--blue);
-    stroke: white;
-    stroke-width: 2;
-    r: 5;
-}
-
-/* Timeline chart height (consistent with enhanced timeline) */
-.timeline-chart svg {
-    height: 160px;
-    overflow: hidden;
 }
 
 
@@ -2945,53 +3011,23 @@ body {
     100% { box-shadow: none; }
 }
 
-/* Timeline treatment dot */
-.timeline-dot.treatment-dot {
-    stroke: #fff;
-    stroke-width: 2.5;
-    filter: drop-shadow(0 1px 3px rgba(0,0,0,0.15));
-}
+/* Legacy timeline dot/text classes removed — now using tl-* namespace */
 
-.timeline-treatment-icon {
-    font-size: 12px;
-    font-weight: 700;
-}
-
-.timeline-treatment-text {
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-}
-
-.timeline-risk-delta {
-    font-size: 10px;
-    font-weight: 700;
-}
-
-.timeline-risk-value {
-    font-size: 9px;
-    fill: var(--text-secondary, #666);
-    font-weight: 500;
-}
-
-.timeline-axis-label {
-    font-size: 8px;
-    fill: var(--text-tertiary, #999);
-    font-weight: 400;
-}
-
-/* .timeline-threshold-label removed — 10% line no longer displayed */
-
-/* Treatment history legend below chart */
+/* Treatment history legend — sidebar to the right of chart */
 .timeline-legend {
-    margin-top: 8px;
-    padding: 8px 12px;
+    width: 200px;
+    flex-shrink: 0;
+    padding: 10px 12px;
     background: var(--bg-elevated, #fafafa);
     border-radius: var(--radius-sm, 6px);
     border: 1px solid var(--border-light, #e5e5e5);
+    flex-direction: column;
+    gap: 6px;
+    max-height: 220px;
+    overflow-y: auto;
 }
 
-.timeline-legend-title {
+.tl-legend-title {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -2999,55 +3035,66 @@ body {
     font-weight: 600;
     color: var(--text-primary, #1d1d1f);
     margin-bottom: 6px;
-    padding-bottom: 4px;
+    padding-bottom: 5px;
     border-bottom: 1px solid var(--border-light, #e5e5e5);
+    white-space: nowrap;
 }
 
-.timeline-legend-item {
+.tl-legend-item {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
-    padding: 3px 0;
+    padding: 4px 0;
     font-size: 11px;
     color: var(--text-secondary, #666);
+    border-bottom: 1px solid var(--border-light, #f0f0f0);
 }
 
-.timeline-legend-dot {
+.tl-legend-item:last-child {
+    border-bottom: none;
+}
+
+.tl-legend-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
     flex-shrink: 0;
+    margin-top: 3px;
 }
 
-.timeline-legend-label {
+.tl-legend-label {
     font-weight: 500;
     color: var(--text-primary, #1d1d1f);
     flex: 1;
+    line-height: 1.3;
+    word-break: break-word;
 }
 
-.timeline-legend-time {
-    color: var(--text-tertiary, #999);
-    font-size: 10px;
+.tl-legend-values {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    flex-shrink: 0;
+    gap: 1px;
 }
 
-.timeline-legend-risk {
+.tl-legend-risk {
     font-weight: 600;
-    min-width: 42px;
-    text-align: right;
+    font-size: 11px;
+    white-space: nowrap;
 }
 
-.timeline-legend-delta {
+.tl-legend-delta {
     font-weight: 700;
     font-size: 10px;
-    min-width: 42px;
-    text-align: right;
+    white-space: nowrap;
 }
 
-.timeline-legend-delta.delta-positive {
+.tl-legend-delta.delta-positive {
     color: #22c55e;
 }
 
-.timeline-legend-delta.delta-negative {
+.tl-legend-delta.delta-negative {
     color: #ef4444;
 }
 
@@ -3110,7 +3157,7 @@ body {
 }
 
 .timeline-expandable-area.open {
-    max-height: 500px;
+    max-height: 800px;
     opacity: 1;
     padding: 16px 0;
 }
@@ -3183,8 +3230,7 @@ body {
 
 /* Ensure timeline chart within expandable area has good sizing */
 .timeline-expandable-area .timeline-chart {
-    min-height: 140px;
-    margin-top: 8px;
+    min-height: 160px;
 }
 
 .timeline-expandable-area .timeline-empty {
