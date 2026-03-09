@@ -1796,15 +1796,10 @@ body {
     }
 
     .timeline-body .timeline-legend {
-        width: calc(100% + 24px);
+        width: 100%;
         max-height: none;
         padding: 14px 16px;
         gap: 8px;
-        border-radius: 0;
-        border-left: none;
-        border-right: none;
-        margin-left: -12px;
-        margin-right: -12px;
     }
 
     .tl-legend-title {
@@ -1827,15 +1822,15 @@ body {
     }
 
     .tl-legend-label {
-        font-size: 14px;
+        font-size: 13px;
     }
 
     .tl-legend-risk {
-        font-size: 14px;
+        font-size: 13px;
     }
 
     .tl-legend-delta {
-        font-size: 12px;
+        font-size: 13px;
     }
 
     /* Timeline expandable area – mobile layout */
