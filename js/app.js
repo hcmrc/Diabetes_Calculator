@@ -58,6 +58,7 @@ DRC.App = (() => {
 
         UI().renderRisk(riskPct);
         UI().updateNonModSummary();
+        UI().updateModSummary();
         UI().renderIconArray(riskPct);
         UI().renderContributionChart(contributions);
         UI().renderHeatmapPointer(contributions);
@@ -175,6 +176,7 @@ DRC.App = (() => {
 
         UI().renderRisk(riskPct);
         UI().updateNonModSummary();
+        UI().updateModSummary();
         UI().renderIconArray(riskPct);
         UI().renderContributionChart(contributions);
         UI().renderHeatmapPointer(contributions);
@@ -248,6 +250,7 @@ DRC.App = (() => {
 
         UI().updateAllSliderFills();
         Timeline().clear();
+        if (DRC.TreatmentSimulator?.resetSimulated) DRC.TreatmentSimulator.resetSimulated();
         calculate();
     };
 
@@ -382,10 +385,26 @@ DRC.App = (() => {
                 if (targetId === 'non-mod-section') {
                     document.getElementById('non-mod-summary')?.classList.toggle('visible', collapsed);
                 }
+                if (targetId === 'mod-section') {
+                    document.getElementById('mod-summary')?.classList.toggle('visible', collapsed);
+                }
             });
         });
 
-        // Non-modifiable section starts expanded (no collapse on init)
+        // Panel-level collapse buttons
+        document.querySelectorAll('.panel-collapse-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const panelId = btn.getAttribute('data-panel');
+                const panel = document.getElementById(panelId);
+                if (!panel) return;
+                const body = panel.querySelector('.panel-body');
+                const subtitle = panel.querySelector('.panel-subtitle');
+                const isCollapsed = btn.classList.toggle('collapsed');
+                btn.setAttribute('aria-expanded', String(!isCollapsed));
+                if (body) body.classList.toggle('panel-hidden', isCollapsed);
+                if (subtitle) subtitle.classList.toggle('panel-hidden', isCollapsed);
+            });
+        });
 
         // Initialize sub-modules and run first calculation
         UI().renderBetaVectors();

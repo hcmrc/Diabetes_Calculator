@@ -21,6 +21,7 @@ DRC.TreatmentSimulator = (() => {
     const DURATION = 1500;   // Animation duration in ms
     const STEPS    = 30;     // Number of animation frames
     let _animating = false;
+    const _simulated = new Set();  // Track already-simulated factors
 
     /**
      * Get the unit-appropriate treatment delta for a factor.
@@ -63,6 +64,7 @@ DRC.TreatmentSimulator = (() => {
      */
     const simulate = (factor) => {
         if (_animating) return;
+        if (_simulated.has(factor)) return;  // Already simulated
         const info = computeTarget(factor);
         if (!info || info.currentVal === info.targetVal) return;
 
@@ -124,11 +126,19 @@ DRC.TreatmentSimulator = (() => {
         }
 
         _animating = false;
+        _simulated.add(factor);
 
-        // Re-enable indicated simulate buttons
+        // Re-enable indicated simulate buttons and update already-simulated ones
         document.querySelectorAll('.btn-simulate-treatment').forEach(b => {
-            const rowEl = b.closest('.treatment-overview-row');
-            b.disabled = !(rowEl?.classList.contains('indicated'));
+            const simFactor = b.getAttribute('data-sim-factor');
+            if (_simulated.has(simFactor)) {
+                b.disabled = true;
+                b.innerHTML = '<span class="material-icons-round">check_circle</span> Already Simulated';
+                b.classList.add('simulated');
+            } else {
+                const rowEl = b.closest('.treatment-overview-row');
+                b.disabled = !(rowEl?.classList.contains('indicated'));
+            }
         });
 
         // Auto-open timeline if hidden
@@ -139,5 +149,5 @@ DRC.TreatmentSimulator = (() => {
         }
     };
 
-    return { simulate };
+    return { simulate, resetSimulated: () => _simulated.clear() };
 })();

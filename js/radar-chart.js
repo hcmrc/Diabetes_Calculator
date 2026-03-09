@@ -72,14 +72,11 @@ DRC.RadarChart = (() => {
             }));
         });
 
-        // Reference polygons (ideal + population)
-        const idealPoints = AXES.map((field, i) =>
+        // Reference polygon (population average)
+        const popPoints = AXES.map((field, i) =>
             polarToXY(i, RADIUS * normalizeAxis(field, DRC.CONFIG.MEANS[field])));
-        const pointsStr = toPointsStr(idealPoints);
+        const pointsStr = toPointsStr(popPoints);
 
-        svg.appendChild(createSVGElement('polygon', {
-            id: 'radar-ideal-poly', class: 'radar-ideal', points: pointsStr
-        }));
         svg.appendChild(createSVGElement('polygon', {
             id: 'radar-population-poly', class: 'radar-population', points: pointsStr
         }));
