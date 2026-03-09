@@ -44,9 +44,9 @@
                 <span class="btn-timeline-label">Risk Timeline</span>
             </button>
             <!-- Patient Management Button -->
-            <button id="patientMenuBtn" type="button" class="btn-patient-menu" aria-label="Manage patients">
+            <button id="patientMenuBtn" type="button" class="btn-patient-menu" aria-label="Manage profiles">
                 <span class="material-icons-round">person</span>
-                <span class="patient-name-label" id="patientNameLabel">No Patient</span>
+                <span class="patient-name-label" id="patientNameLabel">Select Profile</span>
                 <span class="material-icons-round patient-chevron">expand_more</span>
             </button>
         </div>
@@ -57,7 +57,7 @@
 <div class="patient-overlay" id="patientOverlay"></div>
 <aside class="patient-drawer" id="patientDrawer" aria-label="Patient Management">
     <div class="pd-header">
-        <h2><span class="material-icons-round">people</span> Patient Profiles</h2>
+        <h2><span class="material-icons-round">people</span> My Profiles</h2>
         <button class="pd-close-btn" id="patientDrawerClose" aria-label="Close patient menu">
             <span class="material-icons-round">close</span>
         </button>
@@ -66,22 +66,22 @@
     <!-- Active Patient Indicator -->
     <div class="pd-active-patient" id="pdActivePatient">
         <span class="material-icons-round">person_pin</span>
-        <span id="pdActiveLabel">No patient selected</span>
+        <span id="pdActiveLabel">No profile selected</span>
     </div>
 
     <!-- Patient List -->
     <div class="pd-section">
-        <div class="pd-section-label">Saved Patients</div>
+        <div class="pd-section-label">Saved Profiles</div>
         <div class="pd-patient-list" id="pdPatientList">
-            <p class="pd-empty-msg">No patients saved yet.</p>
+            <p class="pd-empty-msg">No profiles saved yet.</p>
         </div>
     </div>
 
     <!-- Add New Patient -->
     <div class="pd-section">
-        <div class="pd-section-label">Add New Patient</div>
+        <div class="pd-section-label">Add New Profile</div>
         <div class="pd-add-form">
-            <input type="text" id="pdNewPatientName" class="pd-input" placeholder="Patient name…" maxlength="60" />
+            <input type="text" id="pdNewPatientName" class="pd-input" placeholder="Profile name…" maxlength="60" />
             <button id="pdAddPatientBtn" type="button" class="pd-btn-add">
                 <span class="material-icons-round">person_add</span> Add &amp; Save Current Values
             </button>
@@ -165,23 +165,26 @@
     <!-- ========== LEFT COLUMN: Risk Factor Inputs ========== -->
     <section class="col-panel col-left" id="panel-input" aria-label="Risk Factor Inputs">
         <div class="col-step-label">
-            <span>Your Values</span>
-            <span class="material-icons-round step-arrow">arrow_forward</span>
+            <span>Your Data</span>
         </div>
         <div class="panel-header-bar">
             <span class="material-icons-round">tune</span>
-            <h2>Risk Factors</h2>
+            <h2>Patient Data</h2>
+            <button class="panel-collapse-btn" data-panel="panel-input" aria-label="Collapse section" aria-expanded="true">
+                <span class="material-icons-round">expand_less</span>
+            </button>
         </div>
+        <p class="panel-subtitle">Please enter your data here</p>
         <div class="panel-body">
 
-            <!-- Non-Modifiable Section with Collapse -->
+            <!-- Demographic Data Section with Collapse -->
             <div class="section-collapse-header">
                 <button class="section-collapse-btn" data-target="non-mod-section" aria-expanded="true">
                     <span class="material-icons-round">expand_more</span>
                 </button>
                 <div class="input-section-label">
                     <span class="material-icons-round">lock</span>
-                    Non-Modifiable
+                    Demographic Data
                 </div>
             </div>
             <div class="section-summary" id="non-mod-summary">
@@ -255,10 +258,18 @@
                 </div>
             </div>
 
-            <!-- Modifiable Section -->
-            <div class="input-section-label modifiable">
-                <span class="material-icons-round">tune</span>
-                Modifiable
+            <!-- Clinical Values Section with Collapse -->
+            <div class="section-collapse-header">
+                <button class="section-collapse-btn" data-target="mod-section" aria-expanded="true">
+                    <span class="material-icons-round">expand_more</span>
+                </button>
+                <div class="input-section-label modifiable">
+                    <span class="material-icons-round">tune</span>
+                    Clinical Values
+                </div>
+            </div>
+            <div class="section-summary" id="mod-summary">
+                <span id="summary-fastGlu">Gluc: 95 mg/dL</span> · <span id="summary-waist">Waist: 36 in</span> · <span id="summary-sbp">BP: 120 mmHg</span> · <span id="summary-hdl">HDL: 50 mg/dL</span> · <span id="summary-tri">TG: 150 mg/dL</span>
             </div>
 
             <div id="mod-section" class="collapsible-section">
@@ -383,13 +394,16 @@
     <!-- ========== CENTER COLUMN: Model Visualization ========== -->
     <section class="col-panel col-center" id="panel-model" aria-label="Model Visualization">
         <div class="col-step-label">
-            <span>Model</span>
-            <span class="material-icons-round step-arrow">arrow_forward</span>
+            <span>Risk Analysis</span>
         </div>
         <div class="panel-header-bar">
             <span class="material-icons-round">insights</span>
-            <h2>Model Weights</h2>
+            <h2>Risk Factors</h2>
+            <button class="panel-collapse-btn" data-panel="panel-model" aria-label="Collapse section" aria-expanded="true">
+                <span class="material-icons-round">expand_less</span>
+            </button>
         </div>
+        <p class="panel-subtitle">Which factors influence risk by how much</p>
         <div class="panel-body">
 
             <!-- Model Tabs Navigation -->
@@ -414,7 +428,6 @@
                     <svg id="radar-svg" viewBox="0 0 300 300" aria-label="Radar chart"></svg>
                 </div>
                 <div class="radar-legend">
-                    <div class="radar-legend-item"><span class="legend-swatch ideal"></span><span>Ideal</span></div>
                     <div class="radar-legend-item"><span class="legend-swatch population"></span><span>Population Avg</span></div>
                     <div class="radar-legend-item"><span class="legend-swatch patient"></span><span>You</span></div>
                 </div>
@@ -433,17 +446,21 @@
     <!-- ========== RIGHT COLUMN: Treatment Recommendations ========== -->
     <section class="col-panel col-right" id="panel-treatment" aria-label="Treatment Recommendations">
         <div class="col-step-label">
-            <span>Possible Treatment</span>
+            <span>Take Action</span>
         </div>
         <div class="panel-header-bar">
             <span class="material-icons-round">medical_services</span>
-            <h2>Treatment</h2>
+            <h2>What Can I Do?</h2>
+            <button class="panel-collapse-btn" data-panel="panel-treatment" aria-label="Collapse section" aria-expanded="true">
+                <span class="material-icons-round">expand_less</span>
+            </button>
         </div>
+        <p class="panel-subtitle">Evidence-based steps to reduce your risk</p>
         <div class="panel-body">
 
             <!-- Treatment Tabs Navigation -->
             <div class="model-tabs">
-                <button class="model-tab active" data-tab="treatment">Treatment Suggestions</button>
+                <button class="model-tab active" data-tab="treatment">My Options</button>
                 <button class="model-tab" data-tab="zonemap">Zone Map</button>
             </div>
 

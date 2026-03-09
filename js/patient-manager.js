@@ -173,10 +173,10 @@ DRC.PatientManager = (() => {
         const active = patients.find(p => p.id === activePatientId);
         const label = document.getElementById('patientNameLabel');
         const activeLabel = document.getElementById('pdActiveLabel');
-        if (label) label.textContent = active ? active.name : 'No Patient';
+        if (label) label.textContent = active ? active.name : 'Select Profile';
         if (activeLabel) activeLabel.textContent = active
             ? `${active.name} (${active.riskPct?.toFixed(1) || '?'}%)`
-            : 'No patient selected';
+            : 'No profile selected';
     };
 
     const renderList = () => {

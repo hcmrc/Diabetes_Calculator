@@ -198,6 +198,27 @@ DRC.UIController = (() => {
         if (!container) return;
         container.innerHTML = '';
 
+        // Risk-factors-only filter toggle (default: enabled)
+        // Shows only factors with positive contribution (above population mean = risk-increasing)
+        const filterState = container.getAttribute('data-filter-risk') !== 'false';
+
+        const filterToggle = document.createElement('div');
+        filterToggle.style.cssText = 'display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-bottom:8px;';
+        filterToggle.innerHTML = `
+            <span style="font-size:11px;color:#6e6e73;">Show above average risk factors only</span>
+            <label class="toggle-switch" style="transform:scale(0.75);">
+                <input type="checkbox" id="risk-filter-toggle" ${filterState ? 'checked' : ''}>
+                <span class="toggle-slider"></span>
+            </label>
+        `;
+        container.appendChild(filterToggle);
+
+        document.getElementById('risk-filter-toggle')?.addEventListener('change', (e) => {
+            container.setAttribute('data-filter-risk', e.target.checked);
+            // Trigger recalculation to re-render
+            DRC.App._calculate();
+        });
+
         const totalAbs = Object.values(contributions)
             .reduce((sum, v) => sum + Math.abs(v), 0);
 
@@ -209,9 +230,11 @@ DRC.UIController = (() => {
             }))
             .sort((a, b) => b.abs - a.abs);
 
-        const maxPct = Math.max(...items.map(i => i.pct), 1);
+        // When filter active: show only risk-increasing factors (positive contribution = above population mean)
+        const filteredItems = filterState ? items.filter(i => i.val > 0) : items;
+        const maxPct = Math.max(...filteredItems.map(i => i.pct), 1);
 
-        items.forEach(({ key, val, pct }, idx) => {
+        filteredItems.forEach(({ key, val, pct }, idx) => {
             const barWidth = (pct / maxPct) * 100;
             const isPositive = val >= 0;
             const pctDisplay = pct < 1 && pct > 0 ? '<1%' : Math.round(pct) + '%';
@@ -238,7 +261,15 @@ DRC.UIController = (() => {
                     </div>
                     <div style="width:50px;flex-shrink:0;font-size:10px;font-weight:600;color:${textColor};text-align:${isPositive ? 'left' : 'right'};">${pctDisplay}</div>
                 </div>
-                ${idx < 3 ? `<div style="width:calc(100% - 88px);margin-left:88px;font-size:9px;color:#86868b;font-style:italic;margin-top:2px;line-height:1.3;">Your ${CFG.LABELS[key].toLowerCase()} ${isPositive ? `contributes ${Math.round(pct)}% to your risk \u2013 it is above average.` : `reduces your risk by ${Math.round(pct)}% \u2013 it is below average/protective.`}</div>` : ''}
+                ${idx < 3 ? (() => {
+                    const beta = CFG.BETAS[key] || 0;
+                    const valueAboveMean = beta >= 0 ? isPositive : !isPositive;
+                    const direction = valueAboveMean ? 'above' : 'below';
+                    const explanation = isPositive
+                        ? `contributes ${Math.round(pct)}% to your risk – your value is ${direction} the population average.`
+                        : `accounts for ${Math.round(pct)}% – your value is ${direction} average, which is favorable.`;
+                    return `<div style="width:calc(100% - 88px);margin-left:88px;font-size:9px;color:#86868b;font-style:italic;margin-top:2px;line-height:1.3;">Your ${CFG.LABELS[key].toLowerCase()} ${explanation}</div>`;
+                })() : ''}
             `;
             container.appendChild(row);
         });
@@ -286,6 +317,10 @@ DRC.UIController = (() => {
         if (!container) return;
         container.innerHTML = '';
 
+        // Check if risk-factors-only filter is active
+        const contribContainer = el('contribution-chart');
+        const filterRiskOnly = contribContainer?.getAttribute('data-filter-risk') !== 'false';
+
         const totalAbs = Object.values(contributions)
             .reduce((sum, v) => sum + Math.abs(v), 0);
 
@@ -297,9 +332,12 @@ DRC.UIController = (() => {
             isIndicated: elevatedFactors.includes(factor)
         })).sort((a, b) => b.absContrib - a.absContrib);
 
-        const maxPct = Math.max(...items.map(i => i.pct), 1);
+        // When risk-filter active: show only treatments for indicated (elevated) factors
+        const displayItems = filterRiskOnly ? items.filter(i => i.isIndicated) : items;
 
-        items.forEach(({ factor, treatment, pct, isIndicated }) => {
+        const maxPct = Math.max(...displayItems.map(i => i.pct), 1);
+
+        displayItems.forEach(({ factor, treatment, pct, isIndicated }) => {
             const barWidth = (pct / maxPct) * 100;
 
             // Build therapy HTML
@@ -340,10 +378,10 @@ DRC.UIController = (() => {
                     <div class="tov-details ${isIndicated ? 'expanded' : ''}">
                         <div class="tov-details-inner">
                             ${therapiesHTML}
-                            <button class="btn-simulate-treatment" data-sim-factor="${factor}" ${!isIndicated ? 'disabled' : ''}>
+                            ${isIndicated ? `<button class="btn-simulate-treatment" data-sim-factor="${factor}">
                                 <span class="material-icons-round">play_circle</span>
                                 Simulate Treatment
-                            </button>
+                            </button>` : ''}
                         </div>
                     </div>
                 </div>
@@ -517,6 +555,25 @@ DRC.UIController = (() => {
         setText('summary-height', hVal + ' ' + hUnit);
     };
 
+    /** Update the collapsed summary line for modifiable factors. */
+    const updateModSummary = () => {
+        const gVal  = el('fastGlu-value')?.value || '95';
+        const gUnit = el('fastGlu-value-unit')?.textContent || 'mg/dL';
+        const wVal  = el('waist-value')?.value || '36';
+        const wUnit = el('waist-value-unit')?.textContent || 'in';
+        const bp    = el('sbp-value')?.value || '120';
+        const hVal  = el('cholHDL-value')?.value || '50';
+        const hUnit = el('cholHDL-value-unit')?.textContent || 'mg/dL';
+        const tVal  = el('cholTri-value')?.value || '150';
+        const tUnit = el('cholTri-value-unit')?.textContent || 'mg/dL';
+
+        setText('summary-fastGlu', 'Gluc: ' + gVal + ' ' + gUnit);
+        setText('summary-waist',   'Waist: ' + wVal + ' ' + wUnit);
+        setText('summary-sbp',     'BP: ' + bp + ' mmHg');
+        setText('summary-hdl',     'HDL: ' + hVal + ' ' + hUnit);
+        setText('summary-tri',     'TG: ' + tVal + ' ' + tUnit);
+    };
+
     // ─── Public API ─────────────────────────────────────────────────────
 
     return {
@@ -525,6 +582,7 @@ DRC.UIController = (() => {
         renderRisk, renderContributionChart, renderHeatmapPointer,
         renderTreatmentOverview, renderTreatmentRecommendations,
         renderBetaVectors, renderWhatIfBadge, renderIconArray,
-        renderCausalityChains, renderScenarioComparison, updateNonModSummary
+        renderCausalityChains, renderScenarioComparison,
+        updateNonModSummary, updateModSummary
     };
 })();
