@@ -17,7 +17,7 @@
 :root {
     /* Primary */
     --blue:           #0071e3;
-    --blue-hover:     #0077ED;
+    --blue-hover:     #0066cc;
     --blue-light:     rgba(0, 113, 227, 0.08);
     --blue-glow:      rgba(0, 113, 227, 0.15);
 
@@ -41,7 +41,7 @@
     --text-tertiary:  #86868b;
 
     /* Backgrounds */
-    --bg-page:        #f5f5f7;
+    --bg-page:        #f2f4f8;
     --bg-card:        #ffffff;
     --bg-elevated:    #fbfbfd;
     --bg-frosted:     rgba(255, 255, 255, 0.72);
@@ -91,12 +91,12 @@ html {
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Inter', 'Helvetica Neue', sans-serif;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
     background: var(--bg-page);
     color: var(--text-primary);
-    line-height: 1.47059;
-    font-size: 15px;
-    letter-spacing: -0.022em;
+    line-height: 1.65;
+    font-size: 14px;
+    letter-spacing: -0.01em;
     min-height: 100vh;
 }
 
@@ -109,8 +109,10 @@ body {
     position: sticky;
     top: 0;
     z-index: 100;
-    background: #ffffff;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.95);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.07);
 }
 
 .nav-inner {
@@ -239,9 +241,10 @@ body {
 
 .hero-section {
     background: var(--bg-card);
-    padding: 20px var(--content-padding) 16px;
+    padding: 28px var(--content-padding) 20px;
     text-align: center;
-    border-bottom: 1px solid var(--border);
+    border-bottom: none;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
     transition: background 0.5s ease, box-shadow 0.5s ease;
 }
 
@@ -251,7 +254,7 @@ body {
 }
 
 .hero-label {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--text-secondary);
     text-transform: uppercase;
@@ -267,8 +270,8 @@ body {
 }
 
 .risk-number {
-    font-size: 64px;
-    font-weight: 700;
+    font-size: 52px;
+    font-weight: 800;
     letter-spacing: -0.04em;
     line-height: 1;
     transition: color 0.4s ease;
@@ -276,7 +279,7 @@ body {
 }
 
 .risk-unit {
-    font-size: 32px;
+    font-size: 22px;
     font-weight: 600;
     transition: color 0.4s ease;
     color: var(--safe);
@@ -448,7 +451,7 @@ body {
     gap: 16px;
     margin: 12px 0;
     padding: 12px 16px;
-    background: rgba(0, 113, 227, 0.05);
+    background: rgba(0, 102, 204, 0.05);
     border-radius: var(--radius);
     font-size: 12px;
     font-weight: 600;
@@ -501,12 +504,17 @@ body {
     color: var(--danger);
 }
 
-/* Neutral hero background */
-.hero-section[data-risk-level="safe"],
-.hero-section[data-risk-level="alert"],
-.hero-section[data-risk-level="warning"],
+.hero-section[data-risk-level="safe"] {
+    background: linear-gradient(180deg, rgba(52, 199, 89, 0.04) 0%, #ffffff 100%);
+}
+.hero-section[data-risk-level="alert"] {
+    background: linear-gradient(180deg, rgba(255, 159, 10, 0.05) 0%, #ffffff 100%);
+}
+.hero-section[data-risk-level="warning"] {
+    background: linear-gradient(180deg, rgba(255, 103, 35, 0.06) 0%, #ffffff 100%);
+}
 .hero-section[data-risk-level="danger"] {
-    background: var(--bg-card);
+    background: linear-gradient(180deg, rgba(255, 59, 48, 0.07) 0%, #ffffff 100%);
 }
 
 
@@ -519,12 +527,12 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 8px 18px;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0.01em;
     color: var(--text-tertiary);
-    background: var(--bg-elevated);
+    background: transparent;
     border-bottom: 1px solid var(--border);
 }
 
@@ -550,7 +558,7 @@ body {
     gap: var(--grid-gap);
     max-width: 1600px;
     margin: 0 auto;
-    padding: 0 var(--content-padding) 40px;
+    padding: 20px var(--content-padding) 60px;
     align-items: start;
 }
 
@@ -562,9 +570,9 @@ body {
 .col-panel {
     background: #ffffff;
     border-radius: var(--radius-xl);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07), 0 1px 4px rgba(0, 0, 0, 0.05);
     overflow: hidden;
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.07);
 }
 
 /* --- Dynamic Risk-Level Borders on INPUT panel --- */
@@ -581,8 +589,8 @@ body {
 #panel-treatment[data-risk-level="alert"],
 #panel-treatment[data-risk-level="warning"],
 #panel-treatment[data-risk-level="danger"] {
-    border-color: rgba(0, 0, 0, 0.08);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.07);
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07), 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
 /* Center (model) panel with neutral border */
@@ -599,9 +607,9 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 14px 18px;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg-elevated);
+    padding: 18px 20px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    background: transparent;
 }
 
 .panel-header-bar .material-icons-round {
@@ -610,8 +618,8 @@ body {
 }
 
 .panel-header-bar h2 {
-    font-size: 15px;
-    font-weight: 600;
+    font-size: 16px;
+    font-weight: 700;
     letter-spacing: -0.02em;
     color: var(--text-primary);
     margin: 0;
@@ -707,12 +715,12 @@ body {
    ============================================ */
 
 .panel-body {
-    padding: 16px;
+    padding: 20px 24px;
 }
 
 /* Extra breathing room in Values panel to prevent slider thumb clipping */
 #panel-input .panel-body {
-    padding: 20px;
+    padding: 24px;
 }
 
 
@@ -727,7 +735,7 @@ body {
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.03em;
     color: var(--text-tertiary);
     padding: 8px 0 6px;
     margin-top: 4px;
@@ -741,7 +749,7 @@ body {
 
 .input-section-label.modifiable {
     color: var(--blue);
-    border-bottom-color: rgba(0, 113, 227, 0.15);
+    border-bottom-color: rgba(0, 102, 204, 0.15);
     margin-top: 12px;
 }
 
@@ -751,7 +759,7 @@ body {
    ============================================ */
 
 .input-group {
-    padding: 12px 2px;
+    padding: 14px 4px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.04);
 }
 
@@ -760,11 +768,11 @@ body {
 }
 
 .input-group-highlight {
-    background: rgba(0, 113, 227, 0.04);
+    background: rgba(0, 102, 204, 0.04);
     margin: 0;
     padding: 10px 12px;
     border-radius: var(--radius);
-    border: 1px solid rgba(0, 113, 227, 0.15);
+    border: 1px solid rgba(0, 102, 204, 0.15);
     box-shadow: none;
     border-bottom: none;
 }
@@ -780,8 +788,9 @@ body {
     display: flex;
     align-items: center;
     gap: 5px;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
+    letter-spacing: 0.01em;
     color: var(--text-primary);
     cursor: pointer;
 }
@@ -803,7 +812,7 @@ body {
 /* Strongest predictor badge */
 .strongest-badge {
     display: inline-block;
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -846,8 +855,8 @@ body {
 .slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     background: white;
     cursor: pointer;
@@ -866,8 +875,8 @@ body {
 }
 
 .slider::-moz-range-thumb {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     background: white;
     cursor: pointer;
@@ -877,7 +886,7 @@ body {
 
 .slider-track-bg {
     position: absolute;
-    top: 6px;
+    top: 7px;
     left: 14px;
     right: 14px;
     height: 6px;
@@ -921,7 +930,7 @@ body {
 .slider-labels {
     display: flex;
     margin-top: 2px;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 500;
     color: var(--text-tertiary);
 }
@@ -947,12 +956,12 @@ body {
 }
 
 .value-input {
-    width: 58px;
-    padding: 3px 6px;
+    width: 64px;
+    padding: 5px 8px;
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
-    font-size: 13px;
-    font-weight: 500;
+    font-size: 12px;
+    font-weight: 600;
     text-align: center;
     background: var(--bg-elevated);
     transition: border-color 0.2s, box-shadow 0.2s;
@@ -962,7 +971,7 @@ body {
 .value-input:focus {
     outline: none;
     border-color: var(--blue);
-    box-shadow: 0 0 0 2px rgba(0, 113, 227, 0.1);
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
 }
 
 .value-unit-label {
@@ -1040,7 +1049,7 @@ body {
 .beta-vector {
     display: inline-flex;
     align-items: center;
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 700;
     opacity: 0.8;
     transition: opacity 0.2s;
@@ -1058,7 +1067,7 @@ body {
 
 .beta-vector::after {
     content: attr(data-label);
-    font-size: 8px;
+    font-size: 9px;
     font-weight: 500;
     letter-spacing: 0.3px;
 }
@@ -1170,15 +1179,17 @@ body {
    ============================================ */
 
 .center-card {
-    background: var(--bg-elevated);
-    border-radius: var(--radius);
-    padding: 16px;
+    background: transparent;    /* statt var(--bg-elevated) */
+    border-radius: 0;           /* statt var(--radius) */
+    padding: 0 0 16px 0;        /* statt 16px */
     margin-bottom: 16px;
-    border: 1px solid var(--border);
+    border: none;               /* statt 1px solid var(--border) */
+    border-bottom: 1px solid var(--border);
 }
 
 .center-card:last-child {
-    margin-bottom: 0;
+    border-bottom: none;
+    padding-bottom: 0;
 }
 
 .center-card h3 {
@@ -1239,9 +1250,9 @@ body {
 .chain-node:last-of-type {
     flex-shrink: 0;
     font-weight: 600;
-    color: var(--danger);
-    border-color: rgba(255, 59, 48, 0.3);
-    background: rgba(255, 59, 48, 0.04);
+    color: #666;           /* Neutraler statt Danger-Rot */
+    border-color: rgba(0,0,0,0.15);
+    background: rgba(0,0,0,0.02);
 }
 
 .causality-chain.highlighted .chain-node {
@@ -1301,7 +1312,7 @@ body {
 }
 
 .radar-patient {
-    fill: rgba(0, 113, 227, 0.1);
+    fill: rgba(0, 102, 204, 0.1);
     stroke: var(--blue);
     stroke-width: 2;
     transition: d 0.3s ease;
@@ -1321,7 +1332,7 @@ body {
 }
 
 .radar-label {
-    font-size: 9px;
+    font-size: 10px;
     fill: var(--text-secondary);
     font-weight: 500;
     text-anchor: middle;
@@ -1357,7 +1368,7 @@ body {
 }
 
 .legend-swatch.patient {
-    background: rgba(0, 113, 227, 0.2);
+    background: rgba(0, 102, 204, 0.2);
     border: 2px solid var(--blue);
 }
 
@@ -1394,7 +1405,7 @@ body {
     justify-content: center;
     padding: 6px;
     text-align: center;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 500;
     color: rgba(0, 0, 0, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.3);
@@ -1466,8 +1477,8 @@ body {
 }
 
 [data-field].factor-highlight {
-    background: rgba(0, 113, 227, 0.05);
-    box-shadow: 0 0 0 1px rgba(0, 113, 227, 0.2);
+    background: rgba(0, 102, 204, 0.15);
+    box-shadow: 0 0 0 1px rgba(0, 102, 204, 0.45);
     border-radius: var(--radius);
 }
 
@@ -1721,7 +1732,7 @@ body {
 }
 
 .timeline-area {
-    fill: rgba(0, 113, 227, 0.1);
+    fill: rgba(0, 102, 204, 0.1);
 }
 
 .timeline-dot {
@@ -1771,8 +1782,8 @@ body {
         grid-column: auto;
     }
 
-    .risk-number { font-size: 48px; }
-    .risk-unit   { font-size: 24px; }
+    .risk-number { font-size: 40px; }
+    .risk-unit   { font-size: 20px; }
 
     .hero-section {
         padding: 16px var(--content-padding) 12px;
@@ -1879,7 +1890,7 @@ body {
 
 /* Keep normal spacing so the Risk Factors panel is not over-compressed */
 .hero-section {
-    padding: 16px var(--content-padding) 14px;
+    padding: 28px var(--content-padding) 20px;
 }
 
 .hero-value {
@@ -1887,18 +1898,17 @@ body {
 }
 
 .risk-number {
-    font-size: 58px;
+    font-size: 52px;
 }
 
 .risk-unit {
-    font-size: 28px;
+    font-size: 22px;
 }
 
 .main-grid {
     height: auto;
     min-height: 0;
-    padding-top: 12px;
-    padding-bottom: 20px;
+    padding: 20px var(--content-padding) 60px;
     align-items: start;
 }
 
@@ -1909,12 +1919,12 @@ body {
 }
 
 .panel-body {
-    padding: 16px;
+    padding: 20px 24px;
     overflow: visible;
 }
 
 .panel-header-bar {
-    padding: 12px 16px;
+    padding: 18px 20px;
 }
 
 .col-step-label {
@@ -1951,29 +1961,26 @@ body {
 .section-collapse-btn {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    padding: 8px 12px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.04);
+    border: none;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    transition: background 0.2s, color 0.2s;
-    margin-bottom: 8px;
+    transition: background 0.2s;
+    flex-shrink: 0;
+    margin-bottom: 0;
 }
 
 .section-collapse-btn:hover {
-    background: rgba(0, 113, 227, 0.06);
-    color: var(--blue);
+    background: rgba(0, 102, 204, 0.1);
 }
 
 .section-collapse-btn .material-icons-round {
-    font-size: 18px;
+    font-size: 16px !important;
+    color: var(--text-tertiary) !important;
     transition: transform 0.3s ease;
 }
 
@@ -2024,21 +2031,21 @@ body {
 
 .model-tabs {
     display: flex;
-    gap: 2px;
-    padding: 0 0 10px;
+    gap: 4px;
+    padding: 0 0 12px;
     border-bottom: 1px solid var(--border);
-    margin-bottom: 12px;
+    margin-bottom: 14px;
 }
 
 .model-tab {
     flex: 1;
-    padding: 7px 8px;
-    font-size: 11px;
+    padding: 8px 10px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--text-tertiary);
-    background: transparent;
+    background: rgba(0,0,0,0.03);
     border: 1px solid transparent;
-    border-radius: var(--radius-sm);
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
     text-align: center;
@@ -2053,9 +2060,10 @@ body {
 .model-tab.active {
     color: var(--blue);
     background: var(--blue-light);
-    border-color: rgba(0, 113, 227, 0.2);
+    border-color: rgba(0, 102, 204, 0.2);
     font-weight: 700;
 }
+
 
 .model-tab-content {
     display: none;
@@ -2081,7 +2089,7 @@ body {
    ============================================ */
 
 .input-group {
-    padding: 12px 2px;
+    padding: 14px 4px;
 }
 
 .input-label-row {
@@ -2119,9 +2127,9 @@ body {
     }
 }
 
-/* Force all icons to the same blue tone */
+/* Icons inherit semantic context — no global override */
 .material-icons-round {
-    color: var(--blue) !important;
+    font-size: inherit;
 }
 
 
@@ -2139,8 +2147,9 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 7px 8px;
-    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    border-radius: 12px;
+    margin-bottom: 8px;
     transition: background 0.2s ease, box-shadow 0.2s ease;
     border-left: 3px solid transparent;
 }
@@ -2170,11 +2179,11 @@ body {
 }
 
 .treatment-overview-row.indicated .tov-icon-col {
-    background: var(--danger-light);
+    background: rgba(255, 59, 48, 0.20);
 }
 
 .treatment-overview-row.normal .tov-icon-col {
-    background: var(--safe-light);
+    background: rgba(52, 199, 89, 0.20);
 }
 
 .tov-factor-icon {
@@ -2204,8 +2213,8 @@ body {
 }
 
 .tov-title {
-    font-size: 11px;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 700;
     color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
@@ -2218,7 +2227,7 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 3px;
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -2234,7 +2243,7 @@ body {
 
 .tov-status.status-indicated {
     color: #ff3b30;
-    background: rgba(255, 59, 48, 0.10);
+    background: rgba(255, 59, 48, 0.20);
 }
 
 .tov-status.status-indicated .material-icons-round {
@@ -2242,12 +2251,12 @@ body {
 }
 
 .tov-status.status-normal {
-    color: #34c759;
-    background: rgba(52, 199, 89, 0.10);
+    color: var(--safe);
+    background: rgba(52, 199, 89, 0.20);
 }
 
 .tov-status.status-normal .material-icons-round {
-    color: #34c759 !important;
+    color: var(--safe) !important;
 }
 
 .tov-bar-container {
@@ -2265,15 +2274,15 @@ body {
 }
 
 .tov-bar.bar-indicated {
-    background: linear-gradient(90deg, #ff3b30, #ff6b6b);
+    background: linear-gradient(90deg, #ff3b30, #ff6b61);
 }
 
 .tov-bar.bar-normal {
-    background: linear-gradient(90deg, #34c759, #65d98e);
+    background: linear-gradient(90deg, #34c759, #6ee090);
 }
 
 .tov-pct {
-    font-size: 9px;
+    font-size: 10px;
     color: var(--text-tertiary);
     margin-top: 2px;
     white-space: nowrap;
@@ -2355,9 +2364,9 @@ body {
 .scenario-comparison-inline {
     display: flex;
     padding: 8px 12px;
-    background: rgba(0, 113, 227, 0.04);
+    background: rgba(0, 102, 204, 0.04);
     border-radius: var(--radius-sm);
-    border: 1px solid rgba(0, 113, 227, 0.1);
+    border: 1px solid rgba(0, 102, 204, 0.1);
     margin-bottom: 10px;
 }
 
@@ -2516,7 +2525,7 @@ body {
     background: var(--bg-card);
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-card);
-    border: 2px solid rgba(0, 113, 227, 0.15);
+    border: 2px solid rgba(0, 102, 204, 0.15);
     overflow: hidden;
 }
 
@@ -2565,7 +2574,7 @@ body {
     font-weight: 600;
     color: var(--blue);
     background: var(--blue-light);
-    border: 1px solid rgba(0, 113, 227, 0.15);
+    border: 1px solid rgba(0, 102, 204, 0.15);
     border-radius: 20px;
     cursor: pointer;
     transition: background 0.2s, transform 0.2s, color 0.2s;
@@ -2595,7 +2604,7 @@ body {
 .scenario-comparison-panel-new {
     display: flex;
     padding: 12px 18px;
-    background: rgba(0, 113, 227, 0.03);
+    background: rgba(0, 102, 204, 0.03);
     border-bottom: 1px solid var(--border);
 }
 
@@ -2640,7 +2649,7 @@ body {
     gap: 5px;
     padding: 4px 10px 4px 6px;
     background: var(--blue-light);
-    border: 1px solid rgba(0, 113, 227, 0.15);
+    border: 1px solid rgba(0, 102, 204, 0.15);
     border-radius: 20px;
     cursor: pointer;
     transition: background 0.2s, transform 0.2s;
@@ -2818,21 +2827,21 @@ body {
 }
 
 .pd-patient-card:hover {
-    background: rgba(0, 113, 227, 0.04);
-    border-color: rgba(0, 113, 227, 0.2);
+    background: rgba(0, 102, 204, 0.04);
+    border-color: rgba(0, 102, 204, 0.2);
 }
 
 .pd-patient-card.active {
     background: var(--blue-light);
-    border-color: rgba(0, 113, 227, 0.3);
-    box-shadow: 0 0 0 1px rgba(0, 113, 227, 0.15);
+    border-color: rgba(0, 102, 204, 0.3);
+    box-shadow: 0 0 0 1px rgba(0, 102, 204, 0.15);
 }
 
 .pd-patient-avatar {
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: rgba(0, 113, 227, 0.1);
+    background: rgba(0, 102, 204, 0.1);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2919,7 +2928,7 @@ body {
 .pd-input:focus {
     outline: none;
     border-color: var(--blue);
-    box-shadow: 0 0 0 2px rgba(0, 113, 227, 0.1);
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
 }
 
 .pd-btn-add {
@@ -2977,8 +2986,8 @@ body {
 }
 
 .pd-btn-io:hover {
-    background: rgba(0, 113, 227, 0.04);
-    border-color: rgba(0, 113, 227, 0.2);
+    background: rgba(0, 102, 204, 0.04);
+    border-color: rgba(0, 102, 204, 0.2);
 }
 
 .pd-btn-io .material-icons-round {
@@ -3018,16 +3027,16 @@ body {
     box-sizing: border-box;
     gap: 6px;
     margin-top: 10px;
-    padding: 8px 16px;
-    font-size: 12px;
-    font-weight: 600;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 700;
     color: #fff;
     background: linear-gradient(135deg, #007aff, #5856d6);
     border: none;
-    border-radius: var(--radius-sm);
+    border-radius: 10px;
     cursor: pointer;
     transition: all 0.25s ease;
-    letter-spacing: 0.02em;
+    letter-spacing: -0.01em;
 }
 
 .btn-simulate-treatment:hover:not(:disabled) {
@@ -3298,3 +3307,23 @@ body {
     font-size: 11px;
     padding: 12px;
 }
+
+
+/* ============================================
+   33. SEMANTISCHE ICON-FARBEN (nach Entfernung des globalen Overrides)
+   ============================================ */
+
+/* Timeline icons */
+.btn-timeline-toggle .material-icons-round { color: var(--text-secondary) !important; }
+.btn-timeline-toggle.active .material-icons-round { color: var(--blue) !important; }
+/* Reset button */
+.btn-reset .material-icons-round { color: var(--text-secondary) !important; }
+/* Section collapse */
+.section-collapse-btn .material-icons-round { color: var(--text-tertiary) !important; }
+/* Panel collapse */
+.panel-collapse-btn .material-icons-round { color: var(--text-tertiary) !important; }
+/* Simulate button */
+.btn-simulate-treatment .material-icons-round { color: inherit !important; }
+/* Patient menu */
+.btn-patient-menu .material-icons-round { color: var(--text-secondary) !important; }
+.pd-close-btn .material-icons-round { color: var(--text-secondary) !important; }
