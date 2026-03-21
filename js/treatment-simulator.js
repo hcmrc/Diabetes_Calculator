@@ -93,7 +93,7 @@ DRC.TreatmentSimulator = (() => {
             const baseBtn = document.getElementById('compareScenarioBtn');
             if (baseBtn) {
                 baseBtn.classList.add('active');
-                baseBtn.innerHTML = '<span class="material-icons-round">flag</span> Reset Baseline';
+                baseBtn.innerHTML = '<i data-lucide="flag" class="lucide-icon"></i> Reset Baseline';
             }
             const panel = document.getElementById('scenario-comparison');
             if (panel) panel.style.display = 'flex';
@@ -162,13 +162,16 @@ DRC.TreatmentSimulator = (() => {
             const simFactor = b.getAttribute('data-sim-factor');
             if (_simulated.has(simFactor)) {
                 b.disabled = true;
-                b.innerHTML = '<span class="material-icons-round">check_circle</span> Already Simulated';
+                b.innerHTML = '<i data-lucide="check-circle" class="lucide-icon"></i> Already Simulated';
                 b.classList.add('simulated');
             } else {
                 const rowEl = b.closest('.treatment-overview-row');
                 b.disabled = !(rowEl?.classList.contains('indicated'));
             }
         });
+
+        // Initialize Lucide icons for updated buttons
+        if (typeof lucide !== 'undefined') lucide.createIcons();
 
         // Auto-open timeline if hidden
         const area = document.getElementById('timeline-expandable');

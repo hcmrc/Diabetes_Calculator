@@ -349,7 +349,7 @@ DRC.UIController = (() => {
                 `<div class="therapy-mini"><div><strong>${t.name}:</strong> ${t.desc}</div></div>`
             ).join('');
 
-            const statusIcon  = isIndicated ? 'warning' : 'check_circle';
+            const statusIcon  = isIndicated ? 'alert-triangle' : 'check-circle';
             const statusLabel = isIndicated ? 'Indicated' : 'Normal';
             const statusClass = isIndicated ? 'status-indicated' : 'status-normal';
 
@@ -360,16 +360,16 @@ DRC.UIController = (() => {
 
             row.innerHTML = `
                 <div class="tov-icon-col">
-                    <span class="material-icons-round tov-factor-icon">${treatment.icon}</span>
+                    <i data-lucide="${treatment.icon}" class="lucide-icon tov-factor-icon"></i>
                 </div>
                 <div class="tov-main-col">
                     <div class="tov-label-row tov-clickable" data-toggle-factor="${factor}">
                         <span class="tov-title">${treatment.title}</span>
                         <span class="tov-status ${statusClass}">
-                            <span class="material-icons-round">${statusIcon}</span>
+                            <i data-lucide="${statusIcon}" class="lucide-icon"></i>
                             ${statusLabel}
                         </span>
-                        <span class="material-icons-round tov-chevron ${isIndicated ? '' : 'collapsed'}">expand_more</span>
+                        <i data-lucide="chevron-down" class="lucide-icon tov-chevron ${isIndicated ? '' : 'collapsed'}"></i>
                     </div>
                     <div class="tov-bar-container">
                         <div class="tov-bar ${isIndicated ? 'bar-indicated' : 'bar-normal'}" style="width:${barWidth}%;"></div>
@@ -379,7 +379,7 @@ DRC.UIController = (() => {
                         <div class="tov-details-inner">
                             ${therapiesHTML}
                             ${isIndicated ? `<button class="btn-simulate-treatment" data-sim-factor="${factor}">
-                                <span class="material-icons-round">play_circle</span>
+                                <i data-lucide="play-circle" class="lucide-icon"></i>
                                 Simulate Treatment
                             </button>` : ''}
                         </div>
@@ -404,6 +404,9 @@ DRC.UIController = (() => {
 
             container.appendChild(row);
         });
+
+        // Re-initialize Lucide icons for dynamically added content
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     };
 
     /** Legacy no-op kept for API compatibility. */
@@ -521,22 +524,25 @@ DRC.UIController = (() => {
         panel.innerHTML = `
             <div class="scenario-inline-row">
                 <div class="scenario-inline-item">
-                    <span class="material-icons-round scenario-inline-icon">flag</span>
+                    <i data-lucide="flag" class="lucide-icon scenario-inline-icon"></i>
                     <span class="scenario-inline-label">Baseline</span>
                     <span class="scenario-inline-value">${baselineRisk.toFixed(1)}%</span>
                 </div>
-                <span class="material-icons-round scenario-inline-arrow">arrow_forward</span>
+                <i data-lucide="arrow-right" class="lucide-icon scenario-inline-arrow"></i>
                 <div class="scenario-inline-item">
-                    <span class="material-icons-round scenario-inline-icon current-icon">person</span>
+                    <i data-lucide="user" class="lucide-icon scenario-inline-icon current-icon"></i>
                     <span class="scenario-inline-label">Current</span>
                     <span class="scenario-inline-value current-value">${currentRisk.toFixed(1)}%</span>
                 </div>
                 <div class="scenario-inline-delta ${cls}">
-                    <span class="material-icons-round">${icon}</span>
+                    <i data-lucide="${icon.replace(/_/g, '-')}" class="lucide-icon"></i>
                     <span>${delta >= 0 ? '+' : ''}${delta.toFixed(2)}%</span>
                 </div>
             </div>
         `;
+
+        // Initialize Lucide icons for the new content
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     };
 
     // ─── Non-modifiable summary ─────────────────────────────────────────

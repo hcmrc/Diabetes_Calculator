@@ -135,8 +135,9 @@ body {
     color: var(--text-primary);
 }
 
-.nav-brand .material-icons-round {
-    font-size: 20px;
+.nav-brand .lucide-icon {
+    width: 20px;
+    height: 20px;
     color: var(--blue);
 }
 
@@ -230,8 +231,9 @@ body {
     transform: rotate(-45deg);
 }
 
-.btn-reset .material-icons-round {
-    font-size: 18px;
+.btn-reset .lucide-icon {
+    width: 18px;
+    height: 18px;
 }
 
 
@@ -393,8 +395,9 @@ body {
     transform: translateY(-1px);
 }
 
-.btn-expand-hero .material-icons-round {
-    font-size: 15px;
+.btn-expand-hero .lucide-icon {
+    width: 15px;
+    height: 15px;
 }
 
 .expand-hero-chevron {
@@ -441,8 +444,9 @@ body {
     transform: translateY(-1px);
 }
 
-.btn-compare-scenario .material-icons-round {
-    font-size: 16px;
+.btn-compare-scenario .lucide-icon {
+    width: 16px;
+    height: 16px;
 }
 
 .scenario-comparison-panel {
@@ -612,8 +616,9 @@ body {
     background: transparent;
 }
 
-.panel-header-bar .material-icons-round {
-    font-size: 20px;
+.panel-header-bar .lucide-icon {
+    width: 20px;
+    height: 20px;
     color: var(--blue);
 }
 
@@ -647,12 +652,13 @@ body {
     color: var(--blue);
 }
 
-.panel-collapse-btn .material-icons-round {
-    font-size: 18px;
+.panel-collapse-btn .lucide-icon {
+    width: 18px;
+    height: 18px;
     transition: transform 0.3s ease;
 }
 
-.panel-collapse-btn.collapsed .material-icons-round {
+.panel-collapse-btn.collapsed .lucide-icon {
     transform: rotate(-180deg);
 }
 
@@ -745,7 +751,7 @@ body {
     margin-bottom: 8px;
 }
 
-.input-section-label .material-icons-round {
+.input-section-label .lucide-icon {
     font-size: 14px;
 }
 
@@ -1427,7 +1433,7 @@ body {
     z-index: 10;
 }
 
-.heatmap-pointer .material-icons-round {
+.heatmap-pointer .lucide-icon {
     font-size: 24px;
     color: var(--blue);
     background: white;
@@ -1457,7 +1463,7 @@ body {
     border-radius: var(--radius);
 }
 
-.treatment-ok .material-icons-round {
+.treatment-ok .lucide-icon {
     color: var(--safe);
     font-size: 24px;
     flex-shrink: 0;
@@ -1588,7 +1594,7 @@ body {
     color: var(--text-primary);
 }
 
-.timeline-header-row h3 .material-icons-round {
+.timeline-header-row h3 .lucide-icon {
     font-size: 18px;
     color: var(--blue);
 }
@@ -1721,7 +1727,7 @@ body {
     transform: translateY(-1px);
 }
 
-.btn-snapshot .material-icons-round {
+.btn-snapshot .lucide-icon {
     font-size: 14px;
 }
 
@@ -1980,13 +1986,13 @@ body {
     background: rgba(0, 102, 204, 0.1);
 }
 
-.section-collapse-btn .material-icons-round {
+.section-collapse-btn .lucide-icon {
     font-size: 16px !important;
     color: var(--text-tertiary) !important;
     transition: transform 0.3s ease;
 }
 
-.section-collapse-btn.collapsed .material-icons-round {
+.section-collapse-btn.collapsed .lucide-icon {
     transform: rotate(-90deg);
 }
 
@@ -2129,9 +2135,17 @@ body {
     }
 }
 
-/* Icons inherit semantic context — no global override */
-.material-icons-round {
-    font-size: inherit;
+/* Lucide Icons - Base Styles */
+.lucide-icon {
+    width: 1em;
+    height: 1em;
+    flex-shrink: 0;
+    stroke-width: 1.5;
+}
+
+.lucide-icon svg {
+    width: 100%;
+    height: 100%;
 }
 
 
@@ -2239,7 +2253,7 @@ body {
     flex-shrink: 0;
 }
 
-.tov-status .material-icons-round {
+.tov-status .lucide-icon {
     font-size: 11px !important;
 }
 
@@ -2248,7 +2262,7 @@ body {
     background: rgba(255, 59, 48, 0.20);
 }
 
-.tov-status.status-indicated .material-icons-round {
+.tov-status.status-indicated .lucide-icon {
     color: #ff3b30 !important;
 }
 
@@ -2257,7 +2271,7 @@ body {
     background: rgba(52, 199, 89, 0.20);
 }
 
-.tov-status.status-normal .material-icons-round {
+.tov-status.status-normal .lucide-icon {
     color: var(--safe) !important;
 }
 
@@ -2434,7 +2448,7 @@ body {
     background: var(--safe-light);
 }
 
-.scenario-inline-delta.improved .material-icons-round {
+.scenario-inline-delta.improved .lucide-icon {
     color: var(--safe) !important;
     font-size: 14px !important;
 }
@@ -2444,7 +2458,7 @@ body {
     background: var(--danger-light);
 }
 
-.scenario-inline-delta.worsened .material-icons-round {
+.scenario-inline-delta.worsened .lucide-icon {
     color: var(--danger) !important;
     font-size: 14px !important;
 }
@@ -2471,7 +2485,7 @@ body {
     transform: translateY(-1px);
 }
 
-.btn-compare-scenario-inline .material-icons-round {
+.btn-compare-scenario-inline .lucide-icon {
     font-size: 14px;
 }
 
@@ -2480,7 +2494,7 @@ body {
     color: white;
 }
 
-.btn-compare-scenario-inline.active .material-icons-round {
+.btn-compare-scenario-inline.active .lucide-icon {
     color: white !important;
 }
 
@@ -2547,7 +2561,7 @@ body {
     gap: 8px;
 }
 
-.scenario-section-title .material-icons-round {
+.scenario-section-title .lucide-icon {
     font-size: 20px;
     color: var(--blue);
 }
@@ -2588,7 +2602,7 @@ body {
     transform: translateY(-1px);
 }
 
-.btn-compare-scenario-section .material-icons-round {
+.btn-compare-scenario-section .lucide-icon {
     font-size: 15px;
 }
 
@@ -2598,7 +2612,7 @@ body {
     border-color: var(--blue);
 }
 
-.btn-compare-scenario-section.active .material-icons-round {
+.btn-compare-scenario-section.active .lucide-icon {
     color: white !important;
 }
 
@@ -2666,7 +2680,7 @@ body {
     transform: translateY(-1px);
 }
 
-.btn-patient-menu .material-icons-round {
+.btn-patient-menu .lucide-icon {
     font-size: 16px;
 }
 
@@ -2744,7 +2758,7 @@ body {
     margin: 0;
 }
 
-.pd-header h2 .material-icons-round {
+.pd-header h2 .lucide-icon {
     font-size: 20px;
 }
 
@@ -2780,7 +2794,7 @@ body {
     flex-shrink: 0;
 }
 
-.pd-active-patient .material-icons-round {
+.pd-active-patient .lucide-icon {
     font-size: 18px;
 }
 
@@ -2896,16 +2910,16 @@ body {
     background: rgba(0, 0, 0, 0.06);
 }
 
-.pd-btn-icon .material-icons-round {
+.pd-btn-icon .lucide-icon {
     font-size: 14px !important;
     color: var(--text-tertiary) !important;
 }
 
-.pd-btn-icon.delete:hover .material-icons-round {
+.pd-btn-icon.delete:hover .lucide-icon {
     color: var(--danger) !important;
 }
 
-.pd-btn-icon.save:hover .material-icons-round {
+.pd-btn-icon.save:hover .lucide-icon {
     color: var(--safe) !important;
 }
 
@@ -2954,7 +2968,7 @@ body {
     transform: translateY(-1px);
 }
 
-.pd-btn-add .material-icons-round {
+.pd-btn-add .lucide-icon {
     font-size: 16px;
     color: white !important;
 }
@@ -2992,7 +3006,7 @@ body {
     border-color: rgba(0, 102, 204, 0.2);
 }
 
-.pd-btn-io .material-icons-round {
+.pd-btn-io .lucide-icon {
     font-size: 15px;
 }
 
@@ -3057,7 +3071,7 @@ body {
     box-shadow: none;
 }
 
-.btn-simulate-treatment .material-icons-round {
+.btn-simulate-treatment .lucide-icon {
     font-size: 16px;
 }
 
@@ -3068,7 +3082,7 @@ body {
     opacity: 0.7;
 }
 
-.btn-simulate-treatment.simulated .material-icons-round {
+.btn-simulate-treatment.simulated .lucide-icon {
     color: #34c759;
 }
 
@@ -3206,7 +3220,7 @@ body {
     background: rgba(0, 122, 255, 0.16);
 }
 
-.btn-timeline-toggle .material-icons-round {
+.btn-timeline-toggle .lucide-icon {
     font-size: 18px;
 }
 
@@ -3255,7 +3269,7 @@ body {
     gap: 8px;
 }
 
-.timeline-expandable-title .material-icons-round {
+.timeline-expandable-title .lucide-icon {
     font-size: 20px;
     color: #007aff;
 }
@@ -3286,7 +3300,7 @@ body {
     gap: 4px;
 }
 
-.timeline-expandable-area .btn-compare-scenario-section .material-icons-round {
+.timeline-expandable-area .btn-compare-scenario-section .lucide-icon {
     font-size: 14px;
 }
 
@@ -3296,7 +3310,7 @@ body {
     gap: 4px;
 }
 
-.timeline-expandable-area .btn-snapshot .material-icons-round {
+.timeline-expandable-area .btn-snapshot .lucide-icon {
     font-size: 14px;
 }
 
@@ -3316,16 +3330,16 @@ body {
    ============================================ */
 
 /* Timeline icons */
-.btn-timeline-toggle .material-icons-round { color: var(--text-secondary) !important; }
-.btn-timeline-toggle.active .material-icons-round { color: var(--blue) !important; }
+.btn-timeline-toggle .lucide-icon { color: var(--text-secondary) !important; }
+.btn-timeline-toggle.active .lucide-icon { color: var(--blue) !important; }
 /* Reset button */
-.btn-reset .material-icons-round { color: var(--text-secondary) !important; }
+.btn-reset .lucide-icon { color: var(--text-secondary) !important; }
 /* Section collapse */
-.section-collapse-btn .material-icons-round { color: var(--text-tertiary) !important; }
+.section-collapse-btn .lucide-icon { color: var(--text-tertiary) !important; }
 /* Panel collapse */
-.panel-collapse-btn .material-icons-round { color: var(--text-tertiary) !important; }
+.panel-collapse-btn .lucide-icon { color: var(--text-tertiary) !important; }
 /* Simulate button */
-.btn-simulate-treatment .material-icons-round { color: inherit !important; }
+.btn-simulate-treatment .lucide-icon { color: inherit !important; }
 /* Patient menu */
-.btn-patient-menu .material-icons-round { color: var(--text-secondary) !important; }
-.pd-close-btn .material-icons-round { color: var(--text-secondary) !important; }
+.btn-patient-menu .lucide-icon { color: var(--text-secondary) !important; }
+.pd-close-btn .lucide-icon { color: var(--text-secondary) !important; }

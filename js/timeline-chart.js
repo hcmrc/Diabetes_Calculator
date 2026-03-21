@@ -252,9 +252,12 @@ DRC.TimelineChart = (() => {
         });
 
         legendEl.innerHTML = `<div class="tl-legend-title">
-            <span class="material-icons-round" style="font-size:14px; color:#007aff;">history</span>
+            <i data-lucide="history" class="lucide-icon" style="width:14px; height:14px; color:#007aff;"></i>
             Treatment History
         </div>${items.join('')}`;
+
+        // Initialize Lucide icons for the legend
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     };
 
     /** Clear all snapshots and baseline. */

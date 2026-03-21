@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy"
           content="default-src 'self';
-                   script-src 'self' https://cdn.sheetjs.com;
+                   script-src 'self' https://cdn.sheetjs.com https://unpkg.com;
                    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
                    font-src https://fonts.gstatic.com https://fonts.googleapis.com;
                    connect-src 'none';
@@ -17,7 +17,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 
     <!-- SheetJS for Excel Import/Export -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"
@@ -33,7 +34,7 @@
 <nav class="top-nav">
     <div class="nav-inner">
         <div class="nav-brand">
-            <span class="material-icons-round">monitor_heart</span>
+            <i data-lucide="activity" class="lucide-icon"></i>
             <span>Diabetes Risk Calculator</span>
         </div>
         <div class="nav-actions">
@@ -46,18 +47,18 @@
                 <span class="toggle-label-nav" id="unit-label-si">SI</span>
             </div>
             <button id="resetBtn" type="button" class="btn-reset" aria-label="Reset all values">
-                <span class="material-icons-round">refresh</span>
+                <i data-lucide="rotate-ccw" class="lucide-icon"></i>
             </button>
             <!-- Timeline Toggle Button -->
             <button id="timelineToggleBtn" type="button" class="btn-timeline-toggle" aria-label="Toggle Risk Timeline">
-                <span class="material-icons-round">timeline</span>
+                <i data-lucide="line-chart" class="lucide-icon"></i>
                 <span class="btn-timeline-label">Risk Timeline</span>
             </button>
             <!-- Patient Management Button -->
             <button id="patientMenuBtn" type="button" class="btn-patient-menu" aria-label="Manage profiles">
-                <span class="material-icons-round">person</span>
+                <i data-lucide="user" class="lucide-icon"></i>
                 <span class="patient-name-label" id="patientNameLabel">Select Profile</span>
-                <span class="material-icons-round patient-chevron">expand_more</span>
+                <i data-lucide="chevron-down" class="lucide-icon patient-chevron"></i>
             </button>
         </div>
     </div>
@@ -67,15 +68,15 @@
 <div class="patient-overlay" id="patientOverlay"></div>
 <aside class="patient-drawer" id="patientDrawer" aria-label="Patient Management">
     <div class="pd-header">
-        <h2><span class="material-icons-round">people</span> My Profiles</h2>
+        <h2><i data-lucide="users" class="lucide-icon"></i> My Profiles</h2>
         <button class="pd-close-btn" id="patientDrawerClose" aria-label="Close patient menu">
-            <span class="material-icons-round">close</span>
+            <i data-lucide="x" class="lucide-icon"></i>
         </button>
     </div>
 
     <!-- Active Patient Indicator -->
     <div class="pd-active-patient" id="pdActivePatient">
-        <span class="material-icons-round">person_pin</span>
+        <i data-lucide="map-pin-user" class="lucide-icon"></i>
         <span id="pdActiveLabel">No profile selected</span>
     </div>
 
@@ -93,7 +94,7 @@
         <div class="pd-add-form">
             <input type="text" id="pdNewPatientName" class="pd-input" placeholder="Profile name…" maxlength="60" />
             <button id="pdAddPatientBtn" type="button" class="pd-btn-add">
-                <span class="material-icons-round">person_add</span> Add &amp; Save Current Values
+                <i data-lucide="user-plus" class="lucide-icon"></i> Add &amp; Save Current Values
             </button>
         </div>
     </div>
@@ -103,10 +104,10 @@
         <div class="pd-section-label">Import / Export (Excel)</div>
         <div class="pd-io-actions">
             <button id="pdExportBtn" type="button" class="pd-btn-io">
-                <span class="material-icons-round">file_download</span> Export .xlsx
+                <i data-lucide="download" class="lucide-icon"></i> Export .xlsx
             </button>
             <label class="pd-btn-io pd-btn-import" for="pdImportFile">
-                <span class="material-icons-round">file_upload</span> Import .xlsx
+                <i data-lucide="upload" class="lucide-icon"></i> Import .xlsx
             </label>
             <input type="file" id="pdImportFile" accept=".xlsx,.xls" style="display:none;" />
         </div>
@@ -126,9 +127,9 @@
             </div>
         </div>
         <button id="expandHeroBtn" type="button" class="btn-expand-hero" aria-expanded="false">
-            <span class="material-icons-round">info_outline</span>
+            <i data-lucide="info" class="lucide-icon"></i>
             <span id="expandHeroLabel">What does that mean?</span>
-            <span class="material-icons-round expand-hero-chevron">expand_more</span>
+            <i data-lucide="chevron-down" class="lucide-icon expand-hero-chevron"></i>
         </button>
         <div id="hero-expandable" class="hero-expandable">
             <div id="icon-array" class="icon-array-container"></div>
@@ -143,16 +144,16 @@
     <div class="timeline-expandable-inner">
         <div class="timeline-expandable-header">
             <div class="timeline-expandable-title">
-                <span class="material-icons-round">timeline</span>
+                <i data-lucide="line-chart" class="lucide-icon"></i>
                 <h3>Risk Timeline</h3>
                 <span class="timeline-hint">Simulate treatments to track risk changes over time</span>
             </div>
             <div class="timeline-expandable-actions">
                 <button id="compareScenarioBtn" type="button" class="btn-compare-scenario-section" aria-label="Set baseline for comparison">
-                    <span class="material-icons-round">flag</span> Set Baseline
+                    <i data-lucide="flag" class="lucide-icon"></i> Set Baseline
                 </button>
                 <button id="snapshotBtn" type="button" class="btn-snapshot">
-                    <span class="material-icons-round">add_circle_outline</span> Snapshot
+                    <i data-lucide="plus-circle" class="lucide-icon"></i> Snapshot
                 </button>
             </div>
         </div>
@@ -175,10 +176,10 @@
             <span>Your Data</span>
         </div>
         <div class="panel-header-bar">
-            <span class="material-icons-round">tune</span>
+            <i data-lucide="sliders-horizontal" class="lucide-icon"></i>
             <h2>Patient Data</h2>
             <button class="panel-collapse-btn" data-panel="panel-input" aria-label="Collapse section" aria-expanded="true">
-                <span class="material-icons-round">expand_less</span>
+                <i data-lucide="chevron-up" class="lucide-icon"></i>
             </button>
         </div>
         <p class="panel-subtitle">Please enter your data here</p>
@@ -187,10 +188,10 @@
             <!-- Demographic Data Section with Collapse -->
             <div class="section-collapse-header">
                 <button class="section-collapse-btn" data-target="non-mod-section" aria-expanded="true">
-                    <span class="material-icons-round">expand_more</span>
+                    <i data-lucide="chevron-down" class="lucide-icon"></i>
                 </button>
                 <div class="input-section-label">
-                    <span class="material-icons-round">lock</span>
+                    <i data-lucide="lock" class="lucide-icon"></i>
                     Demographic Data
                 </div>
             </div>
@@ -203,7 +204,7 @@
                 <div class="input-group" data-field="age">
                     <div class="input-label-row">
                         <label for="age-slider">
-                            <span class="material-icons-round ig-icon">calendar_today</span>
+                            <i data-lucide="calendar" class="lucide-icon ig-icon"></i>
                             Age
                         </label>
                         <span class="beta-vector" id="beta-vector-age"></span>
@@ -223,7 +224,7 @@
                 <!-- Race -->
                 <div class="input-group" data-field="race">
                     <div class="input-label-row">
-                        <label><span class="material-icons-round ig-icon">groups</span> Ethnicity</label>
+                        <label><i data-lucide="users" class="lucide-icon ig-icon"></i> Ethnicity</label>
                         <span class="beta-vector" id="beta-vector-race"></span>
                     </div>
                     <div class="toggle-group">
@@ -236,7 +237,7 @@
                 <!-- Parental History -->
                 <div class="input-group" data-field="parentHist">
                     <div class="input-label-row">
-                        <label><span class="material-icons-round ig-icon">family_restroom</span> Parental Diabetes</label>
+                        <label><i data-lucide="users-round" class="lucide-icon ig-icon"></i> Parental Diabetes</label>
                         <span class="beta-vector" id="beta-vector-parentHist"></span>
                     </div>
                     <div class="toggle-group">
@@ -249,7 +250,7 @@
                 <!-- Height -->
                 <div class="input-group" data-field="height">
                     <div class="input-label-row">
-                        <label for="height-slider"><span class="material-icons-round ig-icon">height</span> Height <span class="unit-label" id="height-unit">(in)</span></label>
+                        <label for="height-slider"><i data-lucide="move-vertical" class="lucide-icon ig-icon"></i> Height <span class="unit-label" id="height-unit">(in)</span></label>
                         <span class="beta-vector" id="beta-vector-height"></span>
                     </div>
                     <div class="slider-wrapper">
@@ -268,10 +269,10 @@
             <!-- Clinical Values Section with Collapse -->
             <div class="section-collapse-header">
                 <button class="section-collapse-btn" data-target="mod-section" aria-expanded="true">
-                    <span class="material-icons-round">expand_more</span>
+                    <i data-lucide="chevron-down" class="lucide-icon"></i>
                 </button>
                 <div class="input-section-label modifiable">
-                    <span class="material-icons-round">tune</span>
+                    <i data-lucide="sliders-horizontal" class="lucide-icon"></i>
                     Clinical Values
                 </div>
             </div>
@@ -284,7 +285,7 @@
             <!-- Fasting Glucose -->
             <div class="input-group" data-field="fastGlu">
                 <div class="input-label-row">
-                    <label for="fastGlu-slider"><span class="material-icons-round ig-icon icon-danger">bloodtype</span> Fasting Glucose <span class="unit-label" id="fastGlu-unit">(mg/dL)</span></label>
+                    <label for="fastGlu-slider"><i data-lucide="droplet" class="lucide-icon ig-icon"></i> Fasting Glucose <span class="unit-label" id="fastGlu-unit">(mg/dL)</span></label>
                     <span class="beta-vector" id="beta-vector-fastGlu"></span>
                 </div>
                 <div class="strongest-badge">Strongest Predictor</div>
@@ -307,7 +308,7 @@
             <!-- Waist -->
             <div class="input-group" data-field="waist">
                 <div class="input-label-row">
-                    <label for="waist-slider"><span class="material-icons-round ig-icon">straighten</span> Waist <span class="unit-label" id="waist-unit">(in)</span></label>
+                    <label for="waist-slider"><i data-lucide="ruler" class="lucide-icon ig-icon"></i> Waist <span class="unit-label" id="waist-unit">(in)</span></label>
                     <span class="beta-vector" id="beta-vector-waist"></span>
                 </div>
                 <div class="slider-wrapper">
@@ -329,7 +330,7 @@
             <!-- SBP -->
             <div class="input-group" data-field="sbp">
                 <div class="input-label-row">
-                    <label for="sbp-slider"><span class="material-icons-round ig-icon">favorite</span> Blood Pressure <span class="unit-label">(mmHg)</span></label>
+                    <label for="sbp-slider"><i data-lucide="heart-pulse" class="lucide-icon ig-icon"></i> Blood Pressure <span class="unit-label">(mmHg)</span></label>
                     <span class="beta-vector" id="beta-vector-sbp"></span>
                 </div>
                 <div class="slider-wrapper">
@@ -352,7 +353,7 @@
             <!-- HDL -->
             <div class="input-group" data-field="cholHDL">
                 <div class="input-label-row">
-                    <label for="cholHDL-slider"><span class="material-icons-round ig-icon icon-safe">water_drop</span> HDL Cholesterol <span class="unit-label" id="cholHDL-unit">(mg/dL)</span></label>
+                    <label for="cholHDL-slider"><i data-lucide="droplets" class="lucide-icon ig-icon"></i> HDL Cholesterol <span class="unit-label" id="cholHDL-unit">(mg/dL)</span></label>
                     <span class="beta-vector" id="beta-vector-cholHDL"></span>
                 </div>
                 <div class="slider-wrapper">
@@ -374,7 +375,7 @@
             <!-- Triglycerides -->
             <div class="input-group" data-field="cholTri">
                 <div class="input-label-row">
-                    <label for="cholTri-slider"><span class="material-icons-round ig-icon">science</span> Blood Fats (Triglycerides) <span class="unit-label" id="cholTri-unit">(mg/dL)</span></label>
+                    <label for="cholTri-slider"><i data-lucide="flask-conical" class="lucide-icon ig-icon"></i> Blood Fats (Triglycerides) <span class="unit-label" id="cholTri-unit">(mg/dL)</span></label>
                     <span class="beta-vector" id="beta-vector-cholTri"></span>
                 </div>
                 <div class="slider-wrapper">
@@ -404,10 +405,10 @@
             <span>Risk Analysis</span>
         </div>
         <div class="panel-header-bar">
-            <span class="material-icons-round">insights</span>
+            <i data-lucide="bar-chart-3" class="lucide-icon"></i>
             <h2>Risk Factors</h2>
             <button class="panel-collapse-btn" data-panel="panel-model" aria-label="Collapse section" aria-expanded="true">
-                <span class="material-icons-round">expand_less</span>
+                <i data-lucide="chevron-up" class="lucide-icon"></i>
             </button>
         </div>
         <p class="panel-subtitle">Which factors influence risk by how much</p>
@@ -456,10 +457,10 @@
             <span>Take Action</span>
         </div>
         <div class="panel-header-bar">
-            <span class="material-icons-round">medical_services</span>
+            <i data-lucide="stethoscope" class="lucide-icon"></i>
             <h2>What Can I Do?</h2>
             <button class="panel-collapse-btn" data-panel="panel-treatment" aria-label="Collapse section" aria-expanded="true">
-                <span class="material-icons-round">expand_less</span>
+                <i data-lucide="chevron-up" class="lucide-icon"></i>
             </button>
         </div>
         <p class="panel-subtitle">Evidence-based steps to reduce your risk</p>
@@ -492,7 +493,7 @@
                         <div class="zone zone-4"><span>High glucose<br>Evaluation needed</span></div>
                         <div class="zone zone-5"><span>High risk<br>GLP-1 / SGLT2</span></div>
                     </div>
-                    <div class="heatmap-pointer" id="heatmap-pointer"><span class="material-icons-round">my_location</span></div>
+                    <div class="heatmap-pointer" id="heatmap-pointer"><i data-lucide="map-pin" class="lucide-icon"></i></div>
                 </div>
             </div>
 
@@ -512,5 +513,12 @@
 <script src="js/patient-manager.js"></script>
 <script src="js/treatment-simulator.js"></script>
 <script src="js/main.js"></script>
+
+<!-- Initialize Lucide Icons -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        lucide.createIcons();
+    });
+</script>
 </body>
 </html>

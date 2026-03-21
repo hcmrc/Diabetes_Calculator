@@ -104,7 +104,7 @@ DRC.CONFIG = Object.freeze({
     /** Treatment recommendations per modifiable risk factor (ESC 2023). */
     TREATMENTS: {
         fastGlu: {
-            id: 'glucose-treatment', icon: 'bloodtype',
+            id: 'glucose-treatment', icon: 'droplet',
             title: 'Blood Sugar Management',
             therapies: [
                 { name: 'Standard Medication', desc: 'Metformin is often the first step to help control blood sugar levels.' },
@@ -112,7 +112,7 @@ DRC.CONFIG = Object.freeze({
             ]
         },
         sbp: {
-            id: 'bp-treatment', icon: 'favorite',
+            id: 'bp-treatment', icon: 'heart',
             title: 'Blood Pressure Control',
             therapies: [
                 { name: 'Combination Medications', desc: 'It is recommend to start with a combination of different blood pressure medications (e.g. RAS inhibitors and CCBs).' },
@@ -120,7 +120,7 @@ DRC.CONFIG = Object.freeze({
             ]
         },
         cholHDL: {
-            id: 'hdl-treatment', icon: 'water_drop',
+            id: 'hdl-treatment', icon: 'droplets',
             title: 'HDL Improvement',
             therapies: [
                 { name: 'Regular Exercise', desc: 'Aim for 150 minutes per week of activity like brisk walking, or 75 minutes of intense exercise.' },
@@ -128,7 +128,7 @@ DRC.CONFIG = Object.freeze({
             ]
         },
         cholTri: {
-            id: 'tri-treatment', icon: 'science',
+            id: 'tri-treatment', icon: 'flask-conical',
             title: 'Blood Fats (Triglycerides) Treatment',
             therapies: [
                 { name: 'Prescription Fish Oil', desc: 'If blood fats (triglycerides) remain high, special prescription fish oil (icosapent ethyl) might be considered.' },
@@ -136,7 +136,7 @@ DRC.CONFIG = Object.freeze({
             ]
         },
         waist: {
-            id: 'waist-treatment', icon: 'straighten',
+            id: 'waist-treatment', icon: 'ruler',
             title: 'Weight Management',
             therapies: [
                 { name: 'Diet & Exercise', desc: 'Reducing daily calories and exercising more leads to steady weight loss.' },

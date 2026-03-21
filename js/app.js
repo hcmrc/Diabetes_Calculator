@@ -276,19 +276,21 @@ DRC.App = (() => {
             state.baselineRisk = risk;
             if (btn) {
                 btn.classList.add('active');
-                btn.innerHTML = '<span class="material-icons-round">flag</span> Reset Baseline';
+                btn.innerHTML = '<i data-lucide="flag" class="lucide-icon"></i> Reset Baseline';
             }
             if (panel) panel.style.display = 'flex';
             UI().renderScenarioComparison(state.baselineRisk, risk);
+            if (typeof lucide !== 'undefined') lucide.createIcons();
             Timeline().setBaseline(risk);
         } else {
             state.baselineRisk = null;
             Timeline().clearBaseline();
             if (btn) {
                 btn.classList.remove('active');
-                btn.innerHTML = '<span class="material-icons-round">flag</span> Set Baseline';
+                btn.innerHTML = '<i data-lucide="flag" class="lucide-icon"></i> Set Baseline';
             }
             if (panel) panel.style.display = 'none';
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
     };
 

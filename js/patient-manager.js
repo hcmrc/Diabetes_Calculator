@@ -136,6 +136,33 @@ DRC.PatientManager = (() => {
         XLSX.writeFile(wb, 'diabetes_risk_patients.xlsx');
     };
 
+    /** Export a single patient profile with formatted filename. */
+    const exportSinglePatient = (patientId) => {
+        const patient = patients.find(p => p.id === patientId);
+        if (!patient) { alert('Patient not found.'); return; }
+
+        const rows = [{
+            Name: patient.name, Age: patient.data.age, Ethnicity_African_American: patient.data.race,
+            Parental_Diabetes: patient.data.parentHist, Systolic_BP: patient.data.sbp,
+            Height: patient.data.height, Waist: patient.data.waist,
+            Fasting_Glucose: patient.data.fastGlu, HDL_Cholesterol: patient.data.cholHDL,
+            Blood_Fats_Triglycerides: patient.data.cholTri, Risk_Pct: patient.riskPct, Saved_At: patient.savedAt
+        }];
+
+        // Format timestamp: YYYY-MM-DD
+        const now = new Date();
+        const timestamp = now.toISOString().slice(0, 10);
+
+        // Sanitize filename: remove special chars, limit length
+        const sanitizedName = patient.name.replace(/[<>:"/\\|?*]/g, '_').slice(0, 50);
+        const filename = `${sanitizedName}_${timestamp}_DRC_Export.xlsx`;
+
+        const ws = XLSX.utils.json_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Profile');
+        XLSX.writeFile(wb, filename);
+    };
+
     const importFromExcel = (file) => {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -222,15 +249,17 @@ DRC.PatientManager = (() => {
                 btn.title = title;
                 btn.dataset.action = action;
                 btn.dataset.id = p.id;
-                const iconEl = document.createElement('span');
-                iconEl.className = 'material-icons-round';
-                iconEl.textContent = icon;
+                const iconEl = document.createElement('i');
+                iconEl.setAttribute('data-lucide', icon.replace(/_/g, '-'));
+                iconEl.className = 'lucide-icon';
                 btn.appendChild(iconEl);
                 return btn;
             };
 
+            const exportBtn = mkBtn('export', 'Export this profile to Excel', 'export', 'download');
             const saveBtn = mkBtn('save', 'Update with current values', 'save', 'save');
-            const delBtn  = mkBtn('delete', 'Delete patient', 'delete', 'delete_outline');
+            const delBtn  = mkBtn('delete', 'Delete patient', 'delete', 'trash-2');
+            actions.appendChild(exportBtn);
             actions.appendChild(saveBtn);
             actions.appendChild(delBtn);
 
@@ -239,6 +268,7 @@ DRC.PatientManager = (() => {
             card.appendChild(actions);
 
             card.addEventListener('click', (e) => { if (!e.target.closest('[data-action]')) loadPatient(p.id); });
+            exportBtn.addEventListener('click', (e) => { e.stopPropagation(); exportSinglePatient(p.id); });
             saveBtn.addEventListener('click', (e) => { e.stopPropagation(); updatePatient(p.id); });
             delBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -246,6 +276,9 @@ DRC.PatientManager = (() => {
             });
             container.appendChild(card);
         });
+
+        // Initialize Lucide icons for dynamically added content
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     };
 
     // ─── Drawer toggle ──────────────────────────────────────────────────
