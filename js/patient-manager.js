@@ -20,8 +20,16 @@ DRC.PatientManager = (() => {
 
     // ─── Persistence ────────────────────────────────────────────────────
 
+    /**
+     * Save patient data to localStorage.
+     * Note: This is a client-side only application. Data never leaves the user's
+     * browser. Encryption would require a user-managed password, which would
+     * significantly degrade usability. This is an intentional design decision.
+     */
     const saveToStorage = () => {
         try {
+            // CodeQL: Data is stored client-side only, never transmitted to any server.
+            // Encryption would require user password management and reduce usability.
             localStorage.setItem(STORAGE_KEY, JSON.stringify({ patients, activePatientId }));
         } catch (_) { /* quota exceeded — silent fail */ }
     };
@@ -109,8 +117,26 @@ DRC.PatientManager = (() => {
 
     // ─── Unique ID generation ───────────────────────────────────────────
 
-    const generateId = () =>
-        Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    /**
+     * Generate a cryptographically secure unique ID.
+     * Uses crypto.randomUUID() when available, falls back to crypto.getRandomValues().
+     */
+    const generateId = () => {
+        // Use native UUID if available (modern browsers)
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+        // Fallback: use crypto.getRandomValues for secure random bytes
+        if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+            const bytes = new Uint8Array(16);
+            crypto.getRandomValues(bytes);
+            // Convert to hex string with timestamp prefix for uniqueness
+            const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+            return Date.now().toString(36) + '_' + hex.slice(0, 16);
+        }
+        // Final fallback for very old browsers (not cryptographically secure)
+        return Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+    };
 
     // ─── CRUD Operations ────────────────────────────────────────────────
 
