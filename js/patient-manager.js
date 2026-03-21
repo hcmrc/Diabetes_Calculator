@@ -142,27 +142,28 @@ DRC.PatientManager = (() => {
             try {
                 const wb   = XLSX.read(e.target.result, { type: 'array' });
                 const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+                const clamp = (v, min, max) => Math.min(Math.max(isNaN(v) ? min : v, min), max);
                 rows.forEach(row => {
-                    const name = row.Name || row.name || 'Imported Patient';
+                    const rawName = String(row.Name || row.name || 'Imported Patient').trim().slice(0, 60);
                     const data = {
-                        age: parseFloat(row.Age || row.age) || 50,
-                        race: parseInt(row.Ethnicity_African_American || row.Race_African_American || row.race) || 0,
-                        parentHist: parseInt(row.Parental_Diabetes || row.Parent_History || row.parentHist) || 0,
-                        sbp: parseFloat(row.Systolic_BP || row.sbp) || 120,
-                        height: parseFloat(row.Height || row.height) || 170,
-                        waist: parseFloat(row.Waist || row.waist) || 90,
-                        fastGlu: parseFloat(row.Fasting_Glucose || row.fastGlu) || 100,
-                        cholHDL: parseFloat(row.HDL_Cholesterol || row.cholHDL) || 50,
-                        cholTri: parseFloat(row.Blood_Fats_Triglycerides || row.Triglycerides || row.cholTri) || 150,
-                        _riskPct: parseFloat(row.Risk_Pct || 0) || 0
+                        age:        clamp(parseFloat(row.Age        || row.age)        || 50,   20,  80),
+                        race:       clamp(parseInt(row.Ethnicity_African_American || row.Race_African_American || row.race) || 0, 0, 1),
+                        parentHist: clamp(parseInt(row.Parental_Diabetes || row.Parent_History || row.parentHist) || 0, 0, 1),
+                        sbp:        clamp(parseFloat(row.Systolic_BP || row.sbp)       || 120,  80, 220),
+                        height:     clamp(parseFloat(row.Height      || row.height)    || 170,  48, 213),
+                        waist:      clamp(parseFloat(row.Waist       || row.waist)     || 90,   25, 152),
+                        fastGlu:    clamp(parseFloat(row.Fasting_Glucose || row.fastGlu) || 95, 2.8, 300),
+                        cholHDL:    clamp(parseFloat(row.HDL_Cholesterol || row.cholHDL) || 50, 0.5, 100),
+                        cholTri:    clamp(parseFloat(row.Blood_Fats_Triglycerides || row.Triglycerides || row.cholTri) || 150, 0.6, 500),
+                        _riskPct:   clamp(parseFloat(row.Risk_Pct || 0) || 0, 0, 100)
                     };
                     patients.push({
-                        id: generateId(), name, data,
+                        id: generateId(), name: rawName, data,
                         riskPct: data._riskPct, savedAt: row.Saved_At || new Date().toISOString()
                     });
                 });
                 saveToStorage(); renderList(); updateNavLabel();
-            } catch (err) { alert('Error reading Excel file: ' + err.message); }
+            } catch (_) { alert('Could not read the Excel file. Please check that it is a valid .xlsx file.'); }
         };
         reader.readAsArrayBuffer(file);
     };
@@ -189,26 +190,57 @@ DRC.PatientManager = (() => {
         container.innerHTML = '';
         patients.forEach(p => {
             const initials = p.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
             const card = document.createElement('div');
             card.className = `pd-patient-card${p.id === activePatientId ? ' active' : ''}`;
-            card.innerHTML = `
-                <div class="pd-patient-avatar">${initials}</div>
-                <div class="pd-patient-info">
-                    <div class="pd-patient-name">${p.name}</div>
-                    <div class="pd-patient-risk">Risk: ${p.riskPct?.toFixed(1) || '?'}% \u00B7 ${new Date(p.savedAt).toLocaleDateString()}</div>
-                </div>
-                <div class="pd-patient-actions">
-                    <button class="pd-btn-icon save" title="Update with current values" data-action="save" data-id="${p.id}">
-                        <span class="material-icons-round">save</span>
-                    </button>
-                    <button class="pd-btn-icon delete" title="Delete patient" data-action="delete" data-id="${p.id}">
-                        <span class="material-icons-round">delete_outline</span>
-                    </button>
-                </div>
-            `;
+
+            const avatar = document.createElement('div');
+            avatar.className = 'pd-patient-avatar';
+            avatar.textContent = initials;
+
+            const info = document.createElement('div');
+            info.className = 'pd-patient-info';
+
+            const nameEl = document.createElement('div');
+            nameEl.className = 'pd-patient-name';
+            nameEl.textContent = p.name;
+
+            const riskEl = document.createElement('div');
+            riskEl.className = 'pd-patient-risk';
+            const savedDate = (() => { try { return new Date(p.savedAt).toLocaleDateString(); } catch (_) { return ''; } })();
+            riskEl.textContent = `Risk: ${p.riskPct?.toFixed(1) || '?'}% \u00B7 ${savedDate}`;
+
+            info.appendChild(nameEl);
+            info.appendChild(riskEl);
+
+            const actions = document.createElement('div');
+            actions.className = 'pd-patient-actions';
+
+            const mkBtn = (cls, title, action, icon) => {
+                const btn = document.createElement('button');
+                btn.className = `pd-btn-icon ${cls}`;
+                btn.title = title;
+                btn.dataset.action = action;
+                btn.dataset.id = p.id;
+                const iconEl = document.createElement('span');
+                iconEl.className = 'material-icons-round';
+                iconEl.textContent = icon;
+                btn.appendChild(iconEl);
+                return btn;
+            };
+
+            const saveBtn = mkBtn('save', 'Update with current values', 'save', 'save');
+            const delBtn  = mkBtn('delete', 'Delete patient', 'delete', 'delete_outline');
+            actions.appendChild(saveBtn);
+            actions.appendChild(delBtn);
+
+            card.appendChild(avatar);
+            card.appendChild(info);
+            card.appendChild(actions);
+
             card.addEventListener('click', (e) => { if (!e.target.closest('[data-action]')) loadPatient(p.id); });
-            card.querySelector('[data-action="save"]').addEventListener('click', (e) => { e.stopPropagation(); updatePatient(p.id); });
-            card.querySelector('[data-action="delete"]').addEventListener('click', (e) => {
+            saveBtn.addEventListener('click', (e) => { e.stopPropagation(); updatePatient(p.id); });
+            delBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 if (confirm(`Delete patient "${p.name}"?`)) deletePatient(p.id);
             });

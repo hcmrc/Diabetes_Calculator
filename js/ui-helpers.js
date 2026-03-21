@@ -51,5 +51,17 @@ DRC.UIHelpers = (() => {
     const formatAxisValue = (value, isFloat) =>
         isFloat ? parseFloat(value).toFixed(1) : String(value);
 
-    return { el, setText, clampAndRound, formatAxisValue };
+    /**
+     * Escape a string for safe insertion into HTML/SVG markup.
+     * @param {string} str — Raw string to escape.
+     * @returns {string} HTML-safe string.
+     */
+    const escapeHtml = (str) => String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+    return { el, setText, clampAndRound, formatAxisValue, escapeHtml };
 })();
