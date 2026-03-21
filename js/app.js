@@ -443,17 +443,63 @@ DRC.App = (() => {
      * Simple event bus for decoupled communication between modules.
      * Replaces direct method calls like DRC.App._calculate().
      */
-    const eventListeners = {};
+    const eventListeners = Object.create(null); // No prototype chain lookups
+
+    /**
+     * Register an event listener.
+     * @param {string} event — Event name.
+     * @param {Function} callback — Callback function.
+     * @returns {Function} Unsubscribe function to remove the listener.
+     */
     const on = (event, callback) => {
+        if (typeof callback !== 'function') {
+            console.error(`Event listener for "${event}" must be a function, got ${typeof callback}`);
+            return () => {};
+        }
+        // Reject prototype pollution keys
+        if (event === '__proto__' || event === 'constructor' || event === 'prototype') {
+            console.error(`Invalid event name: "${event}"`);
+            return () => {};
+        }
         if (!eventListeners[event]) eventListeners[event] = [];
         eventListeners[event].push(callback);
+
+        // Return unsubscribe function
+        return () => off(event, callback);
     };
+
+    /**
+     * Remove an event listener.
+     * @param {string} event — Event name.
+     * @param {Function} callback — Callback function to remove.
+     */
+    const off = (event, callback) => {
+        if (!eventListeners[event]) return;
+        eventListeners[event] = eventListeners[event].filter(cb => cb !== callback);
+        // Clean up empty arrays
+        if (eventListeners[event].length === 0) {
+            delete eventListeners[event];
+        }
+    };
+
+    /**
+     * Trigger an event with optional data.
+     * @param {string} event — Event name.
+     * @param {*} data — Data to pass to listeners.
+     */
     const trigger = (event, data) => {
-        eventListeners[event]?.forEach(cb => cb(data));
+        if (!eventListeners[event]) return;
+        eventListeners[event].forEach(cb => {
+            try {
+                cb(data);
+            } catch (err) {
+                console.error(`Error in event listener for "${event}":`, err);
+            }
+        });
     };
 
     // Register core events
     on('risk:recalculate', calculate);
 
-    return { init, _calculate: calculate, _getState: () => ({ ...state }), _setCompareScenario: setCompareScenario, on, trigger };
+    return { init, _calculate: calculate, _getState: () => ({ ...state }), _setCompareScenario: setCompareScenario, on, off, trigger };
 })();
