@@ -1,5 +1,7 @@
-# Diabetes_Calculator
-## Diabetes Risk Calculator - Ecological Interface Design
+# Diabetes Risk Calculator
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://img.shields.io/badge/tests-126%20passing-brightgreen.svg)](tests/)
 
 An interactive, web-based interface for communicating the logistic regression model by Schmidt et al. (2005) to medical laypersons. The interface was developed as part of a master's thesis based on the Ecological Interface Design (EID) methodology (Vicente & Rasmussen, 1992).
 
@@ -50,32 +52,50 @@ The interface follows the core principles of Ecological Interface Design:
 
 ## Technology
 
-- Vanilla JavaScript (ES6+, IIFE module pattern, `window.DRC` namespace)
-- No framework, no bundler, no build step
-- SVG for diagrams (radar chart, timeline)
-- CSS Custom Properties for consistent theming
-- Google Fonts (Inter) and Material Icons
+- **Vanilla JavaScript** (ES6+, IIFE module pattern, `window.DRC` namespace)
+- **No framework**, no bundler, no build step required
+- **SVG** for diagrams (radar chart, timeline)
+- **CSS Custom Properties** for consistent theming
+- **Lucide Icons** (local)
+- **Google Fonts** (Plus Jakarta Sans)
+- **SheetJS** for Excel import/export (CDN with SRI)
 
 ## Project Structure
 
 ```
-index.html              Main interface file
-style.css               Complete stylesheet
+index.html                Main interface file
+style.css                 Complete stylesheet
+LICENSE                   MIT License
 js/
-  config.js             Model coefficients, thresholds, treatment data
-  risk-model.js         Logistic regression, contribution calculation, unit conversion
-  ui-helpers.js         Utility functions (clamping, formatting)
-  ui-controller.js      DOM rendering, slider updates, gauge animation
-  radar-chart.js        SVG radar chart of risk factors
-  timeline-chart.js     SVG timeline chart with snapshot tracking
+  config.js               Model coefficients, thresholds, treatment data
+  conversion-service.js   Unit conversion (US ↔ SI)
+  risk-model.js           Logistic regression, contribution calculation
+  ui-helpers.js           Utility functions (clamping, formatting)
+  ui-controller.js        DOM rendering, slider updates, gauge animation
+  radar-chart.js          SVG radar chart of risk factors
+  timeline-chart.js       SVG timeline chart with snapshot tracking
   treatment-simulator.js  Animated treatment simulations
-  patient-manager.js    Patient management (localStorage)
-  app.js                Application logic, event binding, state management
-  main.js               Bootstrap (DOMContentLoaded)
+  patient-manager.js      Patient management (localStorage) with Excel I/O
+  app.js                  Application logic, event binding, state management
+  main.js                 Bootstrap (DOMContentLoaded)
+  lib/
+    lucide.min.js         Local icon library
 tests/
-  test-risk-model.js    Model validation (62 tests)
-  test-comparison.js    Refactoring comparison original vs. modular (55 tests)
-  test-ui-helpers.js    UI utility functions (9 tests)
+  test-risk-model.js              Model validation (62 tests)
+  test-risk-model-edge-cases.js   Edge case validation (12 tests)
+  test-comparison.js              Refactoring comparison (55 tests)
+  test-ui-helpers.js              UI utility functions (9 tests)
+  test-ui-controller.js           UI controller tests (16 tests)
+  test-timeline-chart.js          Timeline chart tests (8 tests)
+  test-patient-manager.js         Patient manager tests (14 tests)
+  test-treatment-simulator.js     Treatment simulator tests (10 tests)
+  test-event-system.js            Event system tests (6 tests)
+.github/
+  CODE_OF_CONDUCT.md      Contributor Covenant code of conduct
+  CONTRIBUTING.md         Contribution guidelines
+  SECURITY.md             Security policy
+  ISSUE_TEMPLATE/         GitHub issue templates
+  PULL_REQUEST_TEMPLATE.md  PR template
 ```
 
 ## Usage
@@ -90,13 +110,39 @@ For GitHub Pages: Upload all files (including the `js/` directory) to the reposi
 
 ## Tests
 
+Run individual test suites:
+
 ```bash
-node tests/test-risk-model.js
-node tests/test-comparison.js
-node tests/test-ui-helpers.js
+node tests/test-risk-model.js              # 62 tests - Core model validation
+node tests/test-risk-model-edge-cases.js   # 12 tests - Edge case handling
+node tests/test-comparison.js              # 55 tests - Refactoring comparison
+node tests/test-ui-helpers.js            # 9 tests - Utility functions
+node tests/test-ui-controller.js           # 16 tests - UI controller
+node tests/test-timeline-chart.js          # 8 tests - Timeline functionality
+node tests/test-patient-manager.js         # 14 tests - Patient management
+node tests/test-treatment-simulator.js     # 10 tests - Treatment simulations
+node tests/test-event-system.js            # 6 tests - Event system
 ```
 
-All 126 tests validate the correct implementation of the Schmidt et al. model.
+**Total: 192+ tests** validate the correct implementation of the Schmidt et al. model.
+
+## Security
+
+This application:
+- Runs **entirely client-side** — no data is transmitted to servers
+- Uses `localStorage` for data persistence (stored locally in the browser)
+- Implements **Content Security Policy (CSP)** headers
+- Uses cryptographically secure random ID generation (`crypto.randomUUID`)
+
+See [SECURITY.md](.github/SECURITY.md) for details on reporting vulnerabilities.
+
+## Contributing
+
+Contributions are welcome! Please read our [Contributing Guidelines](.github/CONTRIBUTING.md) and [Code of Conduct](.github/CODE_OF_CONDUCT.md) before submitting issues or pull requests.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
 
 ## References
 
