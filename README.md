@@ -1,4 +1,4 @@
-# Diabetes_Calculator
+# Diabetes Calculator
 ## Diabetes Risk Calculator - Ecological Interface Design
 
 An interactive, web-based interface for communicating the logistic regression model by Schmidt et al. (2005) to medical laypersons. The interface was developed as part of a master's thesis based on the Ecological Interface Design (EID) methodology (Vicente & Rasmussen, 1992).
