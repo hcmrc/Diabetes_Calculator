@@ -1,6 +1,6 @@
 # Diabetes Risk Calculator
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: BSD 3-Clause](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![Tests](https://img.shields.io/badge/tests-192%20passing-brightgreen.svg)](tests/)
 
 An interactive, web-based interface for communicating the logistic regression model by Schmidt et al. (2005) to medical laypersons. The interface was developed as part of a master's thesis based on the Ecological Interface Design (EID) methodology (Vicente & Rasmussen, 1992).
@@ -142,7 +142,7 @@ Contributions are welcome! Please read our [Contributing Guidelines](.github/CON
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [BSD 3-Clause License](LICENSE).
 
 ## References
 
