@@ -56,6 +56,7 @@ function makeMockEl(overrides) {
         textContent: '',
         className: '',
         style: {},
+        dataset: {},
         classList: {
             contains: () => false,
             add: () => {},
@@ -113,6 +114,7 @@ function loadPatientManager(localStorageInstance, domOverrides) {
     global.document = {
         getElementById:    id  => fieldMap[id] || makeMockEl(),
         createElement:     ()  => makeMockEl(),
+        createElementNS:   (ns, tag)  => makeMockEl({ tagName: tag }),
         querySelectorAll:  ()  => []
     };
 
@@ -120,10 +122,21 @@ function loadPatientManager(localStorageInstance, domOverrides) {
     global.DRC = {
         CONFIG: {
             ALL_FIELDS: ['age', 'race', 'parentHist', 'sbp', 'height', 'waist',
-                         'fastGlu', 'cholHDL', 'cholTri']
+                         'fastGlu', 'cholHDL', 'cholTri'],
+            CONVERTIBLE_FIELDS: ['height', 'waist', 'fastGlu', 'cholHDL', 'cholTri'],
+            RANGES: {
+                age:     { us: [20, 80, 1],      si: [20, 80, 1] },
+                sbp:     { us: [80, 220, 1],     si: [80, 220, 1] },
+                height:  { us: [48, 84, 1],      si: [122, 213, 1] },
+                waist:   { us: [25, 60, 1],      si: [64, 152, 1] },
+                fastGlu: { us: [50, 300, 1],     si: [2.8, 16.7, 0.1] },
+                cholHDL: { us: [20, 100, 1],     si: [0.5, 2.6, 0.1] },
+                cholTri: { us: [50, 500, 1],     si: [0.6, 5.6, 0.1] }
+            }
         },
-        UIController: { updateSliderFill: () => {} },
-        App:           { _calculate: () => {} }
+        ConversionService: { convertField: (field, val) => val },
+        UIController:      { updateSliderFill: () => {} },
+        App:               { _calculate: () => {}, _getState: () => ({ isMetric: false }) }
     };
 
     require('../js/patient-manager.js');
@@ -304,6 +317,9 @@ console.log('\n═══ TEST SUITE 6: captureCurrentValues() returns correct st
     assert('cholHDL'    in vals, 'captureCurrentValues() includes cholHDL');
     assert('cholTri'    in vals, 'captureCurrentValues() includes cholTri');
     assert('_riskPct'   in vals, 'captureCurrentValues() includes _riskPct');
+    assert('_isMetric'  in vals, 'captureCurrentValues() includes _isMetric');
+    assert(typeof vals._isMetric === 'boolean', '_isMetric is a boolean');
+    assertDeepField(vals, '_isMetric', false, '_isMetric defaults to false when App._getState unavailable');
 
     assertDeepField(vals, 'race',       1,    'race-toggle checked → race = 1');
     assertDeepField(vals, 'parentHist', 0,    'parentHist-toggle unchecked → parentHist = 0');
@@ -359,6 +375,118 @@ console.log('\n═══ TEST SUITE 7: captureCurrentValues() tolerates missing 
     assertDeepField(vals, 'age',      0, 'Missing age DOM element → falls back to 0');
     assertDeepField(vals, 'fastGlu',  0, 'Missing fastGlu DOM element → falls back to 0');
     assertDeepField(vals, '_riskPct', 0, 'Missing risk-percentage element → _riskPct falls back to 0');
+}
+
+// ─── TEST SUITE 8: applyValues() unit conversion (SI → US and US → SI) ───────
+
+console.log('\n═══ TEST SUITE 8: applyValues() unit conversion ═══');
+{
+    unloadModules();
+    const ls = makeLocalStorage();
+
+    // Track which field values were applied to the DOM
+    const appliedValues = {};
+    const fieldMock = (field) => ({
+        ...makeMockEl(),
+        get value() { return String(appliedValues[field] ?? 0); },
+        set value(v) { appliedValues[field] = parseFloat(v); }
+    });
+
+    // Real conversion factors from config (inline to avoid circular dep)
+    const heightToCm = 2.54;  // 1 in = 2.54 cm
+    const gluToMmol  = 1 / 18; // mg/dL → mmol/L
+    const hdlToMmol  = 1 / 38.67;
+    const triToMmol  = 1 / 88.57;
+
+    global.window   = global;
+    global.confirm  = () => true;
+    global.alert    = () => {};
+    global.localStorage = ls;
+    global.document = {
+        getElementById:    id => fieldMock(id.replace(/-value$/, '').replace(/-slider$/, '')),
+        createElement:     () => makeMockEl(),
+        createElementNS:   (ns, tag) => makeMockEl({ tagName: tag }),
+        querySelectorAll:  () => []
+    };
+
+    // ConversionService mock that performs real SI↔US math
+    global.DRC = {
+        CONFIG: {
+            ALL_FIELDS: ['age', 'race', 'parentHist', 'sbp', 'height', 'waist', 'fastGlu', 'cholHDL', 'cholTri'],
+            CONVERTIBLE_FIELDS: ['height', 'waist', 'fastGlu', 'cholHDL', 'cholTri'],
+            RANGES: {
+                age:     { us: [20, 80, 1],       si: [20, 80, 1] },
+                sbp:     { us: [80, 220, 1],       si: [80, 220, 1] },
+                height:  { us: [48, 84, 1],        si: [122, 213, 1] },
+                waist:   { us: [25, 60, 1],        si: [64, 152, 1] },
+                fastGlu: { us: [50, 300, 1],       si: [2.8, 16.7, 0.1] },
+                cholHDL: { us: [20, 100, 1],       si: [0.5, 2.6, 0.1] },
+                cholTri: { us: [50, 500, 1],       si: [0.6, 5.6, 0.1] }
+            }
+        },
+        // Real bidirectional conversion: toMetric=true → to SI, toMetric=false → to US
+        ConversionService: {
+            convertField: (field, val, toMetric) => {
+                if (field === 'height' || field === 'waist') {
+                    return toMetric ? val * heightToCm : val / heightToCm;
+                }
+                if (field === 'fastGlu') return toMetric ? val * gluToMmol  : val / gluToMmol;
+                if (field === 'cholHDL') return toMetric ? val * hdlToMmol  : val / hdlToMmol;
+                if (field === 'cholTri') return toMetric ? val * triToMmol  : val / triToMmol;
+                return val;
+            }
+        },
+        UIHelpers:    { clampAndRound: (v, min, max, step) => {
+            const clamped = Math.min(Math.max(v, min), max);
+            return step < 1 ? parseFloat(clamped.toFixed(1)) : Math.round(clamped);
+        }},
+        UIController: { updateSliderFill: () => {} },
+        App:          { _calculate: () => {}, _getState: () => ({ isMetric: true }) }
+    };
+
+    require('../js/patient-manager.js');
+    const pm = DRC.PatientManager;
+    pm.init();
+
+    // Patient was saved in US mode: height=66in, fastGlu=100mg/dL, cholHDL=50mg/dL, cholTri=150mg/dL
+    // Current mode is SI (isMetric=true) → applyValues() must convert US→SI
+    const usSavedData = {
+        age: 54, race: 0, parentHist: 0, sbp: 120,
+        height: 66, waist: 36, fastGlu: 100, cholHDL: 50, cholTri: 150,
+        _isMetric: false,   // saved in US mode
+        _riskPct: 14.6
+    };
+
+    pm.applyValues = DRC.PatientManager.applyValues ||
+        (() => { /* applyValues is not directly exported; tested via loadPatient */ });
+
+    // Inject the patient directly and call loadPatient
+    ls.setItem('diabetes_risk_patients', JSON.stringify({
+        patients: [{ id: 'conv001', name: 'ConvTest', data: usSavedData, riskPct: 14.6, savedAt: new Date().toISOString() }],
+        activePatientId: null
+    }));
+
+    unloadModules();
+    global.DRC.App._getState = () => ({ isMetric: true }); // current mode: SI
+    require('../js/patient-manager.js');
+    const pm2 = DRC.PatientManager;
+    pm2.init();
+    pm2.loadPatient('conv001');
+
+    // height: 66 in → 66 * 2.54 = 167.64 cm, clamped to [122,213] → 168 (rounded)
+    const expectedHeight = Math.round(Math.min(Math.max(66 * heightToCm, 122), 213));
+    assert(Math.abs((appliedValues['height'] ?? 0) - expectedHeight) < 0.5,
+        `applyValues US→SI: height 66in → ${expectedHeight}cm (got ${appliedValues['height']})`);
+
+    // fastGlu: 100 mg/dL → 100/18 ≈ 5.556 mmol/L, step=0.1 → 5.6
+    const expectedGlu = parseFloat((Math.min(Math.max(100 * gluToMmol, 2.8), 16.7)).toFixed(1));
+    assert(Math.abs((appliedValues['fastGlu'] ?? 0) - expectedGlu) < 0.05,
+        `applyValues US→SI: fastGlu 100mg/dL → ${expectedGlu}mmol/L (got ${appliedValues['fastGlu']})`);
+
+    // cholHDL: 50 mg/dL → 50/38.67 ≈ 1.293 mmol/L, step=0.1 → 1.3
+    const expectedHDL = parseFloat((Math.min(Math.max(50 * hdlToMmol, 0.5), 2.6)).toFixed(1));
+    assert(Math.abs((appliedValues['cholHDL'] ?? 0) - expectedHDL) < 0.05,
+        `applyValues US→SI: cholHDL 50mg/dL → ${expectedHDL}mmol/L (got ${appliedValues['cholHDL']})`);
 }
 
 // ─── Summary ─────────────────────────────────────────────────────────────────

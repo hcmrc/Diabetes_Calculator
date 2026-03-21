@@ -28,17 +28,36 @@ DRC.PatientManager = (() => {
 
     const loadFromStorage = () => {
         try {
-            const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
-            if (parsed) {
-                patients = parsed.patients || [];
-                activePatientId = parsed.activePatientId || null;
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (!stored) return;
+
+            // Use reviver to prevent prototype pollution
+            const parsed = JSON.parse(stored, (key, value) => {
+                // Reject __proto__, constructor, prototype keys
+                if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+                    return undefined;
+                }
+                return value;
+            });
+
+            if (parsed && typeof parsed === 'object') {
+                // Validate data structure
+                if (Array.isArray(parsed.patients)) {
+                    patients = parsed.patients.filter(p => p && typeof p === 'object' && p.id);
+                }
+                if (typeof parsed.activePatientId === 'string' || parsed.activePatientId === null) {
+                    activePatientId = parsed.activePatientId;
+                }
             }
-        } catch (_) { patients = []; activePatientId = null; }
+        } catch (e) {
+            patients = [];
+            activePatientId = null;
+        }
     };
 
     // ─── Value capture/apply ────────────────────────────────────────────
 
-    /** Capture current slider/toggle values + displayed risk. */
+    /** Capture current slider/toggle values + displayed risk + active unit system. */
     const captureCurrentValues = () => {
         const vals = {};
         FIELDS.forEach(f => {
@@ -46,23 +65,44 @@ DRC.PatientManager = (() => {
             else if (f === 'parentHist') vals[f] = document.getElementById('parentHist-toggle')?.checked ? 1 : 0;
             else                    vals[f] = parseFloat(document.getElementById(`${f}-value`)?.value) || 0;
         });
-        vals._riskPct = parseFloat(document.getElementById('risk-percentage')?.textContent) || 0;
+        vals._riskPct  = parseFloat(document.getElementById('risk-percentage')?.textContent) || 0;
+        // Store active unit system so values can be correctly interpreted on load
+        vals._isMetric = DRC.App?._getState?.()?.isMetric ?? false;
         return vals;
     };
 
-    /** Apply stored patient data to sliders/toggles. */
+    /** Apply stored patient data to sliders/toggles.
+     *  Converts values if the saved unit system differs from the current one.
+     */
     const applyValues = (data) => {
         if (!data) return;
+        const currentIsMetric = DRC.App?._getState?.()?.isMetric ?? false;
+        // Legacy profiles without _isMetric: assume US units (false) as conservative default
+        // This prevents incorrect conversion when loading old profiles in SI mode
+        const savedIsMetric = data._isMetric ?? false;
+
         FIELDS.forEach(f => {
             if (f === 'race' || f === 'parentHist') {
                 const toggle = document.getElementById(f === 'race' ? 'race-toggle' : 'parentHist-toggle');
                 if (toggle) toggle.checked = !!data[f];
             } else {
+                // Convert value if the saved unit system differs from the current display unit
+                let val = data[f] ?? 0;
+                if (savedIsMetric !== currentIsMetric && DRC.CONFIG.CONVERTIBLE_FIELDS.includes(f)) {
+                    const siVal = savedIsMetric ? val : DRC.ConversionService.convertField(f, val, true);
+                    val = currentIsMetric ? siVal : DRC.ConversionService.convertField(f, siVal, false);
+                }
+                // Clamp to valid slider range to prevent out-of-range display values
+                const mode = currentIsMetric ? 'si' : 'us';
+                if (DRC.CONFIG.RANGES[f]) {
+                    const [min, max, step] = DRC.CONFIG.RANGES[f][mode];
+                    val = DRC.UIHelpers?.clampAndRound?.(val, min, max, step) ?? Math.min(Math.max(val, min), max);
+                }
                 const input  = document.getElementById(`${f}-value`);
                 const slider = document.getElementById(`${f}-slider`);
-                if (input)  input.value  = data[f] ?? 0;
-                if (slider) slider.value = data[f] ?? 0;
-                DRC.UIController.updateSliderFill(f);
+                if (input)  input.value  = val;
+                if (slider) slider.value = val;
+                DRC.UIController?.updateSliderFill?.(f);
             }
         });
     };
@@ -107,8 +147,11 @@ DRC.PatientManager = (() => {
         activePatientId = id;
         applyValues(patient.data);
         saveToStorage(); renderList(); updateNavLabel();
-        DRC.App?._calculate?.() ||
+        if (DRC.App?._calculate) {
+            DRC.App._calculate();
+        } else {
             document.getElementById('age-slider')?.dispatchEvent(new Event('input'));
+        }
     };
 
     // ─── Excel Import/Export ────────────────────────────────────────────
@@ -182,7 +225,12 @@ DRC.PatientManager = (() => {
                         fastGlu:    clamp(parseFloat(row.Fasting_Glucose || row.fastGlu) || 95, 2.8, 300),
                         cholHDL:    clamp(parseFloat(row.HDL_Cholesterol || row.cholHDL) || 50, 0.5, 100),
                         cholTri:    clamp(parseFloat(row.Blood_Fats_Triglycerides || row.Triglycerides || row.cholTri) || 150, 0.6, 500),
-                        _riskPct:   clamp(parseFloat(row.Risk_Pct || 0) || 0, 0, 100)
+                        _riskPct:   clamp(parseFloat(row.Risk_Pct || 0) || 0, 0, 100),
+                        // Excel format stores raw values without explicit unit system metadata.
+                        // Default to US units (false) as conservative assumption.
+                        // Known limitation: SI-valued Excel exports will be misinterpreted.
+                        // TODO: Add Unit_System column to Excel format for proper round-trip support.
+                        _isMetric: false
                     };
                     patients.push({
                         id: generateId(), name: rawName, data,
@@ -294,6 +342,9 @@ DRC.PatientManager = (() => {
     const init = () => {
         loadFromStorage(); renderList(); updateNavLabel();
 
+        // Initialize Lucide icons for patient drawer elements
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+
         document.getElementById('patientMenuBtn')?.addEventListener('click', () => {
             const isOpen = document.getElementById('patientDrawer')?.classList.contains('open');
             toggleDrawer(!isOpen);
@@ -330,5 +381,5 @@ DRC.PatientManager = (() => {
         return patient ? patient.data : null;
     };
 
-    return { init, loadPatient, captureCurrentValues, updateNavLabel, getActivePatientData };
+    return { init, loadPatient, applyValues, captureCurrentValues, updateNavLabel, getActivePatientData };
 })();

@@ -35,11 +35,28 @@ DRC.App = (() => {
 
     let _highlightedField = null;
 
+    // Cache for field elements (performance optimization)
+    const fieldElementCache = new Map();
+
+    /** Populate cache with all field elements. */
+    const populateFieldCache = () => {
+        fieldElementCache.clear();
+        document.querySelectorAll('[data-field]').forEach(el => {
+            const field = el.getAttribute('data-field');
+            if (!fieldElementCache.has(field)) {
+                fieldElementCache.set(field, []);
+            }
+            fieldElementCache.get(field).push(el);
+        });
+    };
+
     /** Re-apply cross-panel highlight after DOM re-renders. */
     const reapplyHighlight = () => {
         if (!_highlightedField) return;
-        document.querySelectorAll(`[data-field="${_highlightedField}"]`)
-            .forEach(n => n.classList.add('factor-highlight'));
+        const elements = fieldElementCache.get(_highlightedField);
+        if (elements) {
+            elements.forEach(n => n.classList.add('factor-highlight'));
+        }
     };
 
     // ─── Core calculation pipeline ──────────────────────────────────────
@@ -54,7 +71,7 @@ DRC.App = (() => {
         state.preciseSI     = { ...siVals };   // Preserve full-precision SI values
         const riskPct       = Model().computeProbability(siVals) * 100;
         const contributions = Model().computeContributions(siVals);
-        const treatStatus   = Model().getElevatedFactors(siVals, rawInputs, state.isMetric);
+        const treatStatus   = Model().getElevatedFactors(siVals);
 
         UI().renderRisk(riskPct);
         UI().updateNonModSummary();
@@ -75,6 +92,8 @@ DRC.App = (() => {
             UI().renderWhatIfBadge(state.activeField, riskPct - state.prevRiskPct);
         }
 
+        // Refresh cache after DOM updates (for performance optimization)
+        populateFieldCache();
         reapplyHighlight();
         return riskPct;
     };
@@ -135,15 +154,6 @@ DRC.App = (() => {
         //   preciseSI 5.5556 → US: 5.5556 / (1/18) = 100.0 (exact)
         //   preciseSI 5.5556 → SI: 5.5556 → display 5.6 (only display rounds)
 
-        const c = CFG.CONVERSIONS;
-        const convMap = {
-            height:  c.heightToCm,
-            waist:   c.waistToCm,
-            fastGlu: c.gluToMmol,
-            cholHDL: c.hdlToMmol,
-            cholTri: c.triToMmol
-        };
-
         UI().updateUnitLabels(state.isMetric);
         UI().updateSliderRanges(state.isMetric ? 'si' : 'us');
 
@@ -153,9 +163,12 @@ DRC.App = (() => {
             CFG.CONVERTIBLE_FIELDS.forEach(f => {
                 const siVal = state.preciseSI[f];
                 if (siVal == null) return;
-                const multiplier = convMap[f];
-                // SI values are the base; to get US, divide by multiplier
-                const converted = state.isMetric ? siVal : siVal / multiplier;
+                // Convert from SI to target display unit
+                // When in SI mode: use siVal directly (just clamp/round)
+                // When in US mode: convert from SI to US
+                const converted = state.isMetric
+                    ? siVal  // Already in SI, just need rounding
+                    : DRC.ConversionService.convertField(f, siVal, false); // SI to US
                 const [min, max, step] = CFG.RANGES[f][mode];
                 const display = DRC.UIHelpers.clampAndRound(converted, min, max, step);
                 const input  = document.getElementById(`${f}-value`);
@@ -171,8 +184,7 @@ DRC.App = (() => {
         const preciseSI     = state.preciseSI || Model().toSI(UI().readInputs(), state.isMetric);
         const riskPct       = Model().computeProbability(preciseSI) * 100;
         const contributions = Model().computeContributions(preciseSI);
-        const rawInputs     = UI().readInputs();
-        const treatStatus   = Model().getElevatedFactors(preciseSI, rawInputs, state.isMetric);
+        const treatStatus   = Model().getElevatedFactors(preciseSI);
 
         UI().renderRisk(riskPct);
         UI().updateNonModSummary();
@@ -214,16 +226,8 @@ DRC.App = (() => {
         };
 
         if (patientData) {
-            // Reset to active patient's saved values
-            CFG.ALL_FIELDS.forEach(f => {
-                if (f === 'race') {
-                    document.getElementById('race-toggle').checked = !!patientData[f];
-                } else if (f === 'parentHist') {
-                    document.getElementById('parentHist-toggle').checked = !!patientData[f];
-                } else {
-                    setField(f, patientData[f] ?? 0);
-                }
-            });
+            // Reset to active patient's saved values — applyValues handles unit conversion
+            DRC.PatientManager.applyValues(patientData);
         } else {
             // No active patient: fall back to CONFIG defaults (US units)
             document.getElementById('unit-toggle').checked = false;
@@ -280,8 +284,7 @@ DRC.App = (() => {
             }
             if (panel) panel.style.display = 'flex';
             UI().renderScenarioComparison(state.baselineRisk, risk);
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-            Timeline().setBaseline(risk);
+            Timeline().setBaseline(risk); // render() handles lucide.createIcons() internally
         } else {
             state.baselineRisk = null;
             Timeline().clearBaseline();
@@ -346,19 +349,34 @@ DRC.App = (() => {
             });
         }
 
-        // Cross-panel factor highlight on hover
+        // Cross-panel factor highlight on hover (with caching for performance)
+        // Initial population
+        populateFieldCache();
+
         document.addEventListener('mouseover', (e) => {
             const fieldEl = e.target.closest('[data-field]');
             const field = fieldEl?.getAttribute('data-field') || null;
             if (field === _highlightedField) return;
+
+            // Remove highlight from previously highlighted elements using cache
             if (_highlightedField) {
-                document.querySelectorAll(`[data-field="${_highlightedField}"]`)
-                    .forEach(n => n.classList.remove('factor-highlight'));
+                const prevElements = fieldElementCache.get(_highlightedField);
+                if (prevElements) {
+                    prevElements.forEach(n => n.classList.remove('factor-highlight'));
+                }
             }
+
             _highlightedField = field;
+
+            // Add highlight to new field using cache
             if (field) {
-                document.querySelectorAll(`[data-field="${field}"]`)
-                    .forEach(n => n.classList.add('factor-highlight'));
+                let elements = fieldElementCache.get(field);
+                // If not in cache, query and cache (for dynamically added elements)
+                if (!elements) {
+                    elements = Array.from(document.querySelectorAll(`[data-field="${field}"]`));
+                    fieldElementCache.set(field, elements);
+                }
+                elements.forEach(n => n.classList.add('factor-highlight'));
             }
         });
 
@@ -415,5 +433,11 @@ DRC.App = (() => {
         calculate();
     };
 
-    return { init, _calculate: calculate, _getState: () => state };
+    /** Activate scenario-comparison mode (called by TreatmentSimulator). */
+    const setCompareScenario = (baselineRisk) => {
+        state.isComparingScenario = true;
+        state.baselineRisk = baselineRisk;
+    };
+
+    return { init, _calculate: calculate, _getState: () => ({ ...state }), _setCompareScenario: setCompareScenario };
 })();

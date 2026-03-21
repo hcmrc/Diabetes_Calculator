@@ -23,6 +23,7 @@ global.window   = global;
 global.document = { getElementById: () => null };
 
 require('../js/config.js');
+require('../js/conversion-service.js');
 require('../js/risk-model.js');
 
 const { CONFIG } = DRC;
@@ -99,60 +100,51 @@ console.log('\n═══ TEST SUITE 2: getElevatedFactors() exact clinical thres
     // Exactly at threshold → elevated (>= 5.6)
     const atGluThreshold = { ...base, fastGlu: 5.6 };
     assert(
-        getElevatedFactors(atGluThreshold, {}, true).elevatedFactors.includes('fastGlu'),
+        getElevatedFactors(atGluThreshold).elevatedFactors.includes('fastGlu'),
         'Glucose exactly 5.6 mmol/L → elevated (>= threshold)'
     );
     // Just below → NOT elevated
     const belowGluThreshold = { ...base, fastGlu: 5.59 };
     assert(
-        !getElevatedFactors(belowGluThreshold, {}, true).elevatedFactors.includes('fastGlu'),
+        !getElevatedFactors(belowGluThreshold).elevatedFactors.includes('fastGlu'),
         'Glucose 5.59 mmol/L → NOT elevated (< threshold)'
     );
 
     // ── Systolic BP: threshold = 130 mmHg ────────────────────────────────────
     const atSBPThreshold = { ...base, sbp: 130 };
     assert(
-        getElevatedFactors(atSBPThreshold, {}, true).elevatedFactors.includes('sbp'),
+        getElevatedFactors(atSBPThreshold).elevatedFactors.includes('sbp'),
         'SBP exactly 130 mmHg → elevated (>= threshold)'
     );
     const belowSBPThreshold = { ...base, sbp: 129 };
     assert(
-        !getElevatedFactors(belowSBPThreshold, {}, true).elevatedFactors.includes('sbp'),
+        !getElevatedFactors(belowSBPThreshold).elevatedFactors.includes('sbp'),
         'SBP 129 mmHg → NOT elevated (< threshold)'
     );
 
-    // ── HDL Cholesterol: threshold = 1.0 mmol/L (low when ≤ 1.0) ─────────────
-    const atHDLThreshold = { ...base, cholHDL: 1.0 };
+    // ── HDL Cholesterol: threshold = 1.03 mmol/L (NCEP male, low when <= 1.03)
+    // Note: female NCEP threshold (1.29) not used — sex is not in the Schmidt model
+    const atHDLThreshold = { ...base, cholHDL: 1.03 };
     assert(
-        getElevatedFactors(atHDLThreshold, {}, true).elevatedFactors.includes('cholHDL'),
-        'HDL exactly 1.0 mmol/L → low/elevated (<= threshold)'
+        getElevatedFactors(atHDLThreshold).elevatedFactors.includes('cholHDL'),
+        'HDL exactly 1.03 mmol/L → low/elevated (<= NCEP male threshold)'
     );
-    const aboveHDLThreshold = { ...base, cholHDL: 1.01 };
+    const aboveHDLThreshold = { ...base, cholHDL: 1.04 };
     assert(
-        !getElevatedFactors(aboveHDLThreshold, {}, true).elevatedFactors.includes('cholHDL'),
-        'HDL 1.01 mmol/L → NOT low (> threshold)'
+        !getElevatedFactors(aboveHDLThreshold).elevatedFactors.includes('cholHDL'),
+        'HDL 1.04 mmol/L → NOT low (> threshold)'
     );
 
-    // ── Triglycerides (SI): threshold = 1.7 mmol/L ───────────────────────────
+    // ── Triglycerides: threshold = 1.7 mmol/L (SI only — consistent across unit modes)
     const atTriSI = { ...base, cholTri: 1.7 };
     assert(
-        getElevatedFactors(atTriSI, { cholTri: 1.7 }, true).elevatedFactors.includes('cholTri'),
-        'TG exactly 1.7 mmol/L (SI) → elevated (>= threshold)'
+        getElevatedFactors(atTriSI).elevatedFactors.includes('cholTri'),
+        'TG exactly 1.7 mmol/L → elevated (>= threshold)'
     );
     const belowTriSI = { ...base, cholTri: 1.69 };
     assert(
-        !getElevatedFactors(belowTriSI, { cholTri: 1.69 }, true).elevatedFactors.includes('cholTri'),
-        'TG 1.69 mmol/L (SI) → NOT elevated (< threshold)'
-    );
-
-    // ── Triglycerides (US): threshold = 150 mg/dL ────────────────────────────
-    assert(
-        getElevatedFactors(base, { cholTri: 150 }, false).elevatedFactors.includes('cholTri'),
-        'TG exactly 150 mg/dL (US) → elevated (>= 150)'
-    );
-    assert(
-        !getElevatedFactors(base, { cholTri: 149 }, false).elevatedFactors.includes('cholTri'),
-        'TG 149 mg/dL (US) → NOT elevated (< 150)'
+        !getElevatedFactors(belowTriSI).elevatedFactors.includes('cholTri'),
+        'TG 1.69 mmol/L → NOT elevated (< threshold)'
     );
 }
 
@@ -164,25 +156,25 @@ console.log('\n═══ TEST SUITE 3: Waist elevated (≥94 cm) vs high (≥102
 
     // Exactly at elevated threshold (94 cm) — elevated, but NOT high
     const atElevatedWaist = { ...base, waist: 94 };
-    const result94 = getElevatedFactors(atElevatedWaist, {}, true);
+    const result94 = getElevatedFactors(atElevatedWaist);
     assert(result94.elevatedFactors.includes('waist'), 'Waist 94 cm → in elevatedFactors');
     assert(result94.waistIsHigh === false,             'Waist 94 cm → waistIsHigh: false (below 102)');
 
     // Just below elevated threshold (93 cm) — NOT elevated, NOT high
     const belowElevated = { ...base, waist: 93 };
-    const result93 = getElevatedFactors(belowElevated, {}, true);
+    const result93 = getElevatedFactors(belowElevated);
     assert(!result93.elevatedFactors.includes('waist'), 'Waist 93 cm → NOT in elevatedFactors');
     assert(result93.waistIsHigh === false,              'Waist 93 cm → waistIsHigh: false');
 
     // Between thresholds: 96 cm — elevated, NOT high
     const between = { ...base, waist: 96 };
-    const result96 = getElevatedFactors(between, {}, true);
+    const result96 = getElevatedFactors(between);
     assert(result96.elevatedFactors.includes('waist'), 'Waist 96 cm → in elevatedFactors');
     assert(result96.waistIsHigh === false,             'Waist 96 cm → waistIsHigh: false (< 102)');
 
     // Exactly at high threshold (102 cm) — elevated AND high
     const atHigh = { ...base, waist: 102 };
-    const result102 = getElevatedFactors(atHigh, {}, true);
+    const result102 = getElevatedFactors(atHigh);
     assert(result102.elevatedFactors.includes('waist'), 'Waist 102 cm → in elevatedFactors');
     assert(result102.waistIsHigh === true,              'Waist 102 cm → waistIsHigh: true (>= 102)');
 }

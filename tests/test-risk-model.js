@@ -22,6 +22,7 @@ global.document = { getElementById: () => null };
 
 // Load modules in dependency order
 require('../js/config.js');
+require('../js/conversion-service.js');
 require('../js/risk-model.js');
 
 const { CONFIG } = DRC;
@@ -84,15 +85,45 @@ const siPassthrough = toSI(usInputs, true);
 assert(siPassthrough.fastGlu === 100, 'SI passthrough: fastGlu unchanged');
 assert(siPassthrough.height === 66, 'SI passthrough: height unchanged');
 
-// US → SI conversion
+// US → SI conversion (deterministic multiplication — tight tolerance 1e-9)
 const siConverted = toSI(usInputs, false);
-assertApprox(siConverted.height, 66 * 2.54, 0.01, 'Height: 66 in → 167.64 cm');
-assertApprox(siConverted.waist, 38 * 2.54, 0.01, 'Waist: 38 in → 96.52 cm');
-assertApprox(siConverted.fastGlu, 100 / 18, 0.01, 'Glucose: 100 mg/dL → 5.56 mmol/L');
-assertApprox(siConverted.cholHDL, 50 / 38.67, 0.01, 'HDL: 50 mg/dL → 1.29 mmol/L');
-assertApprox(siConverted.cholTri, 150 / 88.57, 0.01, 'Triglycerides: 150 mg/dL → 1.69 mmol/L');
+assertApprox(siConverted.height, 66 * 2.54, 1e-9, 'Height: 66 in → 167.64 cm');
+assertApprox(siConverted.waist, 38 * 2.54, 1e-9, 'Waist: 38 in → 96.52 cm');
+assertApprox(siConverted.fastGlu, 100 / 18, 1e-9, 'Glucose: 100 mg/dL → 5.556 mmol/L');
+assertApprox(siConverted.cholHDL, 50 / 38.67, 1e-9, 'HDL: 50 mg/dL → 1.293 mmol/L');
+assertApprox(siConverted.cholTri, 150 / 88.57, 1e-9, 'Triglycerides: 150 mg/dL → 1.694 mmol/L');
 assert(siConverted.age === 54, 'Age unchanged in conversion');
 assert(siConverted.sbp === 120, 'SBP unchanged in conversion');
+
+// fromSI — inverse of toSI (round-trip test)
+const { fromSI } = DRC.ConversionService;
+const siVals = { age: 54, race: 0, parentHist: 0, sbp: 120,
+                 height: 167.64, waist: 96.52, fastGlu: 5.5556, cholHDL: 1.293, cholTri: 1.6937 };
+const usFromSI = fromSI(siVals, false);
+assertApprox(usFromSI.height,  siVals.height  / 2.54,   1e-9, 'fromSI: height → inches');
+assertApprox(usFromSI.fastGlu, siVals.fastGlu / (1/18), 1e-9, 'fromSI: fastGlu → mg/dL');
+assertApprox(usFromSI.cholHDL, siVals.cholHDL / (1/38.67), 1e-9, 'fromSI: cholHDL → mg/dL');
+assert(usFromSI.age === siVals.age,   'fromSI: age unchanged');
+assert(usFromSI.sbp === siVals.sbp,   'fromSI: sbp unchanged');
+
+// fromSI passthrough in SI mode
+const siPassthrough2 = fromSI(siVals, true);
+assert(siPassthrough2.height === siVals.height, 'fromSI(isMetric=true): height unchanged');
+
+// Round-trip: toSI → fromSI === original
+const rtResult = fromSI(toSI(usInputs, false), false);
+assertApprox(rtResult.height,  usInputs.height,  1e-9, 'Round-trip height');
+assertApprox(rtResult.fastGlu, usInputs.fastGlu, 1e-9, 'Round-trip fastGlu');
+assertApprox(rtResult.cholHDL, usInputs.cholHDL, 1e-9, 'Round-trip cholHDL');
+
+// getConversionFactor
+const { getConversionFactor } = DRC.ConversionService;
+assert(getConversionFactor('height')  === 2.54,    'getConversionFactor height = 2.54');
+assert(getConversionFactor('fastGlu') === 1/18,    'getConversionFactor fastGlu = 1/18');
+assert(getConversionFactor('cholHDL') === 1/38.67, 'getConversionFactor cholHDL = 1/38.67');
+assert(getConversionFactor('cholTri') === 1/88.57, 'getConversionFactor cholTri = 1/88.57');
+assert(getConversionFactor('age')     === null,    'getConversionFactor age = null (non-convertible)');
+assert(getConversionFactor('unknownField') === null, 'getConversionFactor unknown = null');
 results.forEach(r => console.log(r));
 results.length = 0;
 
@@ -104,7 +135,9 @@ console.log('\n═══ TEST SUITE 3: Model Probability (Schmidt et al. 2005) �
 // Population means → known reference risk
 const popMeans = { ...CONFIG.MEANS };
 const popRisk = computeProbability(popMeans) * 100;
-assertApprox(popRisk, 14.58, 0.1, 'Population means → ~14.58% risk');
+// Expected: 12.93% — recalculated after correcting MEANS.race (0.15) and MEANS.fastGlu (5.44)
+// from Schmidt et al. (2005): 15% African-American, median glucose 5.44 mmol/L
+assertApprox(popRisk, 12.93, 0.1, 'Population means → ~12.93% risk (corrected from publication)');
 
 // Lowest possible risk (young, tall, low glucose, high HDL)
 const lowRiskInputs = {
@@ -128,7 +161,8 @@ const schmidtRef = {
     height: 168, waist: 102, fastGlu: 7.0, cholHDL: 1.0, cholTri: 2.3
 };
 const schmidtRisk = computeProbability(schmidtRef) * 100;
-assert(schmidtRisk > 50 && schmidtRisk < 90, `High-risk Schmidt reference: ${schmidtRisk.toFixed(2)}% (expected 50-90%)`);
+// Computed value: 86.11% — tight window of ±0.1% (model is deterministic)
+assertApprox(schmidtRisk, 86.11, 0.1, `High-risk Schmidt reference: ${schmidtRisk.toFixed(2)}% (expected 86.11%)`);
 
 // Probability must be in [0, 1]
 assert(computeProbability(popMeans) >= 0, 'Probability >= 0');
@@ -190,36 +224,36 @@ console.log('\n═══ TEST SUITE 5: Elevated Factor Detection ═══');
 
 // Normal values → no elevated factors
 const normalSI = { ...popMeans, fastGlu: 5.0, sbp: 120, cholHDL: 1.5, cholTri: 1.5, waist: 85 };
-const normalResult = getElevatedFactors(normalSI, { cholTri: 130 }, false);
+const normalResult = getElevatedFactors(normalSI);
 assert(normalResult.elevatedFactors.length === 0, 'Normal values → 0 elevated factors');
 assert(normalResult.waistIsHigh === false, 'Normal waist → not high');
 
 // Elevated glucose
 const highGluSI = { ...normalSI, fastGlu: 6.0 };
-const highGluResult = getElevatedFactors(highGluSI, { cholTri: 130 }, false);
+const highGluResult = getElevatedFactors(highGluSI);
 assert(highGluResult.elevatedFactors.includes('fastGlu'), 'Glucose 6.0 mmol/L → elevated');
 
 // Elevated BP
 const highBPSI = { ...normalSI, sbp: 135 };
-assert(getElevatedFactors(highBPSI, { cholTri: 130 }, false).elevatedFactors.includes('sbp'), 'SBP 135 → elevated');
+assert(getElevatedFactors(highBPSI).elevatedFactors.includes('sbp'), 'SBP 135 → elevated');
 
 // Low HDL
 const lowHDLSI = { ...normalSI, cholHDL: 0.9 };
-assert(getElevatedFactors(lowHDLSI, { cholTri: 130 }, false).elevatedFactors.includes('cholHDL'), 'HDL 0.9 → low/elevated');
+assert(getElevatedFactors(lowHDLSI).elevatedFactors.includes('cholHDL'), 'HDL 0.9 → low/elevated');
 
 // High waist with "high" threshold
 const highWaistSI = { ...normalSI, waist: 105 };
-const waistResult = getElevatedFactors(highWaistSI, { cholTri: 130 }, false);
+const waistResult = getElevatedFactors(highWaistSI);
 assert(waistResult.elevatedFactors.includes('waist'), 'Waist 105 cm → elevated');
 assert(waistResult.waistIsHigh === true, 'Waist 105 cm > 102 → high');
 
-// Triglycerides US check (non-metric: uses rawInputs.cholTri >= 150)
-const triResult = getElevatedFactors(normalSI, { cholTri: 160 }, false);
-assert(triResult.elevatedFactors.includes('cholTri'), 'TG 160 mg/dL (US) → elevated');
+// Triglycerides SI check — all comparisons now use SI values only
+const triResult = getElevatedFactors({ ...normalSI, cholTri: 1.8 });
+assert(triResult.elevatedFactors.includes('cholTri'), 'TG 1.8 mmol/L → elevated');
 
-// Triglycerides SI check
-const triSIResult = getElevatedFactors({ ...normalSI, cholTri: 1.8 }, { cholTri: 1.8 }, true);
-assert(triSIResult.elevatedFactors.includes('cholTri'), 'TG 1.8 mmol/L (SI) → elevated');
+// Triglycerides just above threshold
+const triSIResult = getElevatedFactors({ ...normalSI, cholTri: 1.75 });
+assert(triSIResult.elevatedFactors.includes('cholTri'), 'TG 1.75 mmol/L (> 1.7 threshold) → elevated');
 
 results.forEach(r => console.log(r));
 results.length = 0;
@@ -305,6 +339,21 @@ assert(reduction > 10, `All treatments combined: ${reduction.toFixed(1)}pp reduc
 
 results.forEach(r => console.log(r));
 results.length = 0;
+
+// =====================================================================
+// SUITE 9: CONFIG constants — clinically significant values
+// =====================================================================
+console.log('\n─── Suite 9: CONFIG Constants ───────────────────────────────────');
+
+// HIGH_RISK_CUTOFF must match the published Schmidt et al. (2005) threshold.
+// This is the primary decision boundary — changing it silently would be a patient-safety issue.
+assert(CONFIG.HIGH_RISK_CUTOFF === 0.26,
+    'HIGH_RISK_CUTOFF = 0.26 (Schmidt et al. 2005: sensitivity 52%, specificity 86%)');
+
+// Verify that the population-mean risk sits below the high-risk cutoff.
+// popRisk ≈ 12.93% — if HIGH_RISK_CUTOFF were accidentally set to 0.10 this would fail.
+assert(computeProbability(CONFIG.MEANS) < CONFIG.HIGH_RISK_CUTOFF,
+    'Population-mean risk is below HIGH_RISK_CUTOFF (12.93% < 26%)');
 
 // =====================================================================
 // SUMMARY

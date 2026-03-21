@@ -25,6 +25,7 @@ global.window = global;
 global.DRC    = {};
 
 require('../js/config.js');
+require('../js/conversion-service.js');
 require('../js/ui-helpers.js');
 
 // Stub App before UIController loads (the filter-toggle handler calls it)
@@ -215,9 +216,11 @@ function riskLevel(pct) {
 // Exact boundaries
 assert(riskLevel(50)  === 'danger',  'pct=50 → danger (≥50)');
 assert(riskLevel(100) === 'danger',  'pct=100 → danger');
-assert(riskLevel(49)  === 'warning', 'pct=49 → warning (≥25, <50)');
-assert(riskLevel(25)  === 'warning', 'pct=25 → warning (≥25)');
-assert(riskLevel(24)  === 'alert',   'pct=24 → alert (≥10, <25)');
+// High-risk threshold aligned with Schmidt et al. (2005): Pr(DM) ≥ 26% = high risk
+assert(riskLevel(49)  === 'warning', 'pct=49 → warning (≥26, <50)');
+assert(riskLevel(26)  === 'warning', 'pct=26 → warning (≥26, Schmidt high-risk cutoff)');
+assert(riskLevel(25)  === 'alert',   'pct=25 → alert (≥10, <26)');
+assert(riskLevel(24)  === 'alert',   'pct=24 → alert (≥10, <26)');
 assert(riskLevel(10)  === 'alert',   'pct=10 → alert (≥10)');
 assert(riskLevel(9)   === 'safe',    'pct=9 → safe (<10)');
 assert(riskLevel(0)   === 'safe',    'pct=0 → safe');
@@ -309,20 +312,20 @@ assert(html1.includes('improved'),    'baseline=20, current=15 → contains "imp
 assert(html1.includes('20.0%'),       'Baseline value 20.0% in output');
 assert(html1.includes('15.0%'),       'Current value 15.0% in output');
 assert(html1.includes('-5.00%'),      'Delta -5.00% in output');
-assert(html1.includes('trending_down'), 'Improvement uses trending_down icon');
+assert(html1.includes('trending-down'), 'Improvement uses trending-down icon');
 
 // Worsening (current > baseline)
 UIC.renderScenarioComparison(20.0, 27.5);
 const html2 = ELEMS['scenario-comparison'].innerHTML;
 assert(html2.includes('worsened'),   'baseline=20, current=27.5 → contains "worsened"');
 assert(html2.includes('+7.50%'),     'Delta +7.50% in output');
-assert(html2.includes('trending_up'), 'Worsening uses trending_up icon');
+assert(html2.includes('trending-up'), 'Worsening uses trending-up icon');
 
 // No change (delta = 0)
 UIC.renderScenarioComparison(15.0, 15.0);
 const html3 = ELEMS['scenario-comparison'].innerHTML;
 assert(html3.includes('worsened'),       'delta=0 → classified as "worsened"');
-assert(html3.includes('trending_flat'),  'delta=0 → uses trending_flat icon');
+assert(html3.includes('data-lucide="minus"'), 'delta=0 → uses minus icon (trending-flat does not exist in Lucide)');
 assert(html3.includes('+0.00%'),         'delta=0 → shows "+0.00%"');
 
 // ─── TEST SUITE 5: renderHeatmapPointer() ────────────────────────────────────

@@ -39,7 +39,9 @@ DRC.UIHelpers = (() => {
      */
     const clampAndRound = (value, min, max, step) => {
         const clamped = Math.min(Math.max(value, min), max);
-        return step < 1 ? parseFloat(clamped.toFixed(1)) : Math.round(clamped);
+        if (step >= 1) return Math.round(clamped);
+        const decimals = String(step).split('.')[1]?.length ?? 1;
+        return parseFloat(clamped.toFixed(decimals));
     };
 
     /**

@@ -82,12 +82,8 @@ DRC.TreatmentSimulator = (() => {
             const si  = DRC.RiskModel.toSI(raw, isMetric);
             const risk = DRC.RiskModel.computeProbability(si) * 100;
 
-            // Activate comparison mode in app state
-            const appState = DRC.App._getState?.();
-            if (appState) {
-                appState.isComparingScenario = true;
-                appState.baselineRisk = risk;
-            }
+            // Activate comparison mode via explicit setter (avoids mutating the state copy)
+            DRC.App._setCompareScenario?.(risk);
 
             // Update Set Baseline button UI
             const baseBtn = document.getElementById('compareScenarioBtn');
@@ -181,5 +177,5 @@ DRC.TreatmentSimulator = (() => {
         }
     };
 
-    return { simulate, resetSimulated: () => _simulated.clear() };
+    return { simulate, resetSimulated: () => { _simulated.clear(); _animating = false; } };
 })();

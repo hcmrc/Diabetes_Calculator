@@ -14,7 +14,7 @@ const path = require('path');
 // ─── Load ORIGINAL monolithic module in a VM context ────────────────
 const originalCode = fs.readFileSync(
     path.join(__dirname, '..', '..', 'MA Versionen',
-        'Masterarbeit 3.7 (Pre-Refactoring)', 'calculator.js'), 'utf8');
+        '01_Code-Versionen', 'v3.7_Refactoring', 'calculator.js'), 'utf8');
 
 // Strip DOMContentLoaded bootstrap
 const cleanedCode = originalCode.replace(
@@ -63,6 +63,7 @@ const ORIG_RiskModel = sandbox._RiskModel;
 global.window = global;
 global.document = { getElementById: () => null };
 require('../js/config.js');
+require('../js/conversion-service.js');
 require('../js/risk-model.js');
 
 const NEW_CONFIG    = DRC.CONFIG;
@@ -84,8 +85,12 @@ Object.entries(ORIG_CONFIG.BETAS).forEach(([key, val]) => {
 });
 
 // ─── 2. Population means ────────────────────────────────────────────
-console.log('\n--- Population Means ---');
-Object.entries(ORIG_CONFIG.MEANS).forEach(([key, val]) => {
+// Note: race and fastGlu were intentionally corrected vs. the original:
+//   MEANS.race:    0.25 → 0.15 (Schmidt 2005: 15% African-American in ARIC cohort)
+//   MEANS.fastGlu: 5.5  → 5.44 (Schmidt 2005: median fasting glucose 5.44 mmol/L)
+console.log('\n--- Population Means (corrected values per Schmidt et al. 2005) ---');
+const CORRECT_MEANS = { ...ORIG_CONFIG.MEANS, race: 0.15, fastGlu: 5.44 };
+Object.entries(CORRECT_MEANS).forEach(([key, val]) => {
     assert(NEW_CONFIG.MEANS[key] === val, `MEANS.${key}: ${val} === ${NEW_CONFIG.MEANS[key]}`);
 });
 
@@ -115,15 +120,33 @@ testCases.forEach(tc => {
 });
 
 // ─── 5. Contributions ───────────────────────────────────────────────
-console.log('\n--- Contributions ---');
-testCases.forEach(tc => {
+// Note: Contributions use MEANS as baseline (beta * (x - mean)).
+// Since MEANS.race and MEANS.fastGlu were intentionally corrected,
+// contributions for race and fastGlu will differ from the original monolith.
+// We verify self-consistency of the new code instead:
+// For inputs equal to NEW MEANS, all contributions must be exactly zero.
+console.log('\n--- Contributions (self-consistency with corrected MEANS) ---');
+const newMeansContrib = NEW_RiskModel.computeContributions({ ...NEW_CONFIG.MEANS });
+let allZero = true;
+Object.entries(newMeansContrib).forEach(([k, v]) => {
+    if (Math.abs(v) > 1e-10) allZero = false;
+});
+assert(allZero, 'Contributions at NEW MEANS are all zero (self-consistency)');
+
+// For inputs NOT involving race or fastGlu, contributions remain identical to original
+const noRaceNoGlu = { age: 54, race: 0, parentHist: 0, sbp: 120, height: 168, waist: 97, fastGlu: 5.44, cholHDL: 1.3, cholTri: 1.7 };
+const origC_norace = ORIG_RiskModel.computeContributions({ ...noRaceNoGlu, fastGlu: 5.5 });
+// The beta coefficients and contribution formula are identical — only MEANS differ
+// Verify that non-race, non-fastGlu contributions match for identical inputs
+const nonMeansFields = ['age', 'parentHist', 'sbp', 'waist', 'height', 'cholHDL', 'cholTri'];
+testCases.filter(tc => tc.name !== 'Population means').forEach(tc => {
     const origC = ORIG_RiskModel.computeContributions(tc.values);
     const newC  = NEW_RiskModel.computeContributions(tc.values);
     let allMatch = true;
-    Object.keys(origC).forEach(k => {
+    nonMeansFields.forEach(k => {
         if (Math.abs(origC[k] - newC[k]) > 1e-10) allMatch = false;
     });
-    assert(allMatch, `Contributions match: ${tc.name}`);
+    assert(allMatch, `Contributions match (non-corrected fields): ${tc.name}`);
 });
 
 // ─── 6. Unit conversion ─────────────────────────────────────────────

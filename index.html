@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy"
           content="default-src 'self';
-                   script-src 'self' https://cdn.sheetjs.com https://unpkg.com;
+                   script-src 'self' https://cdn.sheetjs.com;
                    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
                    font-src https://fonts.gstatic.com https://fonts.googleapis.com;
                    connect-src 'none';
@@ -17,8 +17,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <!-- Lucide Icons (local) -->
+    <script src="js/lib/lucide.min.js"></script>
 
     <!-- SheetJS for Excel Import/Export -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"
@@ -504,6 +504,7 @@
 
 <!-- Application Scripts (modular architecture) -->
 <script src="js/config.js"></script>
+<script src="js/conversion-service.js"></script>
 <script src="js/risk-model.js"></script>
 <script src="js/ui-helpers.js"></script>
 <script src="js/ui-controller.js"></script>

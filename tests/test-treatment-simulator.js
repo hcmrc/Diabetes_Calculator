@@ -35,6 +35,7 @@ global.window = global;
 global.DRC    = {};
 
 require('../js/config.js');
+require('../js/conversion-service.js');
 require('../js/ui-helpers.js');
 
 // ─── Minimal DOM mock (null DOM — all getElementById calls return null) ────────
@@ -71,8 +72,9 @@ function setupStubs() {
         computeProbability: ()     => 0.15
     };
     DRC.App = {
-        _getState: () => ({ isComparingScenario: false, baselineRisk: null }),
-        _calculate: () => {}
+        _getState:           () => ({ isComparingScenario: false, baselineRisk: null }),
+        _setCompareScenario: () => {},
+        _calculate:          () => {}
     };
     DRC.TimelineChart = {
         hasBaseline:    () => false,
@@ -244,6 +246,68 @@ assert(isMonotonic, 'easeOutCubic is monotonically non-decreasing on [0, 1]');
 
 // All values in [0, 1]
 assert(steps.every(v => v >= 0 && v <= 1), 'All easeOutCubic values are in [0, 1]');
+
+// ─── TEST SUITE 8: App._setCompareScenario + _getState state verification ────
+
+console.log('\n═══ TEST SUITE 8: _setCompareScenario / _getState state integration ═══');
+
+// Load real app.js to test the actual state management
+// We need a real App instance — load it with enough stubs to init
+{
+    global.window   = global;
+    global.document = makeNullDocument();
+
+    // Real app.js reads DRC.CONFIG, DRC.UIController, etc. at init time
+    // We only need to test _setCompareScenario and _getState which don't touch DOM
+    const appPath = require.resolve('../js/app.js');
+    delete require.cache[appPath];
+
+    // Minimal stubs for app.js module-level setup
+    DRC.UIController    = { readInputs: () => ({}), updateSliderFill: () => {},
+                            updateAllSliderFills: () => {}, renderRisk: () => {},
+                            renderContributionChart: () => {}, renderBetaVectors: () => {},
+                            renderTreatmentOverview: () => {}, renderScenarioComparison: () => {},
+                            renderWhatIfBadge: () => {}, updateUnitLabels: () => {},
+                            updateSliderRanges: () => {}, applyConvertedValues: () => {},
+                            renderRadarChart: () => {}, updateNonModSummary: () => {},
+                            updateModSummary: () => {} };
+    DRC.RiskModel       = { toSI: v => v, computeProbability: () => 0.15,
+                            computeContributions: () => ({}), getElevatedFactors: () => ({ elevatedFactors: [] }) };
+    DRC.RadarChart      = { render: () => {} };
+    DRC.TimelineChart   = { hasBaseline: () => false, setBaseline: () => {}, clearBaseline: () => {},
+                            addSnapshot: () => {}, getLastSnapshot: () => null, clear: () => {} };
+    DRC.PatientManager  = { init: () => {}, getActivePatientData: () => null,
+                            updateNavLabel: () => {}, applyValues: () => {} };
+    DRC.TreatmentSimulator = { resetSimulated: () => {} };
+
+    require('../js/app.js');
+    const App = DRC.App;
+
+    // Verify _setCompareScenario and _getState are accessible
+    assert(typeof App._setCompareScenario === 'function', 'App._setCompareScenario is a function');
+    assert(typeof App._getState          === 'function', 'App._getState is a function');
+
+    // Initial state
+    const s0 = App._getState();
+    assert(s0.isComparingScenario === false, '_getState: isComparingScenario initially false');
+    assert(s0.baselineRisk        === null,  '_getState: baselineRisk initially null');
+
+    // After _setCompareScenario
+    App._setCompareScenario(42.5);
+    const s1 = App._getState();
+    assert(s1.isComparingScenario === true,  '_setCompareScenario: isComparingScenario → true');
+    assert(s1.baselineRisk        === 42.5,  '_setCompareScenario: baselineRisk → 42.5');
+
+    // Overwrite with new value
+    App._setCompareScenario(18.0);
+    const s2 = App._getState();
+    assert(s2.baselineRisk === 18.0, '_setCompareScenario: second call overwrites baselineRisk');
+
+    // _getState returns a copy — mutations don't affect internal state
+    const s3 = App._getState();
+    s3.baselineRisk = 999;
+    assert(App._getState().baselineRisk === 18.0, '_getState returns a copy (mutation-safe)');
+}
 
 // ─── Summary ─────────────────────────────────────────────────────────────────
 

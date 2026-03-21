@@ -18,13 +18,18 @@
 'use strict';
 
 DRC.UIController = (() => {
-    const { el, setText, clampAndRound, formatAxisValue } = DRC.UIHelpers;
+    const { el, setText, clampAndRound, formatAxisValue, escapeHtml } = DRC.UIHelpers;
     const CFG = DRC.CONFIG;
 
+    // Module-scope guard: contribution chart filter listener registered at most once
+    let _filterHandlerAttached = false;
+
     // ─── Risk-level color mapping ───────────────────────────────────────
+    // High-risk threshold (26%) aligns with Schmidt et al. (2005) published cutoff:
+    // Pr(DM) ≥ 0.26 → sensitivity 52%, specificity 86% (see CONFIG.HIGH_RISK_CUTOFF)
     const RISK_COLORS = [
         { min: 50, color: '#ff3b30', level: 'danger' },
-        { min: 25, color: '#ff6723', level: 'warning' },
+        { min: 26, color: '#ff6723', level: 'warning' },
         { min: 10, color: '#ff9f0a', level: 'alert' },
         { min: 0,  color: '#34c759', level: 'safe' }
     ];
@@ -102,44 +107,29 @@ DRC.UIController = (() => {
     /** Update min/mid/max numeric labels beneath sliders that change with units. */
     const updateSliderAxisLabels = (isMetric) => {
         const mode = isMetric ? 'si' : 'us';
-        ['height', 'waist', 'cholTri'].forEach(field => {
+        ['height', 'waist', 'fastGlu', 'cholHDL', 'cholTri'].forEach(field => {
             const [min, max] = CFG.RANGES[field][mode];
             const isFloat = isMetric && CFG.RANGES[field].si[2] < 1;
+            const mid = isFloat ? (min + max) / 2 : Math.round((min + max) / 2);
             setText(`${field}-min`, formatAxisValue(min, isFloat));
-            setText(`${field}-mid`, formatAxisValue((min + max) / 2, isFloat));
+            setText(`${field}-mid`, formatAxisValue(mid, isFloat));
             setText(`${field}-max`, formatAxisValue(max, isFloat));
         });
     };
 
     // ─── Value conversion (US ↔ SI) ─────────────────────────────────────
 
-    /** Convert and apply saved US values when switching units. */
+    /** Convert and apply saved values when switching units.
+     *  Delegates to ConversionService for DRY compliance.
+     */
     const applyConvertedValues = (savedValues, isMetric) => {
-        const c    = CFG.CONVERSIONS;
-        const mode = isMetric ? 'si' : 'us';
-
-        // Conversion map: field → { toSI, fromSI } multipliers
-        const convMap = {
-            height:  c.heightToCm,
-            waist:   c.waistToCm,
-            fastGlu: c.gluToMmol,
-            cholHDL: c.hdlToMmol,
-            cholTri: c.triToMmol
-        };
-
-        Object.entries(savedValues).forEach(([field, rawVal]) => {
-            let val = rawVal;
-            const multiplier = convMap[field];
-            if (multiplier) {
-                val = isMetric ? val * multiplier : val / multiplier;
+        DRC.ConversionService.applyConvertedValues(savedValues, isMetric, {
+            onValue: (field, val) => {
+                const input  = el(`${field}-value`);
+                const slider = el(`${field}-slider`);
+                if (input)  input.value  = val;
+                if (slider) slider.value = val;
             }
-            const [min, max, step] = CFG.RANGES[field][mode];
-            val = clampAndRound(val, min, max, step);
-
-            const input  = el(`${field}-value`);
-            const slider = el(`${field}-slider`);
-            if (input)  input.value  = val;
-            if (slider) slider.value = val;
         });
     };
 
@@ -213,11 +203,18 @@ DRC.UIController = (() => {
         `;
         container.appendChild(filterToggle);
 
-        document.getElementById('risk-filter-toggle')?.addEventListener('change', (e) => {
-            container.setAttribute('data-filter-risk', e.target.checked);
-            // Trigger recalculation to re-render
-            DRC.App._calculate();
-        });
+        // Use event delegation on container instead of direct listener (prevents memory leak)
+        // Only attach once by checking for existing handler
+        if (!_filterHandlerAttached) {
+            container.addEventListener('change', (e) => {
+                if (e.target.id === 'risk-filter-toggle') {
+                    container.setAttribute('data-filter-risk', e.target.checked);
+                    // Trigger recalculation to re-render
+                    if (DRC.App?._calculate) DRC.App._calculate();
+                }
+            });
+            _filterHandlerAttached = true;
+        }
 
         const totalAbs = Object.values(contributions)
             .reduce((sum, v) => sum + Math.abs(v), 0);
@@ -346,7 +343,7 @@ DRC.UIController = (() => {
                 therapies.push(treatment.surgicalOption);
             }
             const therapiesHTML = therapies.map(t =>
-                `<div class="therapy-mini"><div><strong>${t.name}:</strong> ${t.desc}</div></div>`
+                `<div class="therapy-mini"><div><strong>${escapeHtml(t.name)}:</strong> ${escapeHtml(t.desc)}</div></div>`
             ).join('');
 
             const statusIcon  = isIndicated ? 'alert-triangle' : 'check-circle';
@@ -519,7 +516,8 @@ DRC.UIController = (() => {
 
         const delta = currentRisk - baselineRisk;
         const cls   = delta < 0 ? 'improved' : 'worsened';
-        const icon  = delta < 0 ? 'trending_down' : delta > 0 ? 'trending_up' : 'trending_flat';
+        // Note: 'trending-flat' does not exist in Lucide — use 'minus' for no change
+        const icon  = delta < 0 ? 'trending_down' : delta > 0 ? 'trending_up' : 'minus';
 
         panel.innerHTML = `
             <div class="scenario-inline-row">
@@ -568,15 +566,15 @@ DRC.UIController = (() => {
         const wVal  = el('waist-value')?.value || '36';
         const wUnit = el('waist-value-unit')?.textContent || 'in';
         const bp    = el('sbp-value')?.value || '120';
-        const hVal  = el('cholHDL-value')?.value || '50';
-        const hUnit = el('cholHDL-value-unit')?.textContent || 'mg/dL';
-        const tVal  = el('cholTri-value')?.value || '150';
-        const tUnit = el('cholTri-value-unit')?.textContent || 'mg/dL';
+        const hdlVal  = el('cholHDL-value')?.value || '50';
+        const hdlUnit = el('cholHDL-value-unit')?.textContent || 'mg/dL';
+        const tVal    = el('cholTri-value')?.value || '150';
+        const tUnit   = el('cholTri-value-unit')?.textContent || 'mg/dL';
 
         setText('summary-fastGlu', 'Gluc: ' + gVal + ' ' + gUnit);
         setText('summary-waist',   'Waist: ' + wVal + ' ' + wUnit);
         setText('summary-sbp',     'BP: ' + bp + ' mmHg');
-        setText('summary-hdl',     'HDL: ' + hVal + ' ' + hUnit);
+        setText('summary-hdl',     'HDL: ' + hdlVal + ' ' + hdlUnit);
         setText('summary-tri',     'TG: ' + tVal + ' ' + tUnit);
     };
 

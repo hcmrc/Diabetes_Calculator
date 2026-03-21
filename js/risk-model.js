@@ -17,21 +17,12 @@ DRC.RiskModel = (() => {
 
     /**
      * Convert raw UI values to SI units for model computation.
+     * Delegates to ConversionService for DRY compliance.
      * @param {Object} inputs — Raw slider/input values.
      * @param {boolean} isMetric — Whether inputs are already in SI.
      * @returns {Object} Values in SI units.
      */
-    const toSI = (inputs, isMetric) => {
-        if (isMetric) return { ...inputs };
-        return {
-            ...inputs,
-            height:  inputs.height  * C.heightToCm,
-            waist:   inputs.waist   * C.waistToCm,
-            fastGlu: inputs.fastGlu * C.gluToMmol,
-            cholHDL: inputs.cholHDL * C.hdlToMmol,
-            cholTri: inputs.cholTri * C.triToMmol
-        };
-    };
+    const toSI = (inputs, isMetric) => DRC.ConversionService.toSI(inputs, isMetric);
 
     /**
      * Compute the logistic-regression linear predictor (log-odds).
@@ -77,24 +68,19 @@ DRC.RiskModel = (() => {
 
     /**
      * Identify clinically elevated modifiable risk factors.
+     * All comparisons use SI values to ensure consistent results regardless
+     * of the active UI unit system.
      * @param {Object} siVals — Risk-factor values in SI units.
-     * @param {Object} rawInputs — Raw UI values (needed for unit-specific TG check).
-     * @param {boolean} isMetric — Current unit system.
      * @returns {{ elevatedFactors: string[], waistIsHigh: boolean }}
      */
-    const getElevatedFactors = (siVals, rawInputs, isMetric) => {
+    const getElevatedFactors = (siVals) => {
         const elevated = [];
 
-        if (siVals.fastGlu >= T.fastGlu.elevated) elevated.push('fastGlu');
-        if (siVals.sbp     >= T.sbp.elevated)     elevated.push('sbp');
-        if (siVals.cholHDL <= T.cholHDL.low)       elevated.push('cholHDL');
-
-        const triElevated = isMetric
-            ? siVals.cholTri >= T.cholTri.elevated
-            : rawInputs.cholTri >= 150;
-        if (triElevated) elevated.push('cholTri');
-
-        if (siVals.waist >= T.waist.elevated) elevated.push('waist');
+        if (siVals.fastGlu >= T.fastGlu.elevated)  elevated.push('fastGlu');
+        if (siVals.sbp     >= T.sbp.elevated)       elevated.push('sbp');
+        if (siVals.cholHDL <= T.cholHDL.low)        elevated.push('cholHDL');
+        if (siVals.cholTri >= T.cholTri.elevated)   elevated.push('cholTri');
+        if (siVals.waist   >= T.waist.elevated)     elevated.push('waist');
 
         return { elevatedFactors: elevated, waistIsHigh: siVals.waist >= T.waist.high };
     };

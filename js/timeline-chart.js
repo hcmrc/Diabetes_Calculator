@@ -44,7 +44,8 @@ DRC.TimelineChart = (() => {
             timestamp: new Date(),
             riskPct,
             siVals: { ...siVals },
-            isBaseline: _baselineRisk !== null && snapshots.length === 0,
+            // Note: isBaseline was previously set here but never used.
+            // _baselineRisk check in render() is sufficient for baseline display.
             treatmentLabel
         });
         render();
@@ -92,13 +93,27 @@ DRC.TimelineChart = (() => {
         return steps;
     };
 
+    // SVG namespace for secure element creation
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    /** Clear container safely without innerHTML */
+    const clearContainer = (container) => {
+        while (container.firstChild) {
+            container.removeChild(container.firstChild);
+        }
+    };
+
     /** Render the timeline SVG into #timeline-chart. */
     const render = () => {
         const container = document.getElementById('timeline-chart');
         if (!container) return;
 
         if (snapshots.length === 0 && _baselineRisk === null) {
-            container.innerHTML = '<p class="timeline-empty">Set a baseline and add snapshots to track your risk over scenarios.</p>';
+            clearContainer(container);
+            const emptyMsg = document.createElement('p');
+            emptyMsg.className = 'timeline-empty';
+            emptyMsg.textContent = 'Set a baseline and add snapshots to track your risk over scenarios.';
+            container.appendChild(emptyMsg);
             renderLegend();
             return;
         }
@@ -125,28 +140,80 @@ DRC.TimelineChart = (() => {
         const xScale = (i) => PAD.left + (snapshots.length === 1 ? plotW / 2 : (i / (snapshots.length - 1)) * plotW);
         const yScale = (v) => PAD.top + plotH - (v / maxY) * plotH;
 
-        const parts = [`<svg viewBox="0 0 ${VW} ${VH}" preserveAspectRatio="xMidYMid meet" class="timeline-svg">`];
+        // Create SVG element using DOM API (secure against XSS)
+        const svg = document.createElementNS(SVG_NS, 'svg');
+        svg.setAttribute('viewBox', `0 0 ${VW} ${VH}`);
+        svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+        svg.setAttribute('class', 'timeline-svg');
 
         // Y-axis gridlines and labels — dynamic steps
         const gridSteps = computeGridSteps(maxY);
         gridSteps.forEach(v => {
             const y = yScale(v);
-            parts.push(`<line x1="${PAD.left}" y1="${y}" x2="${VW - PAD.right}" y2="${y}" stroke="var(--border-light, #e5e5e5)" stroke-width="0.5" opacity="0.5"/>`);
-            parts.push(`<text x="${PAD.left - 6}" y="${y + 4}" class="tl-axis-y" text-anchor="end">${v}%</text>`);
+
+            const line = document.createElementNS(SVG_NS, 'line');
+            line.setAttribute('x1', PAD.left);
+            line.setAttribute('y1', y.toFixed(1));
+            line.setAttribute('x2', VW - PAD.right);
+            line.setAttribute('y2', y.toFixed(1));
+            line.setAttribute('stroke', 'var(--border-light, #e5e5e5)');
+            line.setAttribute('stroke-width', '0.5');
+            line.setAttribute('opacity', '0.5');
+            svg.appendChild(line);
+
+            const text = document.createElementNS(SVG_NS, 'text');
+            text.setAttribute('x', PAD.left - 6);
+            text.setAttribute('y', (y + 4).toFixed(1));
+            text.setAttribute('class', 'tl-axis-y');
+            text.setAttribute('text-anchor', 'end');
+            text.textContent = `${v}%`;
+            svg.appendChild(text);
         });
 
         // Left axis line
-        parts.push(`<line x1="${PAD.left}" y1="${PAD.top}" x2="${PAD.left}" y2="${VH - PAD.bottom}" stroke="var(--border, #d2d2d7)" stroke-width="0.7"/>`);
+        const axisLine = document.createElementNS(SVG_NS, 'line');
+        axisLine.setAttribute('x1', PAD.left);
+        axisLine.setAttribute('y1', PAD.top);
+        axisLine.setAttribute('x2', PAD.left);
+        axisLine.setAttribute('y2', VH - PAD.bottom);
+        axisLine.setAttribute('stroke', 'var(--border, #d2d2d7)');
+        axisLine.setAttribute('stroke-width', '0.7');
+        svg.appendChild(axisLine);
 
         // Baseline reference line
         if (_baselineRisk !== null) {
             const y = yScale(_baselineRisk);
             const dimmed = snapshots.length > 1 ? ' dimmed' : '';
-            parts.push(`<g class="timeline-baseline-group${dimmed}">`);
-            parts.push(`<line x1="${PAD.left}" y1="${y}" x2="${VW - PAD.right}" y2="${y}" stroke="transparent" stroke-width="14" style="pointer-events:stroke"/>`);
-            parts.push(`<line x1="${PAD.left}" y1="${y}" x2="${VW - PAD.right}" y2="${y}" class="timeline-baseline"/>`);
-            parts.push(`<text x="${PAD.left + 6}" y="${y - 8}" class="tl-baseline-label">Baseline ${_baselineRisk.toFixed(1)}%</text>`);
-            parts.push(`</g>`);
+
+            const baselineGroup = document.createElementNS(SVG_NS, 'g');
+            baselineGroup.setAttribute('class', `timeline-baseline-group${dimmed}`);
+
+            const hitArea = document.createElementNS(SVG_NS, 'line');
+            hitArea.setAttribute('x1', PAD.left);
+            hitArea.setAttribute('y1', y.toFixed(1));
+            hitArea.setAttribute('x2', VW - PAD.right);
+            hitArea.setAttribute('y2', y.toFixed(1));
+            hitArea.setAttribute('stroke', 'transparent');
+            hitArea.setAttribute('stroke-width', '14');
+            hitArea.setAttribute('style', 'pointer-events:stroke');
+            baselineGroup.appendChild(hitArea);
+
+            const baseline = document.createElementNS(SVG_NS, 'line');
+            baseline.setAttribute('x1', PAD.left);
+            baseline.setAttribute('y1', y.toFixed(1));
+            baseline.setAttribute('x2', VW - PAD.right);
+            baseline.setAttribute('y2', y.toFixed(1));
+            baseline.setAttribute('class', 'timeline-baseline');
+            baselineGroup.appendChild(baseline);
+
+            const baselineLabel = document.createElementNS(SVG_NS, 'text');
+            baselineLabel.setAttribute('x', PAD.left + 6);
+            baselineLabel.setAttribute('y', (y - 8).toFixed(1));
+            baselineLabel.setAttribute('class', 'tl-baseline-label');
+            baselineLabel.textContent = `Baseline ${_baselineRisk.toFixed(1)}%`;
+            baselineGroup.appendChild(baselineLabel);
+
+            svg.appendChild(baselineGroup);
         }
 
         // Area and line paths
@@ -154,8 +221,16 @@ DRC.TimelineChart = (() => {
             const pathPoints = snapshots.map((s, i) => `${xScale(i).toFixed(1)} ${yScale(s.riskPct).toFixed(1)}`);
             const lineD = 'M ' + pathPoints.join(' L ');
             const areaD = lineD + ` L ${xScale(snapshots.length - 1).toFixed(1)} ${yScale(0).toFixed(1)} L ${xScale(0).toFixed(1)} ${yScale(0).toFixed(1)} Z`;
-            parts.push(`<path d="${areaD}" class="tl-area"/>`);
-            parts.push(`<path d="${lineD}" class="tl-line"/>`);
+
+            const areaPath = document.createElementNS(SVG_NS, 'path');
+            areaPath.setAttribute('d', areaD);
+            areaPath.setAttribute('class', 'tl-area');
+            svg.appendChild(areaPath);
+
+            const linePath = document.createElementNS(SVG_NS, 'path');
+            linePath.setAttribute('d', lineD);
+            linePath.setAttribute('class', 'tl-line');
+            svg.appendChild(linePath);
         }
 
         // Data points and labels
@@ -177,24 +252,43 @@ DRC.TimelineChart = (() => {
                 dotColor = getTreatmentColor(s.treatmentLabel);
             }
 
-            const esc = DRC.UIHelpers.escapeHtml;
-            const title = hasTreatment
-                ? `#${i + 1}: ${s.riskPct.toFixed(1)}% — ${esc(s.treatmentLabel)} (${formatTime(s.timestamp)})`
-                : `#${i + 1}: ${s.riskPct.toFixed(1)}% (${formatTime(s.timestamp)})`;
+            // Create dot circle with title (using textContent for XSS protection)
+            const dot = document.createElementNS(SVG_NS, 'circle');
+            dot.setAttribute('cx', cx.toFixed(1));
+            dot.setAttribute('cy', cy.toFixed(1));
+            dot.setAttribute('r', dotRadius);
+            dot.setAttribute('class', dotClass);
+            if (dotColor) dot.setAttribute('fill', dotColor);
 
-            // Dot
-            const fillAttr = dotColor ? ` fill="${dotColor}"` : '';
-            parts.push(`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${dotRadius}" class="${dotClass}"${fillAttr}><title>${title}</title></circle>`);
+            const title = document.createElementNS(SVG_NS, 'title');
+            const titleText = hasTreatment
+                ? `#${i + 1}: ${s.riskPct.toFixed(1)}% — ${s.treatmentLabel} (${formatTime(s.timestamp)})`
+                : `#${i + 1}: ${s.riskPct.toFixed(1)}% (${formatTime(s.timestamp)})`;
+            title.textContent = titleText; // textContent automatically escapes
+            dot.appendChild(title);
+            svg.appendChild(dot);
 
             // Treatment short label — above dot
             if (hasTreatment) {
                 const color = getTreatmentColor(s.treatmentLabel);
-                const shortLabel = DRC.UIHelpers.escapeHtml(s.treatmentLabel.split(' ').slice(0, 2).join(' '));
+                // Use substring instead of split for better performance
+                const firstSpace = s.treatmentLabel.indexOf(' ');
+                const secondSpace = firstSpace > 0 ? s.treatmentLabel.indexOf(' ', firstSpace + 1) : -1;
+                const shortLabel = secondSpace > 0 ? s.treatmentLabel.substring(0, secondSpace) : s.treatmentLabel;
+
                 let textAnchor = 'middle';
                 let textXOffset = 0;
                 if (i === 0) { textAnchor = 'start'; textXOffset = 4; }
                 else if (i === snapshots.length - 1 && snapshots.length > 1) { textAnchor = 'end'; textXOffset = -4; }
-                parts.push(`<text x="${(cx + textXOffset).toFixed(1)}" y="${(cy - dotRadius - 8).toFixed(1)}" class="tl-treat-label" text-anchor="${textAnchor}" fill="${color}">${shortLabel}</text>`);
+
+                const label = document.createElementNS(SVG_NS, 'text');
+                label.setAttribute('x', (cx + textXOffset).toFixed(1));
+                label.setAttribute('y', (cy - dotRadius - 8).toFixed(1));
+                label.setAttribute('class', 'tl-treat-label');
+                label.setAttribute('text-anchor', textAnchor);
+                label.setAttribute('fill', color);
+                label.textContent = shortLabel; // textContent escapes
+                svg.appendChild(label);
             }
 
             // Risk value label — below dot
@@ -202,7 +296,14 @@ DRC.TimelineChart = (() => {
             let riskXOffset = 0;
             if (i === 0) { riskTextAnchor = 'start'; riskXOffset = 4; }
             else if (i === snapshots.length - 1 && snapshots.length > 1) { riskTextAnchor = 'end'; riskXOffset = -4; }
-            parts.push(`<text x="${(cx + riskXOffset).toFixed(1)}" y="${(cy + dotRadius + 14).toFixed(1)}" class="tl-risk-val" text-anchor="${riskTextAnchor}">${s.riskPct.toFixed(1)}%</text>`);
+
+            const riskLabel = document.createElementNS(SVG_NS, 'text');
+            riskLabel.setAttribute('x', (cx + riskXOffset).toFixed(1));
+            riskLabel.setAttribute('y', (cy + dotRadius + 14).toFixed(1));
+            riskLabel.setAttribute('class', 'tl-risk-val');
+            riskLabel.setAttribute('text-anchor', riskTextAnchor);
+            riskLabel.textContent = `${s.riskPct.toFixed(1)}%`;
+            svg.appendChild(riskLabel);
 
             // X-axis labels
             if (snapshots.length <= 12 || i === 0 || i === snapshots.length - 1 || i % 3 === 0) {
@@ -210,12 +311,19 @@ DRC.TimelineChart = (() => {
                 let axisXOff = 0;
                 if (i === 0) { axisAnchor = 'start'; axisXOff = 4; }
                 else if (i === snapshots.length - 1 && snapshots.length > 1) { axisAnchor = 'end'; axisXOff = -4; }
-                parts.push(`<text x="${(cx + axisXOff).toFixed(1)}" y="${VH - 8}" class="tl-axis-x" text-anchor="${axisAnchor}">${i + 1}</text>`);
+
+                const axisLabel = document.createElementNS(SVG_NS, 'text');
+                axisLabel.setAttribute('x', (cx + axisXOff).toFixed(1));
+                axisLabel.setAttribute('y', VH - 8);
+                axisLabel.setAttribute('class', 'tl-axis-x');
+                axisLabel.setAttribute('text-anchor', axisAnchor);
+                axisLabel.textContent = `${i + 1}`;
+                svg.appendChild(axisLabel);
             }
         });
 
-        parts.push('</svg>');
-        container.innerHTML = parts.join('');
+        clearContainer(container);
+        container.appendChild(svg);
         renderLegend();
     };
 
@@ -224,37 +332,75 @@ DRC.TimelineChart = (() => {
         const legendEl = document.getElementById('timeline-legend');
         if (!legendEl) return;
 
-        const treatmentSnapshots = snapshots.filter(s => s.treatmentLabel);
+        // O(n) approach: map snapshots to include their indices first, then filter
+        const treatmentSnapshots = snapshots
+            .map((s, idx) => ({ ...s, _originalIndex: idx }))
+            .filter(s => s.treatmentLabel);
+
         if (treatmentSnapshots.length === 0) {
-            legendEl.innerHTML = '';
+            while (legendEl.firstChild) legendEl.removeChild(legendEl.firstChild);
             legendEl.style.display = 'none';
             return;
         }
 
         legendEl.style.display = 'flex';
-        const items = treatmentSnapshots.map((s) => {
+
+        // Clear and rebuild legend content safely
+        while (legendEl.firstChild) legendEl.removeChild(legendEl.firstChild);
+
+        // Create title
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'tl-legend-title';
+
+        const titleIcon = document.createElement('i');
+        titleIcon.setAttribute('data-lucide', 'history');
+        titleIcon.className = 'lucide-icon';
+        titleIcon.style.cssText = 'width:14px; height:14px; color:#007aff;';
+
+        titleDiv.appendChild(titleIcon);
+        titleDiv.appendChild(document.createTextNode(' Treatment History'));
+        legendEl.appendChild(titleDiv);
+
+        // Create legend items (O(n) with pre-computed indices)
+        treatmentSnapshots.forEach((s) => {
             const color = getTreatmentColor(s.treatmentLabel);
-            const snapIdx = snapshots.indexOf(s);
+            const snapIdx = s._originalIndex; // O(1) lookup
             const prevSnap = snapIdx > 0 ? snapshots[snapIdx - 1] : null;
             const diff = prevSnap ? (s.riskPct - prevSnap.riskPct) : 0;
             const diffStr = prevSnap ? `${diff > 0 ? '+' : ''}${diff.toFixed(1)}%` : '';
             const diffClass = diff < 0 ? 'delta-positive' : 'delta-negative';
 
-            const escapedLabel = DRC.UIHelpers.escapeHtml(s.treatmentLabel);
-            return `<div class="tl-legend-item">
-                <span class="tl-legend-dot" style="background:${color}"></span>
-                <span class="tl-legend-label">${escapedLabel}</span>
-                <div class="tl-legend-values">
-                    <span class="tl-legend-risk">${s.riskPct.toFixed(1)}%</span>
-                    ${diffStr ? `<span class="tl-legend-delta ${diffClass}">${diffStr}</span>` : ''}
-                </div>
-            </div>`;
-        });
+            const item = document.createElement('div');
+            item.className = 'tl-legend-item';
 
-        legendEl.innerHTML = `<div class="tl-legend-title">
-            <i data-lucide="history" class="lucide-icon" style="width:14px; height:14px; color:#007aff;"></i>
-            Treatment History
-        </div>${items.join('')}`;
+            const dot = document.createElement('span');
+            dot.className = 'tl-legend-dot';
+            dot.style.background = color;
+
+            const label = document.createElement('span');
+            label.className = 'tl-legend-label';
+            label.textContent = s.treatmentLabel; // textContent escapes
+
+            const valuesDiv = document.createElement('div');
+            valuesDiv.className = 'tl-legend-values';
+
+            const riskSpan = document.createElement('span');
+            riskSpan.className = 'tl-legend-risk';
+            riskSpan.textContent = `${s.riskPct.toFixed(1)}%`;
+            valuesDiv.appendChild(riskSpan);
+
+            if (diffStr) {
+                const diffSpan = document.createElement('span');
+                diffSpan.className = `tl-legend-delta ${diffClass}`;
+                diffSpan.textContent = diffStr;
+                valuesDiv.appendChild(diffSpan);
+            }
+
+            item.appendChild(dot);
+            item.appendChild(label);
+            item.appendChild(valuesDiv);
+            legendEl.appendChild(item);
+        });
 
         // Initialize Lucide icons for the legend
         if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -266,7 +412,12 @@ DRC.TimelineChart = (() => {
         _baselineRisk = null;
         render();
         const legendEl = document.getElementById('timeline-legend');
-        if (legendEl) { legendEl.innerHTML = ''; legendEl.style.display = 'none'; }
+        if (legendEl) {
+            while (legendEl.firstChild) {
+                legendEl.removeChild(legendEl.firstChild);
+            }
+            legendEl.style.display = 'none';
+        }
     };
 
     /** Return the most recent snapshot (or null). */

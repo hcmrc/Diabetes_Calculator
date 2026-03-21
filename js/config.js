@@ -50,10 +50,15 @@ DRC.CONFIG = Object.freeze({
         sigma:     -9.9808      // intercept
     },
 
-    /** Population means from the ARIC Study baseline cohort (all SI). */
+    /**
+     * Population means from the ARIC Study baseline cohort (all SI).
+     * race = 0.15: Schmidt et al. (2005) reports 85% white → 15% African-American.
+     * fastGlu = 5.44: Median fasting glucose reported in the ARIC cohort (5.44 mmol/L).
+     * parentHist = 0.3: Not explicitly reported in the publication; used as approximation.
+     */
     MEANS: {
-        age: 54, race: 0.25, parentHist: 0.3, sbp: 120,
-        waist: 97, height: 168, fastGlu: 5.5, cholHDL: 1.3, cholTri: 1.7
+        age: 54, race: 0.15, parentHist: 0.3, sbp: 120,
+        waist: 97, height: 168, fastGlu: 5.44, cholHDL: 1.3, cholTri: 1.7
     },
 
     /** US-to-SI conversion multipliers. */
@@ -70,7 +75,9 @@ DRC.CONFIG = Object.freeze({
         age:     { us: [20, 80, 1],       si: [20, 80, 1] },
         sbp:     { us: [80, 220, 1],      si: [80, 220, 1] },
         height:  { us: [48, 84, 1],       si: [122, 213, 1] },
-        waist:   { us: [25, 60, 1],       si: [64, 152, 1] },
+        // Waist: 26 inches = 66.04 cm (was 25 inches = 63.5 cm, below SI min of 64)
+        // Updated to eliminate 0.5 cm inconsistency between US and SI ranges
+        waist:   { us: [26, 60, 1],       si: [64, 152, 1] },
         fastGlu: { us: [50, 300, 1],      si: [2.8, 16.7, 0.1] },
         cholHDL: { us: [20, 100, 1],      si: [0.5, 2.6, 0.1] },
         cholTri: { us: [50, 500, 1],      si: [0.6, 5.6, 0.1] }
@@ -91,15 +98,30 @@ DRC.CONFIG = Object.freeze({
 
     /**
      * Clinical decision thresholds (SI units).
-     * Sources: ADA (2024), ESC (2023), WHO.
+     * Sources: ADA (2024), ESC (2023), WHO, NCEP ATP III.
+     *
+     * cholHDL.low: NCEP ATP III male threshold (1.03 mmol/L = 40 mg/dL).
+     *   The female threshold (1.29 mmol/L = 50 mg/dL) is not used here because
+     *   sex is not a variable in the Schmidt et al. (2005) model. The more
+     *   conservative male value is applied universally.
+     * waist.elevated: IDF/WHO threshold for European men (94 cm). Not from
+     *   Schmidt et al. (2005) which uses NCEP values (88 cm women, 102 cm men).
+     *   waist.high (102 cm) matches the NCEP male threshold from the publication.
      */
     THRESHOLDS: {
         fastGlu: { elevated: 5.6,  high: 7.0  },
         sbp:     { elevated: 130,  high: 160  },
-        cholHDL: { low: 1.0,       veryLow: 0.8 },
+        cholHDL: { low: 1.03,      veryLow: 0.8 },
         cholTri: { elevated: 1.7,  high: 2.3  },
         waist:   { elevated: 94,   high: 102  }
     },
+
+    /**
+     * Published high-risk probability cut-off from Schmidt et al. (2005).
+     * Patients with Pr(DM) >= 0.26 are classified as high-risk.
+     * At this threshold: ~20% of population identified, sensitivity 52%, specificity 86%.
+     */
+    HIGH_RISK_CUTOFF: 0.26,
 
     /** Treatment recommendations per modifiable risk factor (ESC 2023). */
     TREATMENTS: {
