@@ -124,7 +124,7 @@ DRC.TreatmentSimulator = (() => {
             if (input)  input.value  = val;
             if (slider) slider.value = val;
             DRC.UIController.updateSliderFill(factor);
-            DRC.App._calculate();
+            DRC.App.trigger('risk:recalculate');
 
             if (frame < STEPS) {
                 setTimeout(tick, DURATION / STEPS);

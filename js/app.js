@@ -439,5 +439,21 @@ DRC.App = (() => {
         state.baselineRisk = baselineRisk;
     };
 
-    return { init, _calculate: calculate, _getState: () => ({ ...state }), _setCompareScenario: setCompareScenario };
+    /**
+     * Simple event bus for decoupled communication between modules.
+     * Replaces direct method calls like DRC.App._calculate().
+     */
+    const eventListeners = {};
+    const on = (event, callback) => {
+        if (!eventListeners[event]) eventListeners[event] = [];
+        eventListeners[event].push(callback);
+    };
+    const trigger = (event, data) => {
+        eventListeners[event]?.forEach(cb => cb(data));
+    };
+
+    // Register core events
+    on('risk:recalculate', calculate);
+
+    return { init, _calculate: calculate, _getState: () => ({ ...state }), _setCompareScenario: setCompareScenario, on, trigger };
 })();

@@ -43,9 +43,9 @@ DRC.UIHelpers = (() => {
         // Handle scientific notation (e.g., 1e-7) correctly
         const stepStr = String(step);
         let decimals;
-        if (stepStr.includes('e-')) {
-            // Scientific notation: extract exponent
-            decimals = parseInt(stepStr.split('e-')[1], 10);
+        if (stepStr.includes('e-') || stepStr.includes('E-')) {
+            // Scientific notation: extract exponent (handles both 1e-7 and 1E-7)
+            decimals = parseInt(stepStr.split(/e-/i)[1], 10);
         } else if (stepStr.includes('.')) {
             decimals = stepStr.split('.')[1]?.length ?? 1;
         } else {

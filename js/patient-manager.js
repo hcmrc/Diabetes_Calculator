@@ -147,8 +147,8 @@ DRC.PatientManager = (() => {
         activePatientId = id;
         applyValues(patient.data);
         saveToStorage(); renderList(); updateNavLabel();
-        if (DRC.App?._calculate) {
-            DRC.App._calculate();
+        if (DRC.App?.trigger) {
+            DRC.App.trigger('risk:recalculate');
         } else {
             document.getElementById('age-slider')?.dispatchEvent(new Event('input'));
         }

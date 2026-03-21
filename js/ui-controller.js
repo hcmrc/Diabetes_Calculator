@@ -210,7 +210,7 @@ DRC.UIController = (() => {
                 if (e.target.id === 'risk-filter-toggle') {
                     container.setAttribute('data-filter-risk', e.target.checked);
                     // Trigger recalculation to re-render
-                    if (DRC.App?._calculate) DRC.App._calculate();
+                    DRC.App.trigger('risk:recalculate');
                 }
             });
             _filterHandlerAttached = true;
