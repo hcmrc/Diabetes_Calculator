@@ -177,8 +177,9 @@ DRC.TimelineChart = (() => {
                 dotColor = getTreatmentColor(s.treatmentLabel);
             }
 
+            const esc = DRC.UIHelpers.escapeHtml;
             const title = hasTreatment
-                ? `#${i + 1}: ${s.riskPct.toFixed(1)}% — ${s.treatmentLabel} (${formatTime(s.timestamp)})`
+                ? `#${i + 1}: ${s.riskPct.toFixed(1)}% — ${esc(s.treatmentLabel)} (${formatTime(s.timestamp)})`
                 : `#${i + 1}: ${s.riskPct.toFixed(1)}% (${formatTime(s.timestamp)})`;
 
             // Dot
@@ -188,7 +189,7 @@ DRC.TimelineChart = (() => {
             // Treatment short label — above dot
             if (hasTreatment) {
                 const color = getTreatmentColor(s.treatmentLabel);
-                const shortLabel = s.treatmentLabel.split(' ').slice(0, 2).join(' ');
+                const shortLabel = DRC.UIHelpers.escapeHtml(s.treatmentLabel.split(' ').slice(0, 2).join(' '));
                 let textAnchor = 'middle';
                 let textXOffset = 0;
                 if (i === 0) { textAnchor = 'start'; textXOffset = 4; }
@@ -239,9 +240,10 @@ DRC.TimelineChart = (() => {
             const diffStr = prevSnap ? `${diff > 0 ? '+' : ''}${diff.toFixed(1)}%` : '';
             const diffClass = diff < 0 ? 'delta-positive' : 'delta-negative';
 
+            const escapedLabel = DRC.UIHelpers.escapeHtml(s.treatmentLabel);
             return `<div class="tl-legend-item">
                 <span class="tl-legend-dot" style="background:${color}"></span>
-                <span class="tl-legend-label">${s.treatmentLabel}</span>
+                <span class="tl-legend-label">${escapedLabel}</span>
                 <div class="tl-legend-values">
                     <span class="tl-legend-risk">${s.riskPct.toFixed(1)}%</span>
                     ${diffStr ? `<span class="tl-legend-delta ${diffClass}">${diffStr}</span>` : ''}
