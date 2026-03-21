@@ -73,6 +73,20 @@ DRC.App = (() => {
         const contributions = Model().computeContributions(siVals);
         const treatStatus   = Model().getElevatedFactors(siVals);
 
+        // Render all views with the calculated data
+        _renderAllViews(riskPct, contributions, treatStatus, siVals);
+        return riskPct;
+    };
+
+    /**
+     * Render all views with calculated data.
+     * Extracted to eliminate DRY violation between calculate() and onToggleUnits().
+     * @param {number} riskPct - Current risk percentage
+     * @param {Object} contributions - Factor contributions
+     * @param {Object} treatStatus - Treatment status with elevated factors
+     * @param {Object} siVals - SI-unit values
+     */
+    const _renderAllViews = (riskPct, contributions, treatStatus, siVals) => {
         UI().renderRisk(riskPct);
         UI().updateNonModSummary();
         UI().updateModSummary();
@@ -95,7 +109,6 @@ DRC.App = (() => {
         // Refresh cache after DOM updates (for performance optimization)
         populateFieldCache();
         reapplyHighlight();
-        return riskPct;
     };
 
     // ─── Slider event handlers ──────────────────────────────────────────
@@ -186,20 +199,7 @@ DRC.App = (() => {
         const contributions = Model().computeContributions(preciseSI);
         const treatStatus   = Model().getElevatedFactors(preciseSI);
 
-        UI().renderRisk(riskPct);
-        UI().updateNonModSummary();
-        UI().updateModSummary();
-        UI().renderIconArray(riskPct);
-        UI().renderContributionChart(contributions);
-        UI().renderHeatmapPointer(contributions);
-        UI().renderTreatmentOverview(treatStatus, contributions);
-        UI().renderTreatmentRecommendations(treatStatus, contributions);
-        UI().renderCausalityChains(preciseSI, treatStatus.elevatedFactors);
-        Radar().render(preciseSI, treatStatus.elevatedFactors);
-
-        if (state.isComparingScenario && state.baselineRisk !== null) {
-            UI().renderScenarioComparison(state.baselineRisk, riskPct);
-        }
+        _renderAllViews(riskPct, contributions, treatStatus, preciseSI);
     };
 
     // ─── Reset ──────────────────────────────────────────────────────────

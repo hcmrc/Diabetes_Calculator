@@ -40,7 +40,17 @@ DRC.UIHelpers = (() => {
     const clampAndRound = (value, min, max, step) => {
         const clamped = Math.min(Math.max(value, min), max);
         if (step >= 1) return Math.round(clamped);
-        const decimals = String(step).split('.')[1]?.length ?? 1;
+        // Handle scientific notation (e.g., 1e-7) correctly
+        const stepStr = String(step);
+        let decimals;
+        if (stepStr.includes('e-')) {
+            // Scientific notation: extract exponent
+            decimals = parseInt(stepStr.split('e-')[1], 10);
+        } else if (stepStr.includes('.')) {
+            decimals = stepStr.split('.')[1]?.length ?? 1;
+        } else {
+            decimals = 1;
+        }
         return parseFloat(clamped.toFixed(decimals));
     };
 

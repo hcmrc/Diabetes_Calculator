@@ -11,7 +11,7 @@ global.document = { getElementById: () => null };
 require('../js/config.js');
 require('../js/ui-helpers.js');
 
-const { clampAndRound, formatAxisValue } = DRC.UIHelpers;
+const { clampAndRound, formatAxisValue, escapeHtml } = DRC.UIHelpers;
 
 let passed = 0, failed = 0;
 function assert(condition, name) {
@@ -26,6 +26,20 @@ assert(clampAndRound(15, 0, 10, 1) === 10, 'Above max: 15 clamped to 10');
 assert(clampAndRound(5.67, 0, 10, 0.1) === 5.7, 'Float step: 5.67 → 5.7');
 assert(clampAndRound(5.34, 0, 10, 0.1) === 5.3, 'Float step: 5.34 → 5.3');
 assert(clampAndRound(5.5, 0, 10, 1) === 6, 'Integer step: 5.5 → 6');
+
+console.log('\n═══ UIHelpers: clampAndRound with scientific notation ═══');
+assert(clampAndRound(5.1234567, 0, 10, 1e-7) === 5.1234567, 'Scientific notation 1e-7: preserves 7 decimals');
+assert(clampAndRound(5.123, 0, 10, 0.0000001) === 5.123, 'Scientific notation 0.0000001: preserves 7 decimals');
+
+console.log('\n═══ UIHelpers: escapeHtml (XSS Prevention) ═══');
+assert(escapeHtml('<script>alert("xss")</script>') === '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;', 'XSS: script tags escaped');
+assert(escapeHtml('Tom & Jerry') === 'Tom &amp; Jerry', 'Ampersand escaped');
+assert(escapeHtml('<div>content</div>') === '&lt;div&gt;content&lt;/div&gt;', 'HTML tags escaped');
+assert(escapeHtml('"quoted"') === '&quot;quoted&quot;', 'Double quotes escaped');
+assert(escapeHtml("'single'") === '&#39;single&#39;', 'Single quotes escaped');
+assert(escapeHtml('normal text') === 'normal text', 'Normal text unchanged');
+assert(escapeHtml('') === '', 'Empty string handled');
+assert(escapeHtml(123) === '123', 'Numbers converted to string');
 
 console.log('\n═══ UIHelpers: formatAxisValue ═══');
 assert(formatAxisValue(5, false) === '5', 'Integer: 5 → "5"');
