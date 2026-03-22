@@ -265,7 +265,7 @@ console.log('\n═══ TEST SUITE 8: _setCompareScenario / _getState state int
     // Minimal stubs for app.js module-level setup
     DRC.UIController    = { readInputs: () => ({}), updateSliderFill: () => {},
                             updateAllSliderFills: () => {}, renderRisk: () => {},
-                            renderContributionChart: () => {}, renderBetaVectors: () => {},
+                            renderContributionChart: () => {},
                             renderTreatmentOverview: () => {}, renderScenarioComparison: () => {},
                             renderWhatIfBadge: () => {}, updateUnitLabels: () => {},
                             updateSliderRanges: () => {}, applyConvertedValues: () => {},

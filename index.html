@@ -12,6 +12,7 @@
                    img-src 'self' data:;
                    object-src 'none';">
     <title>Diabetes Risk Calculator</title>
+    <meta name="theme-color" content="#f2f4f8">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -46,6 +47,10 @@
                 </label>
                 <span class="toggle-label-nav" id="unit-label-si">SI</span>
             </div>
+            <!-- Dark Mode Toggle -->
+            <button id="darkModeToggle" type="button" class="btn-dark-mode" aria-label="Toggle dark mode" aria-pressed="false">
+                <i data-lucide="moon" class="lucide-icon"></i>
+            </button>
             <button id="resetBtn" type="button" class="btn-reset" aria-label="Reset all values">
                 <i data-lucide="rotate-ccw" class="lucide-icon"></i>
             </button>
@@ -207,7 +212,6 @@
                             <i data-lucide="calendar" class="lucide-icon ig-icon"></i>
                             Age
                         </label>
-                        <span class="beta-vector" id="beta-vector-age"></span>
                     </div>
                     <div class="slider-wrapper">
                         <input type="range" id="age-slider" min="20" max="80" value="50" step="1" class="slider">
@@ -225,7 +229,6 @@
                 <div class="input-group" data-field="race">
                     <div class="input-label-row">
                         <label><i data-lucide="users" class="lucide-icon ig-icon"></i> Ethnicity</label>
-                        <span class="beta-vector" id="beta-vector-race"></span>
                     </div>
                     <div class="toggle-group">
                         <span class="toggle-option">Other</span>
@@ -238,7 +241,6 @@
                 <div class="input-group" data-field="parentHist">
                     <div class="input-label-row">
                         <label><i data-lucide="users-round" class="lucide-icon ig-icon"></i> Parental Diabetes</label>
-                        <span class="beta-vector" id="beta-vector-parentHist"></span>
                     </div>
                     <div class="toggle-group">
                         <span class="toggle-option">No</span>
@@ -251,7 +253,6 @@
                 <div class="input-group" data-field="height">
                     <div class="input-label-row">
                         <label for="height-slider"><i data-lucide="move-vertical" class="lucide-icon ig-icon"></i> Height <span class="unit-label" id="height-unit">(in)</span></label>
-                        <span class="beta-vector" id="beta-vector-height"></span>
                     </div>
                     <div class="slider-wrapper">
                         <input type="range" id="height-slider" min="48" max="84" value="66" step="1" class="slider">
@@ -286,9 +287,7 @@
             <div class="input-group" data-field="fastGlu">
                 <div class="input-label-row">
                     <label for="fastGlu-slider"><i data-lucide="droplet" class="lucide-icon ig-icon"></i> Fasting Glucose <span class="unit-label" id="fastGlu-unit">(mg/dL)</span></label>
-                    <span class="beta-vector" id="beta-vector-fastGlu"></span>
                 </div>
-                <div class="strongest-badge">Strongest Predictor</div>
                 <div class="slider-wrapper">
                     <input type="range" id="fastGlu-slider" min="50" max="300" value="95" step="1" class="slider">
                     <div class="slider-track-bg segmented" id="fastGlu-track">
@@ -309,7 +308,6 @@
             <div class="input-group" data-field="waist">
                 <div class="input-label-row">
                     <label for="waist-slider"><i data-lucide="ruler" class="lucide-icon ig-icon"></i> Waist <span class="unit-label" id="waist-unit">(in)</span></label>
-                    <span class="beta-vector" id="beta-vector-waist"></span>
                 </div>
                 <div class="slider-wrapper">
                     <input type="range" id="waist-slider" min="25" max="60" value="36" step="1" class="slider">
@@ -331,7 +329,6 @@
             <div class="input-group" data-field="sbp">
                 <div class="input-label-row">
                     <label for="sbp-slider"><i data-lucide="heart-pulse" class="lucide-icon ig-icon"></i> Blood Pressure <span class="unit-label">(mmHg)</span></label>
-                    <span class="beta-vector" id="beta-vector-sbp"></span>
                 </div>
                 <div class="slider-wrapper">
                     <input type="range" id="sbp-slider" min="80" max="220" value="120" step="1" class="slider">
@@ -354,7 +351,6 @@
             <div class="input-group" data-field="cholHDL">
                 <div class="input-label-row">
                     <label for="cholHDL-slider"><i data-lucide="droplets" class="lucide-icon ig-icon"></i> HDL Cholesterol <span class="unit-label" id="cholHDL-unit">(mg/dL)</span></label>
-                    <span class="beta-vector" id="beta-vector-cholHDL"></span>
                 </div>
                 <div class="slider-wrapper">
                     <input type="range" id="cholHDL-slider" min="20" max="100" value="50" step="1" class="slider">
@@ -376,7 +372,6 @@
             <div class="input-group" data-field="cholTri">
                 <div class="input-label-row">
                     <label for="cholTri-slider"><i data-lucide="flask-conical" class="lucide-icon ig-icon"></i> Blood Fats (Triglycerides) <span class="unit-label" id="cholTri-unit">(mg/dL)</span></label>
-                    <span class="beta-vector" id="beta-vector-cholTri"></span>
                 </div>
                 <div class="slider-wrapper">
                     <input type="range" id="cholTri-slider" min="50" max="500" value="150" step="1" class="slider">
@@ -411,7 +406,7 @@
                 <i data-lucide="chevron-up" class="lucide-icon"></i>
             </button>
         </div>
-        <p class="panel-subtitle">Which factors influence risk by how much</p>
+        <p class="panel-subtitle">Which factors influence risk by how much compared to the average</p>
         <div class="panel-body">
 
             <!-- Model Tabs Navigation -->
@@ -423,8 +418,6 @@
 
             <!-- Tab Content: Contributions -->
             <div class="model-tab-content active" id="tab-contributions">
-                <h3>Factor Contributions</h3>
-                <p class="card-desc">Percentage each factor contributes to your overall risk deviation from the population mean.</p>
                 <div class="contribution-chart" id="contribution-chart" role="img" aria-label="Risk factor contribution chart"></div>
             </div>
 
@@ -465,38 +458,11 @@
         </div>
         <p class="panel-subtitle">Evidence-based steps to reduce your risk</p>
         <div class="panel-body">
-
-            <!-- Treatment Tabs Navigation -->
-            <div class="model-tabs">
-                <button class="model-tab active" data-tab="treatment">My Options</button>
-                <button class="model-tab" data-tab="zonemap">Zone Map</button>
+            <div class="treatment-overview" id="treatment-overview" role="region" aria-live="polite" aria-label="Treatment overview with expandable recommendations sorted by risk contribution">
+                <!-- Populated by ui-controller.js -->
             </div>
-
-            <!-- Tab Content: Treatment Overview -->
-            <div class="model-tab-content active" id="tab-treatment">
-                <div class="treatment-overview" id="treatment-overview" role="region" aria-live="polite" aria-label="Treatment overview with expandable recommendations sorted by risk contribution">
-                    <!-- Populated by ui-controller.js -->
-                </div>
-                <!-- Legacy container (kept for JS compatibility) -->
-                <div id="dynamic-treatments" style="display:none;"></div>
-            </div>
-
-            <!-- Tab Content: Zone Map -->
-            <div class="model-tab-content" id="tab-zonemap">
-                <h3>Treatment Zone Map</h3>
-                <p class="card-desc">Glucose (x) vs. other factors (y) determines your treatment zone.</p>
-                <div class="heatmap-grid" id="heatmap-grid">
-                    <div class="heatmap-zones">
-                        <div class="zone zone-1"><span>Low risk<br>Healthy lifestyle</span></div>
-                        <div class="zone zone-2"><span>Lifestyle changes</span></div>
-                        <div class="zone zone-3"><span>Metformin + lifestyle</span></div>
-                        <div class="zone zone-4"><span>High glucose<br>Evaluation needed</span></div>
-                        <div class="zone zone-5"><span>High risk<br>GLP-1 / SGLT2</span></div>
-                    </div>
-                    <div class="heatmap-pointer" id="heatmap-pointer"><i data-lucide="map-pin" class="lucide-icon"></i></div>
-                </div>
-            </div>
-
+            <!-- Legacy container (kept for JS compatibility) -->
+            <div id="dynamic-treatments" style="display:none;"></div>
         </div>
     </section>
 
@@ -513,6 +479,7 @@
 <script src="js/app.js"></script>
 <script src="js/patient-manager.js"></script>
 <script src="js/treatment-simulator.js"></script>
+<script src="js/dark-mode.js"></script>
 <script src="js/main.js"></script>
 
 <!-- Initialize Lucide Icons -->

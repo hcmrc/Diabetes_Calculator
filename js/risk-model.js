@@ -101,5 +101,55 @@ DRC.RiskModel = (() => {
         return (computeProbability(toSI(altered, isMetric)) - baseProb) * 100;
     };
 
-    return { toSI, computeProbability, computeContributions, getElevatedFactors, computeWhatIfDelta };
+    /**
+     * Compute the baseline (population mean) diabetes risk.
+     * LP_baseline = σ + Σ(βⱼ × μⱼ), P_baseline = 1/(1 + e^(-LP_baseline))
+     * @returns {number} Baseline probability in [0, 1].
+     */
+    const computeBaselineRisk = () => {
+        const lpBaseline = B.sigma +
+            B.age        * M.age        +
+            B.race       * M.race       +
+            B.parentHist * M.parentHist +
+            B.sbp        * M.sbp        +
+            B.waist      * M.waist      +
+            B.height     * M.height     +
+            B.fastGlu    * M.fastGlu    +
+            B.cholHDL    * M.cholHDL    +
+            B.cholTri    * M.cholTri;
+        return 1 / (1 + Math.exp(-lpBaseline));
+    };
+
+    /**
+     * Compute marginal probability contributions per factor.
+     * Δᵢ = P_full - P_without_i where P_without_i = 1/(1 + e^(-(LP - cᵢ)))
+     * @param {Object} siVals — Risk-factor values in SI units.
+     * @returns {Object} Marginal contribution per factor (decimal, e.g. 0.042).
+     */
+    const computeMarginalContributions = (siVals) => {
+        const result = {};
+        const lpFull = linearPredictor(siVals);
+        const pFull = 1 / (1 + Math.exp(-lpFull));
+        for (const key of DRC.CONFIG.ALL_FIELDS) {
+            const ci = B[key] * (siVals[key] - M[key]);
+            const pWithoutI = 1 / (1 + Math.exp(-(lpFull - ci)));
+            result[key] = pFull - pWithoutI;
+        }
+        return result;
+    };
+
+    /**
+     * Compute comprehensive marginal probability summary.
+     * @param {Object} siVals — Risk-factor values in SI units.
+     * @returns {{ contributions: Object, pFull: number, pBaseline: number, netDeviation: number, sumMarginals: number }}
+     */
+    const computeMarginalSummary = (siVals) => {
+        const pFull = computeProbability(siVals);
+        const pBaseline = computeBaselineRisk();
+        const contributions = computeMarginalContributions(siVals);
+        const sumMarginals = Object.values(contributions).reduce((a, b) => a + b, 0);
+        return { contributions, pFull, pBaseline, netDeviation: pFull - pBaseline, sumMarginals };
+    };
+
+    return { toSI, computeProbability, computeContributions, computeBaselineRisk, computeMarginalContributions, computeMarginalSummary, getElevatedFactors, computeWhatIfDelta };
 })();

@@ -116,9 +116,6 @@ const ELEMS = {
     'what-if-sbp':      makeEl({ className: 'what-if-badge', textContent: '' }),
     'what-if-age':      makeEl({ className: 'what-if-badge', textContent: '' }),
 
-    // renderHeatmapPointer
-    'heatmap-pointer':  makeEl({ style: { left: '', bottom: '' } }),
-
     // renderScenarioComparison
     'scenario-comparison': makeEl({ innerHTML: '' }),
 
@@ -163,15 +160,6 @@ const ELEMS = {
         appendChild: () => {}
     }),
 
-    // beta vectors
-    ...(Object.fromEntries(
-        DRC.CONFIG.ALL_FIELDS
-            .filter(f => f !== 'sigma')
-            .map(f => [`beta-vector-${f}`, makeEl({
-                className: '',
-                setAttribute: function(k, v) { this._attrs = this._attrs || {}; this._attrs[k] = v; }
-            })])
-    ))
 };
 
 // createElement returns a mock that can have children appended
@@ -328,42 +316,9 @@ assert(html3.includes('worsened'),       'delta=0 → classified as "worsened"')
 assert(html3.includes('data-lucide="minus"'), 'delta=0 → uses minus icon (trending-flat does not exist in Lucide)');
 assert(html3.includes('+0.00%'),         'delta=0 → shows "+0.00%"');
 
-// ─── TEST SUITE 5: renderHeatmapPointer() ────────────────────────────────────
+// ─── TEST SUITE 5: updateNonModSummary() ─────────────────────────────────────
 
-console.log('\n═══ TEST SUITE 5: renderHeatmapPointer() ═══');
-
-// High glucose contribution, low other → pointer far right, near bottom
-UIC.renderHeatmapPointer({ fastGlu: 4, age: 0, race: 0, parentHist: 0, sbp: 0,
-                            waist: 0, height: 0, cholHDL: 0, cholTri: 0 });
-const leftHigh = parseFloat(ELEMS['heatmap-pointer'].style.left);
-assert(leftHigh > 85, `High glucose contrib → pointer.style.left > 85% (got ${leftHigh}%)`);
-
-// Zero glucose contribution → pointer at left side
-UIC.renderHeatmapPointer({ fastGlu: 0, age: 0, race: 0, parentHist: 0, sbp: 0,
-                            waist: 0, height: 0, cholHDL: 0, cholTri: 0 });
-const leftZero = parseFloat(ELEMS['heatmap-pointer'].style.left);
-assert(leftZero >= 5 && leftZero <= 60,
-    `Zero glucose contrib → pointer.style.left in [5%, 60%] (got ${leftZero}%)`);
-
-// High "other" contributions → pointer near top
-UIC.renderHeatmapPointer({ fastGlu: 0, sbp: 3, waist: 2, age: 0, race: 0,
-                            parentHist: 0, height: 0, cholHDL: 0, cholTri: 0 });
-const bottomHigh = parseFloat(ELEMS['heatmap-pointer'].style.bottom);
-assert(bottomHigh > 70, `High other contribs → pointer.style.bottom > 70% (got ${bottomHigh}%)`);
-
-// All-zeros → both style properties are set (not undefined/empty)
-UIC.renderHeatmapPointer({ fastGlu: 0, age: 0, race: 0, parentHist: 0, sbp: 0,
-                            waist: 0, height: 0, cholHDL: 0, cholTri: 0 });
-assert(typeof ELEMS['heatmap-pointer'].style.left   === 'string' &&
-       ELEMS['heatmap-pointer'].style.left.endsWith('%'),
-    'renderHeatmapPointer always sets style.left as a percentage string');
-assert(typeof ELEMS['heatmap-pointer'].style.bottom === 'string' &&
-       ELEMS['heatmap-pointer'].style.bottom.endsWith('%'),
-    'renderHeatmapPointer always sets style.bottom as a percentage string');
-
-// ─── TEST SUITE 6: updateNonModSummary() ─────────────────────────────────────
-
-console.log('\n═══ TEST SUITE 6: updateNonModSummary() ═══');
+console.log('\n═══ TEST SUITE 5: updateNonModSummary() ═══');
 
 ELEMS['age-value'].value = '58';
 ELEMS['race-toggle'].checked = true;
@@ -385,9 +340,9 @@ ELEMS['parentHist-toggle'].checked = true;
 ELEMS['height-value'].value = '66';
 ELEMS['height-value-unit'].textContent = 'in';
 
-// ─── TEST SUITE 7: updateModSummary() ────────────────────────────────────────
+// ─── TEST SUITE 6: updateModSummary() ────────────────────────────────────────
 
-console.log('\n═══ TEST SUITE 7: updateModSummary() ═══');
+console.log('\n═══ TEST SUITE 6: updateModSummary() ═══');
 
 ELEMS['fastGlu-value'].value = '5.8';
 ELEMS['fastGlu-value-unit'].textContent = 'mmol/L';
@@ -407,9 +362,9 @@ assert(ELEMS['summary-sbp'].textContent     === 'BP: 135 mmHg',     'summary-sbp
 assert(ELEMS['summary-hdl'].textContent     === 'HDL: 1.1 mmol/L',  'summary-hdl correct');
 assert(ELEMS['summary-tri'].textContent     === 'TG: 2.1 mmol/L',   'summary-tri correct');
 
-// ─── TEST SUITE 8: applyConvertedValues() ─────────────────────────────────────
+// ─── TEST SUITE 7: applyConvertedValues() ─────────────────────────────────────
 
-console.log('\n═══ TEST SUITE 8: applyConvertedValues() ═══');
+console.log('\n═══ TEST SUITE 7: applyConvertedValues() ═══');
 
 // US → SI conversion: height 66 in × 2.54 = 167.64 → clamped to [122,213] step=1 → 168
 const usVals = { height: 66, waist: 38, fastGlu: 100, cholHDL: 50, cholTri: 150 };

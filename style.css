@@ -40,6 +40,15 @@
     --text-secondary: #6e6e73;
     --text-tertiary:  #86868b;
 
+    /* Typography Scale */
+    --text-xs:        11px;    /* Minimum readable - labels, badges, small text */
+    --text-sm:        12px;    /* Sublabels, badges, secondary text */
+    --text-base:      14px;    /* Body text, standard content */
+    --text-md:        15px;    /* Emphasized body, panel headers */
+    --text-lg:        16px;    /* Section headers, emphasized text */
+    --text-xl:        18px;    /* Large section headers */
+    --text-hero:      48px;    /* Hero percentage display */
+
     /* Backgrounds */
     --bg-page:        #f2f4f8;
     --bg-card:        #ffffff;
@@ -817,21 +826,6 @@ body {
     font-size: 12px;
 }
 
-/* Strongest predictor badge */
-.strongest-badge {
-    display: inline-block;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--danger);
-    background: var(--danger-light);
-    padding: 2px 8px;
-    border-radius: 4px;
-    margin-bottom: 6px;
-}
-
-
 /* ============================================
    12. SLIDERS (compact)
    ============================================ */
@@ -1051,46 +1045,8 @@ body {
 
 
 /* ============================================
-   15. BETA VECTORS & WHAT-IF BADGES
+   15. WHAT-IF BADGES
    ============================================ */
-
-.beta-vector {
-    display: inline-flex;
-    align-items: center;
-    font-size: 10px;
-    font-weight: 700;
-    opacity: 0.8;
-    transition: opacity 0.2s;
-    cursor: help;
-    padding: 1px 5px;
-    border-radius: 4px;
-    background: rgba(0, 0, 0, 0.03);
-}
-
-.beta-vector::before {
-    content: attr(data-arrow);
-    margin-right: 2px;
-    font-size: 11px;
-}
-
-.beta-vector::after {
-    content: attr(data-label);
-    font-size: 9px;
-    font-weight: 500;
-    letter-spacing: 0.3px;
-}
-
-.beta-vector.risk-up {
-    color: var(--danger);
-    background: var(--danger-light);
-}
-
-.beta-vector.protective {
-    color: var(--safe);
-    background: var(--safe-light);
-}
-
-.beta-vector:hover { opacity: 1; }
 
 .what-if-badge {
     display: inline-block;
@@ -1288,6 +1244,173 @@ body {
     gap: 2px;
 }
 
+/* Summary card above contribution chart */
+.contrib-summary-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+    background: var(--bg-elevated);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+}
+
+.contrib-summary-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 60px;
+}
+
+.contrib-summary-your-risk {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--text-primary);
+}
+
+.contrib-summary-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+}
+
+.contrib-summary-divider {
+    width: 1px;
+    height: 28px;
+    background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.1), transparent);
+}
+
+.contrib-summary-comparison {
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.contrib-summary-sentence {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.contrib-summary-sentence strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* Filter toggle above headers */
+.contrib-filter-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    padding: 6px 0;
+    margin-bottom: 2px;
+}
+
+.contrib-filter-label {
+    font-size: 10px;
+    color: var(--text-tertiary);
+}
+
+/* Contribution chart header */
+.contrib-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    padding: 6px 4px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.contrib-header-left {
+    width: 140px;
+    flex-shrink: 0;
+}
+
+.contrib-header-center {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 4px;
+}
+
+.contrib-header-left-side {
+    text-align: left;
+    color: var(--safe);
+    white-space: nowrap;
+    transform: translateX(-35px);
+}
+
+.contrib-header-center-label {
+    padding: 0 4px;
+    text-align: center;
+    color: var(--text-tertiary);
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.contrib-header-right-side {
+    text-align: right;
+    color: var(--danger);
+    white-space: nowrap;
+    transform: translateX(35px);
+}
+
+.contrib-header-right {
+    width: 60px;
+    flex-shrink: 0;
+}
+
+/* Contribution row with hover tooltip */
+.contrib-row {
+    position: relative;
+    cursor: default;
+}
+
+.contrib-row[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text-primary);
+    color: white;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 400;
+    white-space: normal;
+    max-width: 300px;
+    width: max-content;
+    min-width: 200px;
+    text-align: center;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    line-height: 1.5;
+    pointer-events: none;
+}
+
+.contrib-row[data-tooltip]:hover::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--text-primary);
+    z-index: 1000;
+}
+
 
 /* ============================================
    17. RADAR CHART
@@ -1387,62 +1510,10 @@ body {
 
 
 /* ============================================
-   18. TREATMENT HEATMAP (center column)
+   18. CONTRIBUTION CHART (center column)
    ============================================ */
 
-.heatmap-grid {
-    position: relative;
-    height: 200px;
-    border-radius: var(--radius);
-    overflow: visible;
-    border: 1px solid var(--border);
-}
-
-.heatmap-zones {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    height: 100%;
-    border-radius: var(--radius);
-    overflow: hidden;
-}
-
-.zone {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 6px;
-    text-align: center;
-    font-size: 11px;
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    line-height: 1.2;
-}
-
-.zone-1 { grid-column: 1; grid-row: 2; background: rgba(52, 199, 89, 0.55); }
-.zone-2 { grid-column: 2; grid-row: 2; background: rgba(255, 159, 10, 0.45); }
-.zone-3 { grid-column: 1; grid-row: 1; background: rgba(255, 103, 35, 0.4); }
-.zone-4 { grid-column: 3; grid-row: 2; background: rgba(255, 103, 35, 0.5); }
-.zone-5 { grid-column: 2 / 4; grid-row: 1; background: rgba(255, 59, 48, 0.45); }
-
-.heatmap-pointer {
-    position: absolute;
-    transform: translate(-50%, 50%);
-    transition: left 0.3s var(--ease-out), bottom 0.3s var(--ease-out);
-    z-index: 10;
-}
-
-.heatmap-pointer .lucide-icon {
-    font-size: 24px;
-    color: var(--blue);
-    background: white;
-    border-radius: 50%;
-    padding: 3px;
-    box-shadow: var(--shadow-md);
-    border: 2px solid var(--blue);
-}
-
+/* Contribution chart styles continue in section 17 */
 
 /* ============================================
    19. TREATMENT RECOMMENDATIONS (right column)
@@ -1755,7 +1826,7 @@ body {
 /* .timeline-threshold removed — 10% line no longer displayed */
 
 .timeline-label {
-    font-size: 9px;
+    font-size: 11px;
     fill: var(--text-tertiary);
 }
 
@@ -1803,10 +1874,6 @@ body {
 
     .panel-header-bar h2 {
         font-size: 14px;
-    }
-
-    .heatmap-grid {
-        height: 160px;
     }
 
     /* Timeline: stack chart + legend vertically on smaller screens */
@@ -2175,6 +2242,11 @@ body {
     background: rgba(255, 59, 48, 0.03);
 }
 
+.treatment-overview-row.elevated {
+    border-left-color: #ff9500;
+    background: rgba(255, 149, 0, 0.03);
+}
+
 .treatment-overview-row.normal {
     border-left-color: var(--safe);
     background: rgba(52, 199, 89, 0.03);
@@ -2198,6 +2270,10 @@ body {
     background: rgba(255, 59, 48, 0.20);
 }
 
+.treatment-overview-row.elevated .tov-icon-col {
+    background: rgba(255, 149, 0, 0.20);
+}
+
 .treatment-overview-row.normal .tov-icon-col {
     background: rgba(52, 199, 89, 0.20);
 }
@@ -2208,6 +2284,10 @@ body {
 
 .treatment-overview-row.indicated .tov-factor-icon {
     color: var(--danger) !important;
+}
+
+.treatment-overview-row.elevated .tov-factor-icon {
+    color: #ff9500 !important;
 }
 
 .treatment-overview-row.normal .tov-factor-icon {
@@ -2264,6 +2344,15 @@ body {
 
 .tov-status.status-indicated .lucide-icon {
     color: #ff3b30 !important;
+}
+
+.tov-status.status-elevated {
+    color: #ff9500;
+    background: rgba(255, 149, 0, 0.20);
+}
+
+.tov-status.status-elevated .lucide-icon {
+    color: #ff9500 !important;
 }
 
 .tov-status.status-normal {
@@ -2366,6 +2455,10 @@ body {
 
 .treatment-overview-row.indicated .tov-details-inner {
     border-top-color: rgba(255, 59, 48, 0.15);
+}
+
+.treatment-overview-row.elevated .tov-details-inner {
+    border-top-color: rgba(255, 149, 0, 0.15);
 }
 
 .treatment-overview-row.normal .tov-details-inner {
@@ -3343,3 +3436,432 @@ body {
 /* Patient menu */
 .btn-patient-menu .lucide-icon { color: var(--text-secondary) !important; }
 .pd-close-btn .lucide-icon { color: var(--text-secondary) !important; }
+
+/* ============================================
+   34. DARK MODE TOGGLE
+   ============================================ */
+
+.btn-dark-mode {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s, color 0.2s;
+}
+
+.btn-dark-mode:hover {
+    background: rgba(0, 0, 0, 0.08);
+    transform: scale(1.05);
+}
+
+.btn-dark-mode.active {
+    background: rgba(255, 200, 50, 0.15);
+    color: #ffc832;
+}
+
+.btn-dark-mode .lucide-icon {
+    width: 18px;
+    height: 18px;
+}
+
+
+/* ============================================
+   36. DARK MODE THEME
+   ============================================ */
+
+/* Theme transition for smooth switching */
+.theme-transition,
+.theme-transition *,
+.theme-transition *::before,
+.theme-transition *::after {
+    transition: background-color 0.3s ease,
+                border-color 0.3s ease,
+                color 0.3s ease,
+                box-shadow 0.3s ease,
+                fill 0.3s ease,
+                stroke 0.3s ease !important;
+}
+
+/* Dark mode color variables */
+:root.dark {
+    /* Text */
+    --text-primary:   #f5f5f7;
+    --text-secondary: #a1a1aa;
+    --text-tertiary:  #71717a;
+
+    /* Backgrounds - warm dark colors for better readability */
+    --bg-page:        #0f0f12;
+    --bg-card:        #1a1a1f;
+    --bg-elevated:    #232328;
+    --bg-frosted:     rgba(26, 26, 31, 0.85);
+
+    /* Borders & Shadows */
+    --border:         rgba(255, 255, 255, 0.08);
+    --border-strong:  rgba(255, 255, 255, 0.15);
+    --shadow-sm:      0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow:         0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-md:      0 4px 16px rgba(0, 0, 0, 0.45);
+    --shadow-lg:      0 8px 32px rgba(0, 0, 0, 0.5);
+    --shadow-card:    0 2px 12px rgba(0, 0, 0, 0.4), 0 0 1px rgba(255, 255, 255, 0.06);
+
+    /* Primary blue - slightly lighter for dark mode */
+    --blue-hover:     #1a8cff;
+    --blue-light:     rgba(0, 113, 227, 0.15);
+    --blue-glow:      rgba(0, 113, 227, 0.25);
+}
+
+/* System preference dark mode (when no explicit preference set) */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --text-primary:   #f5f5f7;
+        --text-secondary: #a1a1aa;
+        --text-tertiary:  #71717a;
+        --bg-page:        #0f0f12;
+        --bg-card:        #1a1a1f;
+        --bg-elevated:    #232328;
+        --bg-frosted:     rgba(26, 26, 31, 0.85);
+        --border:         rgba(255, 255, 255, 0.08);
+        --border-strong:  rgba(255, 255, 255, 0.15);
+        --shadow-sm:      0 1px 3px rgba(0, 0, 0, 0.3);
+        --shadow:         0 2px 8px rgba(0, 0, 0, 0.4);
+        --shadow-md:      0 4px 16px rgba(0, 0, 0, 0.45);
+        --shadow-lg:      0 8px 32px rgba(0, 0, 0, 0.5);
+        --shadow-card:    0 2px 12px rgba(0, 0, 0, 0.4), 0 0 1px rgba(255, 255, 255, 0.06);
+        --blue-hover:     #1a8cff;
+        --blue-light:     rgba(0, 113, 227, 0.15);
+        --blue-glow:      rgba(0, 113, 227, 0.25);
+    }
+}
+
+/* Dark mode specific overrides for elements that need explicit colors */
+
+/* Navigation */
+.dark .top-nav {
+    background: rgba(26, 26, 31, 0.95);
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .nav-brand {
+    color: var(--text-primary);
+}
+
+/* Unit toggle in dark mode */
+.dark .unit-toggle-nav {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.dark .toggle-label-nav:first-child {
+    color: var(--text-primary);
+}
+
+.dark .toggle-track-nav {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Reset button */
+.dark .btn-reset {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.dark .btn-reset:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Dark mode toggle button */
+.dark .btn-dark-mode {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.dark .btn-dark-mode:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* Hero section gradients */
+.dark .hero-section {
+    background: var(--bg-card);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.dark .hero-section[data-risk-level="safe"] {
+    background: linear-gradient(180deg, rgba(52, 199, 89, 0.08) 0%, #1a1a1f 100%);
+}
+.dark .hero-section[data-risk-level="alert"] {
+    background: linear-gradient(180deg, rgba(255, 159, 10, 0.1) 0%, #1a1a1f 100%);
+}
+.dark .hero-section[data-risk-level="warning"] {
+    background: linear-gradient(180deg, rgba(255, 103, 35, 0.12) 0%, #1a1a1f 100%);
+}
+.dark .hero-section[data-risk-level="danger"] {
+    background: linear-gradient(180deg, rgba(255, 59, 48, 0.12) 0%, #1a1a1f 100%);
+}
+
+/* Risk bar marker */
+.dark .risk-bar-marker {
+    background: #1a1a1f;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Icon array */
+.dark .icon-array-container {
+    background: var(--bg-elevated);
+}
+
+.dark .icon-array-item {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.dark .icon-array-item.affected {
+    background: #ff453a;
+    box-shadow: 0 1px 3px rgba(255, 59, 48, 0.3);
+}
+
+/* Expand hero button */
+.dark .btn-expand-hero {
+    background: var(--blue-light);
+}
+
+.dark .btn-expand-hero:hover {
+    background: var(--blue-glow);
+}
+
+/* Panel cards */
+.dark .col-panel {
+    background: var(--bg-card);
+    border-color: rgba(255, 255, 255, 0.06);
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.3), 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.dark #panel-input[data-risk-level],
+.dark #panel-treatment[data-risk-level],
+.dark #panel-model {
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Panel header bar */
+.dark .panel-header-bar {
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.dark #panel-input .panel-header-bar,
+.dark #panel-treatment .panel-header-bar,
+.dark #panel-model .panel-header-bar {
+    border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Input groups */
+.dark .input-group {
+    border-bottom-color: rgba(255, 255, 255, 0.04);
+}
+
+.dark .input-group-highlight {
+    background: rgba(0, 102, 204, 0.1);
+    border-color: rgba(0, 102, 204, 0.25);
+}
+
+/* Sliders */
+.dark .slider::-webkit-slider-thumb {
+    background: #2a2a30;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.dark .slider::-webkit-slider-thumb:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+.dark .slider::-moz-range-thumb {
+    background: #2a2a30;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.dark .slider-track-bg {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Value input */
+.dark .value-input {
+    background: var(--bg-elevated);
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+}
+
+.dark .value-input:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 2px rgba(0, 113, 227, 0.25);
+}
+
+/* Toggle switches */
+.dark .toggle-slider {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.dark .toggle-slider::before {
+    background: #f5f5f7;
+}
+
+.dark .toggle-switch input:checked + .toggle-slider {
+    background: var(--blue);
+}
+
+/* Contribution chart */
+.dark .contrib-summary-card {
+    background: var(--bg-elevated);
+    border-color: var(--border);
+}
+
+.dark .contrib-summary-divider {
+    background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+}
+
+.dark .contrib-header {
+    border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Causality chain */
+.dark .causality-chain {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.dark .causality-chain.highlighted {
+    background: rgba(255, 59, 48, 0.1);
+    box-shadow: 0 0 0 1px rgba(255, 59, 48, 0.2);
+}
+
+.dark .chain-node {
+    background: var(--bg-card);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .chain-node:last-of-type {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #a1a1aa;
+}
+
+/* Model tabs */
+.dark .model-tab {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.dark .model-tab:hover {
+    background: var(--blue-light);
+}
+
+.dark .model-tab.active {
+    background: var(--blue-light);
+    border-color: rgba(0, 113, 227, 0.3);
+}
+
+/* Treatment overview */
+.dark .treatment-overview-row {
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dark .treatment-overview-row.indicated {
+    background: rgba(255, 59, 48, 0.08);
+}
+
+.dark .treatment-overview-row.elevated {
+    background: rgba(255, 149, 0, 0.08);
+}
+
+.dark .treatment-overview-row.normal {
+    background: rgba(52, 199, 89, 0.08);
+}
+
+.dark .treatment-overview-row:hover {
+    background: rgba(0, 102, 204, 0.1);
+}
+
+.dark .tov-bar-container {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.dark .tov-details .therapy-mini {
+    background: var(--bg-elevated);
+}
+
+/* Timeline expandable */
+.dark .timeline-expandable-area {
+    background: var(--bg-page);
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.dark .timeline-expandable-title h3 {
+    color: var(--text-primary);
+}
+
+.dark .timeline-chart {
+    background: var(--bg-elevated);
+    border-color: var(--border);
+}
+
+/* Patient drawer */
+.dark .patient-overlay {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.dark .patient-drawer {
+    background: var(--bg-card);
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.5);
+}
+
+.dark .pd-header {
+    background: var(--bg-elevated);
+    border-bottom-color: var(--border);
+}
+
+.dark .pd-close-btn {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.dark .pd-close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.dark .pd-input {
+    background: var(--bg-elevated);
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+}
+
+.dark .pd-btn-io {
+    background: var(--bg-elevated);
+    border-color: var(--border-strong);
+}
+
+.dark .pd-btn-io:hover {
+    background: rgba(0, 102, 204, 0.1);
+    border-color: rgba(0, 102, 204, 0.3);
+}
+
+/* Tooltips */
+.dark .info-icon[data-tooltip]:hover::after,
+.dark .contrib-row[data-tooltip]:hover::after {
+    background: #2a2a30;
+    box-shadow: var(--shadow-lg);
+}
+
+.dark .info-icon[data-tooltip]:hover::before,
+.dark .contrib-row[data-tooltip]:hover::before {
+    border-top-color: #2a2a30;
+}
+
+/* Section collapse */
+.dark .section-collapse-btn {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.dark .section-collapse-btn:hover {
+    background: rgba(0, 113, 227, 0.2);
+}
+
+.dark .section-summary {
+    background: var(--bg-elevated);
+    border-color: var(--border);
+}

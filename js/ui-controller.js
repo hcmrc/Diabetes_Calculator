@@ -183,19 +183,58 @@ DRC.UIController = (() => {
      * Mathematical basis (Van Belle & Calster, 2015):
      *   percentage_i = |contribution_i| / sum(|contribution_j|) * 100
      */
-    const renderContributionChart = (contributions) => {
+    const renderContributionChart = (summaryData) => {
         const container = el('contribution-chart');
         if (!container) return;
         container.innerHTML = '';
 
-        // Risk-factors-only filter toggle (default: enabled)
-        // Shows only factors with positive contribution (above population mean = risk-increasing)
+        const contributions = summaryData.contributions;
+        const pFull = summaryData.pFull;
+        const pBaseline = summaryData.pBaseline;
+        const netDeviation = summaryData.netDeviation;
+
         const filterState = container.getAttribute('data-filter-risk') !== 'false';
 
+        if (!_filterHandlerAttached) {
+            container.addEventListener('change', (e) => {
+                if (e.target.id === 'risk-filter-toggle') {
+                    container.setAttribute('data-filter-risk', e.target.checked);
+                    DRC.App.trigger('risk:recalculate');
+                }
+            });
+            _filterHandlerAttached = true;
+        }
+
+        // Summary card — prominent comparison at top
+        const pFullPct = (pFull * 100).toFixed(1);
+        const pBaselinePct = (pBaseline * 100).toFixed(1);
+        const netDeviationPct = Math.abs(netDeviation * 100).toFixed(1);
+        const isLower = netDeviation < 0;
+        const comparisonWord = isLower ? 'lower' : 'higher';
+        const comparisonColor = isLower ? '#34c759' : '#ff3b30';
+
+        const summaryBanner = document.createElement('div');
+        summaryBanner.className = 'contrib-summary-card';
+        summaryBanner.innerHTML = `
+            <div class="contrib-summary-main">
+                <span class="contrib-summary-your-risk">${pFullPct}%</span>
+                <span class="contrib-summary-label">your risk</span>
+            </div>
+            <div class="contrib-summary-divider"></div>
+            <div class="contrib-summary-comparison">
+                <div class="contrib-summary-sentence">
+                    <span style="color:${comparisonColor};font-weight:700;">${netDeviationPct}% ${comparisonWord}</span>
+                    than the average of <strong>${pBaselinePct}%</strong>
+                </div>
+            </div>
+        `;
+        container.appendChild(summaryBanner);
+
+        // Filter toggle — above column headers
         const filterToggle = document.createElement('div');
-        filterToggle.style.cssText = 'display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-bottom:8px;';
+        filterToggle.className = 'contrib-filter-toggle';
         filterToggle.innerHTML = `
-            <span style="font-size:11px;color:#6e6e73;">Show above average risk factors only</span>
+            <span class="contrib-filter-label">Show above average risk factors only</span>
             <label class="toggle-switch" style="transform:scale(0.75);">
                 <input type="checkbox" id="risk-filter-toggle" ${filterState ? 'checked' : ''}>
                 <span class="toggle-slider"></span>
@@ -203,50 +242,72 @@ DRC.UIController = (() => {
         `;
         container.appendChild(filterToggle);
 
-        // Use event delegation on container instead of direct listener (prevents memory leak)
-        // Only attach once by checking for existing handler
-        if (!_filterHandlerAttached) {
-            container.addEventListener('change', (e) => {
-                if (e.target.id === 'risk-filter-toggle') {
-                    container.setAttribute('data-filter-risk', e.target.checked);
-                    // Trigger recalculation to re-render
-                    DRC.App.trigger('risk:recalculate');
-                }
-            });
-            _filterHandlerAttached = true;
-        }
-
-        const totalAbs = Object.values(contributions)
-            .reduce((sum, v) => sum + Math.abs(v), 0);
+        // Header row with column labels
+        const headerRow = document.createElement('div');
+        headerRow.className = 'contrib-header';
+        headerRow.innerHTML = `
+            <div class="contrib-header-left"></div>
+            <div class="contrib-header-center">
+                <div class="contrib-header-left-side">Better than average</div>
+                <div class="contrib-header-center-label">Average</div>
+                <div class="contrib-header-right-side">Worse than average</div>
+            </div>
+            <div class="contrib-header-right"></div>
+        `;
+        container.appendChild(headerRow);
 
         const items = Object.entries(contributions)
-            .map(([key, val]) => ({
-                key, val,
-                abs: Math.abs(val),
-                pct: totalAbs > 0 ? (Math.abs(val) / totalAbs) * 100 : 0
+            .map(([key, deltaI]) => ({
+                key, deltaI,
+                abs: Math.abs(deltaI)
             }))
             .sort((a, b) => b.abs - a.abs);
 
-        // When filter active: show only risk-increasing factors (positive contribution = above population mean)
-        const filteredItems = filterState ? items.filter(i => i.val > 0) : items;
-        const maxPct = Math.max(...filteredItems.map(i => i.pct), 1);
+        const filteredItems = filterState ? items.filter(i => i.deltaI > 0) : items;
+        const maxAbs = Math.max(...filteredItems.map(i => i.abs), 0.001);
 
-        filteredItems.forEach(({ key, val, pct }, idx) => {
-            const barWidth = (pct / maxPct) * 100;
-            const isPositive = val >= 0;
-            const pctDisplay = pct < 1 && pct > 0 ? '<1%' : Math.round(pct) + '%';
+        filteredItems.forEach(({ key, deltaI }, idx) => {
+            const barWidth = (Math.abs(deltaI) / maxAbs) * 100;
+            const isPositive = deltaI >= 0;
+            const absDeltaPct = Math.abs(deltaI) * 100;
+            const pctDisplay = absDeltaPct < 0.1 ? '<0.1%' : (absDeltaPct.toFixed(1) + '%');
+            const signedDisplay = isPositive ? '+' + pctDisplay : '−' + pctDisplay;
+
             const barColor = isPositive
                 ? 'linear-gradient(90deg, #ff3b30, #ff453a)'
                 : 'linear-gradient(270deg, #34c759, #30d158)';
             const textColor = isPositive ? '#ff3b30' : '#34c759';
 
+            // Tooltip - protective factors have negative beta coefficients (height, cholHDL)
+            // Binary factors (race, parentHist) don't have "above/below average" values
+            const isProtectiveFactor = CFG.BETAS[key] < 0;
+            const isBinaryFactor = ['race', 'parentHist'].includes(key);
+            const isAboveAverage = isProtectiveFactor ? !isPositive : isPositive;
+
+            let tooltipText;
+            if (isBinaryFactor) {
+                tooltipText = isPositive
+                    ? `Your ${CFG.LABELS[key].toLowerCase()} increases your risk by ${pctDisplay}.`
+                    : `Your ${CFG.LABELS[key].toLowerCase()} decreases your risk by ${pctDisplay} compared to average.`;
+            } else {
+                tooltipText = isPositive
+                    ? `Your ${CFG.LABELS[key].toLowerCase()} is ${isAboveAverage ? 'above' : 'below'} average and increases your risk by ${pctDisplay}.`
+                    : `Your ${CFG.LABELS[key].toLowerCase()} is ${isAboveAverage ? 'above' : 'below'} average and decreases your risk by ${pctDisplay}.`;
+            }
+
             const row = document.createElement('div');
+            row.className = 'contrib-row';
             row.style.cssText = 'display:flex;align-items:flex-start;gap:8px;padding:6px 4px;border-bottom:1px solid rgba(0,0,0,0.04);flex-wrap:wrap;border-radius:6px;';
             row.setAttribute('data-field', key);
+            row.setAttribute('data-tooltip', tooltipText);
 
+            // Risk-decreasing: Name | Percentage | Bar  |  Risk-increasing: Name | Bar | Percentage
             row.innerHTML = `
                 <div style="display:flex;align-items:center;gap:8px;width:100%;">
-                    <div style="width:80px;flex-shrink:0;font-size:11px;font-weight:500;color:#6e6e73;text-align:right;">${CFG.LABELS[key]}</div>
+                    <div style="width:140px;flex-shrink:0;display:flex;align-items:center;gap:6px;">
+                        <span style="font-size:11px;font-weight:500;color:#6e6e73;text-align:left;flex:1;">${CFG.LABELS[key]}</span>
+                        ${!isPositive ? `<span style="font-size:10px;font-weight:600;color:${textColor};">${signedDisplay}</span>` : ''}
+                    </div>
                     <div style="flex:1;display:flex;height:22px;position:relative;align-items:center;">
                         <div style="flex:1;display:flex;justify-content:flex-end;padding-right:1px;height:100%;align-items:center;">
                             ${!isPositive ? `<div style="height:16px;width:${barWidth}%;border-radius:4px;transition:width 0.4s cubic-bezier(0.25,0.46,0.45,0.94);min-width:3px;background:${barColor};"></div>` : ''}
@@ -256,60 +317,26 @@ DRC.UIController = (() => {
                             ${isPositive ? `<div style="height:16px;width:${barWidth}%;border-radius:4px;transition:width 0.4s cubic-bezier(0.25,0.46,0.45,0.94);min-width:3px;background:${barColor};"></div>` : ''}
                         </div>
                     </div>
-                    <div style="width:50px;flex-shrink:0;font-size:10px;font-weight:600;color:${textColor};text-align:${isPositive ? 'left' : 'right'};">${pctDisplay}</div>
+                    ${isPositive ? `<div style="width:60px;flex-shrink:0;font-size:10px;font-weight:600;color:${textColor};text-align:left;">${signedDisplay}</div>` : '<div style="width:60px;flex-shrink:0;"></div>'}
                 </div>
-                ${idx < 3 ? (() => {
-                    const beta = CFG.BETAS[key] || 0;
-                    const valueAboveMean = beta >= 0 ? isPositive : !isPositive;
-                    const direction = valueAboveMean ? 'above' : 'below';
-                    const explanation = isPositive
-                        ? `contributes ${Math.round(pct)}% to your risk – your value is ${direction} the population average.`
-                        : `accounts for ${Math.round(pct)}% – your value is ${direction} average, which is favorable.`;
-                    return `<div style="width:calc(100% - 88px);margin-left:88px;font-size:9px;color:#86868b;font-style:italic;margin-top:2px;line-height:1.3;">Your ${CFG.LABELS[key].toLowerCase()} ${explanation}</div>`;
-                })() : ''}
             `;
             container.appendChild(row);
         });
-
-        // Legend
-        const legend = document.createElement('div');
-        legend.style.cssText = 'display:flex;justify-content:center;gap:16px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,0.06);';
-        legend.innerHTML = `
-            <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#6e6e73;">
-                <div style="width:10px;height:6px;border-radius:2px;background:linear-gradient(90deg,#30d158,#34c759);"></div> Reduces Risk
-            </div>
-            <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#6e6e73;">
-                <div style="width:10px;height:6px;border-radius:2px;background:linear-gradient(90deg,#ff3b30,#ff453a);"></div> Increases Risk
-            </div>
-            <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:#86868b;">(% of total contribution)</div>
-        `;
-        container.appendChild(legend);
-    };
-
-    // ─── Rendering: Heatmap pointer ─────────────────────────────────────
-
-    /** Move the treatment zone map pointer based on contribution weights. */
-    const renderHeatmapPointer = (contributions) => {
-        const pointer = el('heatmap-pointer');
-        if (!pointer) return;
-
-        const gluContrib = contributions.fastGlu;
-        const otherContrib = Object.entries(contributions)
-            .filter(([k]) => k !== 'fastGlu')
-            .reduce((sum, [, v]) => sum + v, 0);
-
-        const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
-        pointer.style.left   = `${5 + (clamp(gluContrib, -4, 4) + 4) / 8 * 90}%`;
-        pointer.style.bottom = `${5 + (clamp(otherContrib, -3, 3) + 3) / 6 * 90}%`;
     };
 
     // ─── Rendering: Treatment overview ──────────────────────────────────
 
     /**
      * Unified treatment overview with expandable detail rows.
-     * Indicated treatments auto-expand; normal ones are collapsed.
+     *
+     * Three-tier status system:
+     * - Indicated (red, expanded): Clinical threshold reached AND above average
+     * - Elevated (orange, collapsed): Above average but below clinical threshold
+     * - Normal (green, collapsed): Below average (protective)
+     *
+     * Surgical options for waist use clinical threshold (waistIsHigh).
      */
-    const renderTreatmentOverview = ({ elevatedFactors, waistIsHigh }, contributions = {}) => {
+    const renderTreatmentOverview = ({ elevatedFactors, waistIsHigh }, contributions = {}, marginalContributions = {}) => {
         const container = el('treatment-overview');
         if (!container) return;
         container.innerHTML = '';
@@ -321,20 +348,32 @@ DRC.UIController = (() => {
         const totalAbs = Object.values(contributions)
             .reduce((sum, v) => sum + Math.abs(v), 0);
 
-        const items = Object.keys(CFG.TREATMENTS).map(factor => ({
-            factor,
-            treatment: CFG.TREATMENTS[factor],
-            absContrib: Math.abs(contributions[factor] || 0),
-            pct: totalAbs > 0 ? (Math.abs(contributions[factor] || 0) / totalAbs) * 100 : 0,
-            isIndicated: elevatedFactors.includes(factor)
-        })).sort((a, b) => b.absContrib - a.absContrib);
+        const items = Object.keys(CFG.TREATMENTS).map(factor => {
+            const marginalDelta = marginalContributions[factor] || 0;
+            const isAboveAverage = marginalDelta >= 0;
+            const isClinicallyElevated = elevatedFactors.includes(factor);
+            // Indicated = clinically elevated AND above average
+            const isIndicated = isClinicallyElevated && isAboveAverage;
+            // Elevated = above average but NOT clinically elevated
+            const isElevated = isAboveAverage && !isClinicallyElevated;
+            return {
+                factor,
+                treatment: CFG.TREATMENTS[factor],
+                absContrib: Math.abs(contributions[factor] || 0),
+                pct: totalAbs > 0 ? (Math.abs(contributions[factor] || 0) / totalAbs) * 100 : 0,
+                marginalDelta,
+                isIndicated,
+                isElevated,
+                isAboveAverage
+            };
+        }).sort((a, b) => b.absContrib - a.absContrib);
 
-        // When risk-filter active: show only treatments for indicated (elevated) factors
-        const displayItems = filterRiskOnly ? items.filter(i => i.isIndicated) : items;
+        // When risk-filter active: show only treatments for above-average factors
+        const displayItems = filterRiskOnly ? items.filter(i => i.isAboveAverage) : items;
 
         const maxPct = Math.max(...displayItems.map(i => i.pct), 1);
 
-        displayItems.forEach(({ factor, treatment, pct, isIndicated }) => {
+        displayItems.forEach(({ factor, treatment, pct, marginalDelta, isIndicated, isElevated, isAboveAverage }) => {
             const barWidth = (pct / maxPct) * 100;
 
             // Build therapy HTML
@@ -346,12 +385,26 @@ DRC.UIController = (() => {
                 `<div class="therapy-mini"><div><strong>${escapeHtml(t.name)}:</strong> ${escapeHtml(t.desc)}</div></div>`
             ).join('');
 
-            const statusIcon  = isIndicated ? 'alert-triangle' : 'check-circle';
-            const statusLabel = isIndicated ? 'Indicated' : 'Normal';
-            const statusClass = isIndicated ? 'status-indicated' : 'status-normal';
+            // Three-tier status: Indicated (red) > Elevated (orange) > Normal (green)
+            let statusIcon, statusLabel, statusClass;
+            if (isIndicated) {
+                statusIcon = 'alert-triangle';
+                statusLabel = 'Indicated';
+                statusClass = 'status-indicated';
+            } else if (isElevated) {
+                statusIcon = 'alert-circle';
+                statusLabel = 'Elevated';
+                statusClass = 'status-elevated';
+            } else {
+                statusIcon = 'check-circle';
+                statusLabel = 'Normal';
+                statusClass = 'status-normal';
+            }
 
             const row = document.createElement('div');
-            row.className = `treatment-overview-row ${isIndicated ? 'indicated' : 'normal'}`;
+            row.className = `treatment-overview-row ${isIndicated ? 'indicated' : (isElevated ? 'elevated' : 'normal')}`;
+            row.style.borderLeftColor = isAboveAverage ? '#ff3b30' : '#34c759';
+            row.style.background = isAboveAverage ? 'rgba(255, 59, 48, 0.03)' : 'rgba(52, 199, 89, 0.03)';
             row.setAttribute('data-field', factor);
             row.id = treatment.id;
 
@@ -369,9 +422,9 @@ DRC.UIController = (() => {
                         <i data-lucide="chevron-down" class="lucide-icon tov-chevron ${isIndicated ? '' : 'collapsed'}"></i>
                     </div>
                     <div class="tov-bar-container">
-                        <div class="tov-bar ${isIndicated ? 'bar-indicated' : 'bar-normal'}" style="width:${barWidth}%;"></div>
+                        <div class="tov-bar ${isAboveAverage ? 'bar-indicated' : 'bar-normal'}" style="width:${barWidth}%;"></div>
                     </div>
-                    <div class="tov-pct">${Math.round(pct)}% risk contribution</div>
+                    <div class="tov-pct">${(() => { const v = Math.abs(marginalDelta) * 100; const sign = marginalDelta >= 0 ? '+' : '−'; const disp = v < 0.1 ? '<0.1' : v.toFixed(1); return `${sign}${disp}`; })()}% risk contribution compared to average</div>
                     <div class="tov-details ${isIndicated ? 'expanded' : ''}">
                         <div class="tov-details-inner">
                             ${therapiesHTML}
@@ -383,6 +436,14 @@ DRC.UIController = (() => {
                     </div>
                 </div>
             `;
+
+            // Apply marginal-delta colour to icon col + icon (overrides CSS !important)
+            const iconCol = row.querySelector('.tov-icon-col');
+            const iconEl  = row.querySelector('.tov-factor-icon');
+            const mColor  = isAboveAverage ? '#ff3b30' : '#34c759';
+            const mBg     = isAboveAverage ? 'rgba(255, 59, 48, 0.20)' : 'rgba(52, 199, 89, 0.20)';
+            if (iconCol) iconCol.style.background = mBg;
+            if (iconEl)  iconEl.style.setProperty('color', mColor, 'important');
 
             // Expand/collapse handler
             row.querySelector('.tov-clickable').addEventListener('click', () => {
@@ -410,28 +471,6 @@ DRC.UIController = (() => {
     const renderTreatmentRecommendations = () => {
         const c = el('dynamic-treatments');
         if (c) c.innerHTML = '';
-    };
-
-    // ─── Rendering: Beta vectors (EID KBB) ──────────────────────────────
-
-    /** Render directional arrows on input labels showing model weight direction/magnitude. */
-    const renderBetaVectors = () => {
-        const entries = Object.entries(CFG.BETAS).filter(([k]) => k !== 'sigma');
-        const maxBeta = Math.max(...entries.map(([, v]) => Math.abs(v)));
-
-        entries.forEach(([key, beta]) => {
-            const vecEl = el(`beta-vector-${key}`);
-            if (!vecEl) return;
-
-            const isPositive = beta > 0;
-            const magnitude  = Math.abs(beta) / maxBeta;
-            const sizeLabel  = magnitude > 0.5 ? 'strong' : magnitude > 0.15 ? 'moderate' : 'weak';
-
-            vecEl.className = `beta-vector ${isPositive ? 'risk-up' : 'protective'}`;
-            vecEl.setAttribute('data-arrow', isPositive ? '\u2191' : '\u2193');
-            vecEl.setAttribute('data-label', `(${sizeLabel})`);
-            vecEl.title = `Model weight: ${beta.toFixed(4)} \u2013 ${isPositive ? 'increases' : 'decreases'} risk (${sizeLabel})`;
-        });
     };
 
     // ─── Rendering: What-if badges ──────────────────────────────────────
@@ -583,9 +622,9 @@ DRC.UIController = (() => {
     return {
         readInputs, updateUnitLabels, updateSliderRanges,
         applyConvertedValues, updateSliderFill, updateAllSliderFills,
-        renderRisk, renderContributionChart, renderHeatmapPointer,
+        renderRisk, renderContributionChart,
         renderTreatmentOverview, renderTreatmentRecommendations,
-        renderBetaVectors, renderWhatIfBadge, renderIconArray,
+        renderWhatIfBadge, renderIconArray,
         renderCausalityChains, renderScenarioComparison,
         updateNonModSummary, updateModSummary
     };
