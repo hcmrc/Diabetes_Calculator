@@ -1,0 +1,106 @@
+/**
+ * @fileoverview Dark Mode Controller - manages theme switching with system preference detection
+ * and localStorage persistence.
+ *
+ * @module DarkMode
+ */
+
+DRC.DarkMode = (() => {
+    const STORAGE_KEY = 'drc-theme-preference';
+    const THEME_LIGHT = 'light';
+    const THEME_DARK = 'dark';
+
+    let currentTheme = THEME_LIGHT;
+    let systemPreference = THEME_LIGHT;
+    let mediaQuery = null;
+
+    const init = () => {
+        mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        systemPreference = mediaQuery.matches ? THEME_DARK : THEME_LIGHT;
+
+        const savedPreference = localStorage.getItem(STORAGE_KEY);
+
+        if (savedPreference === THEME_DARK || savedPreference === THEME_LIGHT) {
+            currentTheme = savedPreference;
+        } else {
+            currentTheme = systemPreference;
+        }
+
+        applyTheme(currentTheme);
+        mediaQuery.addEventListener('change', handleSystemPreferenceChange);
+        setupToggleButton();
+    };
+
+    const handleSystemPreferenceChange = (e) => {
+        systemPreference = e.matches ? THEME_DARK : THEME_LIGHT;
+        const savedPreference = localStorage.getItem(STORAGE_KEY);
+        if (!savedPreference) {
+            currentTheme = systemPreference;
+            applyTheme(currentTheme);
+            updateToggleButton();
+        }
+    };
+
+    const applyTheme = (theme) => {
+        const root = document.documentElement;
+        if (theme === THEME_DARK) {
+            root.classList.add('dark');
+            root.setAttribute('data-theme', 'dark');
+        } else {
+            root.classList.remove('dark');
+            root.setAttribute('data-theme', 'light');
+        }
+        const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+        if (metaThemeColor) {
+            metaThemeColor.setAttribute('content', theme === THEME_DARK ? '#1a1a1f' : '#f2f4f8');
+        }
+    };
+
+    const setupToggleButton = () => {
+        const toggleBtn = document.getElementById('darkModeToggle');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', toggle);
+            updateToggleButton();
+        }
+    };
+
+    const updateToggleButton = () => {
+        const toggleBtn = document.getElementById('darkModeToggle');
+        if (!toggleBtn) return;
+        const isDark = document.documentElement.classList.contains('dark');
+        toggleBtn.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+        toggleBtn.setAttribute('aria-pressed', String(isDark));
+        toggleBtn.classList.toggle('active', isDark);
+        if (typeof lucide !== 'undefined') {
+            const icon = toggleBtn.querySelector('.lucide-icon');
+            if (icon) icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+            lucide.createIcons();
+        }
+    };
+
+    const toggle = () => {
+        const isDark = document.documentElement.classList.contains('dark');
+        const newTheme = isDark ? THEME_LIGHT : THEME_DARK;
+        localStorage.setItem(STORAGE_KEY, newTheme);
+        currentTheme = newTheme;
+        document.body.classList.add('theme-transition');
+        applyTheme(newTheme);
+        updateToggleButton();
+        setTimeout(() => document.body.classList.remove('theme-transition'), 300);
+    };
+
+    const isDark = () => document.documentElement.classList.contains('dark');
+    const getTheme = () => currentTheme;
+    const setTheme = (theme) => {
+        if (theme === THEME_LIGHT || theme === THEME_DARK) {
+            localStorage.setItem(STORAGE_KEY, theme);
+            currentTheme = theme;
+            applyTheme(theme);
+            updateToggleButton();
+        }
+    };
+
+    return { init, toggle, getTheme, isDark, setTheme };
+})();
+
+document.addEventListener('DOMContentLoaded', () => DRC.DarkMode.init());

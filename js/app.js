@@ -70,31 +70,31 @@ DRC.App = (() => {
         const siVals        = Model().toSI(rawInputs, state.isMetric);
         state.preciseSI     = { ...siVals };   // Preserve full-precision SI values
         const riskPct       = Model().computeProbability(siVals) * 100;
-        const contributions = Model().computeContributions(siVals);
+        const logOddsContributions = Model().computeContributions(siVals);
+        const marginalSummary = Model().computeMarginalSummary(siVals);
         const treatStatus   = Model().getElevatedFactors(siVals);
 
         // Render all views with the calculated data
-        _renderAllViews(riskPct, contributions, treatStatus, siVals);
+        _renderAllViews(riskPct, logOddsContributions, marginalSummary, treatStatus, siVals);
         return riskPct;
     };
 
     /**
      * Render all views with calculated data.
-     * Extracted to eliminate DRY violation between calculate() and onToggleUnits().
      * @param {number} riskPct - Current risk percentage
-     * @param {Object} contributions - Factor contributions
+     * @param {Object} logOddsContributions - Log-odds contributions (for treatment recommendations)
+     * @param {Object} marginalSummary - Marginal probability summary (for chart + treatments)
      * @param {Object} treatStatus - Treatment status with elevated factors
      * @param {Object} siVals - SI-unit values
      */
-    const _renderAllViews = (riskPct, contributions, treatStatus, siVals) => {
+    const _renderAllViews = (riskPct, logOddsContributions, marginalSummary, treatStatus, siVals) => {
         UI().renderRisk(riskPct);
         UI().updateNonModSummary();
         UI().updateModSummary();
         UI().renderIconArray(riskPct);
-        UI().renderContributionChart(contributions);
-        UI().renderHeatmapPointer(contributions);
-        UI().renderTreatmentOverview(treatStatus, contributions);
-        UI().renderTreatmentRecommendations(treatStatus, contributions);
+        UI().renderContributionChart(marginalSummary);
+        UI().renderTreatmentOverview(treatStatus, logOddsContributions, marginalSummary.contributions);
+        UI().renderTreatmentRecommendations(treatStatus, logOddsContributions);
         UI().renderCausalityChains(siVals, treatStatus.elevatedFactors);
         Radar().render(siVals, treatStatus.elevatedFactors);
 
@@ -196,10 +196,11 @@ DRC.App = (() => {
         // Render with precise SI values (no rounding in the model path)
         const preciseSI     = state.preciseSI || Model().toSI(UI().readInputs(), state.isMetric);
         const riskPct       = Model().computeProbability(preciseSI) * 100;
-        const contributions = Model().computeContributions(preciseSI);
+        const logOddsContributions = Model().computeContributions(preciseSI);
+        const marginalSummary = Model().computeMarginalSummary(preciseSI);
         const treatStatus   = Model().getElevatedFactors(preciseSI);
 
-        _renderAllViews(riskPct, contributions, treatStatus, preciseSI);
+        _renderAllViews(riskPct, logOddsContributions, marginalSummary, treatStatus, preciseSI);
     };
 
     // ─── Reset ──────────────────────────────────────────────────────────
@@ -427,7 +428,6 @@ DRC.App = (() => {
         });
 
         // Initialize sub-modules and run first calculation
-        UI().renderBetaVectors();
         Radar().init();
         UI().updateAllSliderFills();
         calculate();
