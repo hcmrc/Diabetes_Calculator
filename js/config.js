@@ -77,7 +77,7 @@ DRC.CONFIG = Object.freeze({
         height:  { us: [48, 84, 1],       si: [122, 213, 1] },
         // Waist: 26 inches = 66.04 cm (was 25 inches = 63.5 cm, below SI min of 64)
         // Updated to eliminate 0.5 cm inconsistency between US and SI ranges
-        waist:   { us: [26, 60, 1],       si: [64, 152, 1] },
+        waist:   { us: [26, 60, 1],       si: [66, 152, 1] },
         fastGlu: { us: [50, 300, 1],      si: [2.8, 16.7, 0.1] },
         cholHDL: { us: [20, 100, 1],      si: [0.5, 2.6, 0.1] },
         cholTri: { us: [50, 500, 1],      si: [0.6, 5.6, 0.1] }
@@ -179,11 +179,11 @@ DRC.CONFIG = Object.freeze({
      *   waist:   Wong et al. (2025) + van Namen et al. (2019): -5 cm (-2 in)
      */
     SIMULATION_EFFECTS: {
-        fastGlu: { us: -20,  si: -1.1,  label: 'Blood Sugar Management' },
+        fastGlu: { us: -20,  si: -1.11, label: 'Blood Sugar Management' },
         sbp:     { us: -10,  si: -10,   label: 'Blood Pressure Control' },
         cholHDL: { us: +5,   si: +0.13, label: 'HDL Improvement' },
         cholTri: { us: -30,  si: -0.34, label: 'Blood Fats (Triglycerides) Treatment' },
-        waist:   { us: -2,   si: -5,    label: 'Weight Management' }
+        waist:   { us: -2,   si: -5.08, label: 'Weight Management' }
     },
 
     /** Default slider values for the reset function. */
@@ -204,5 +204,14 @@ DRC.CONFIG = Object.freeze({
     SLIDER_FIELDS: ['age', 'sbp', 'height', 'waist', 'fastGlu', 'cholHDL', 'cholTri'],
 
     /** Fields requiring unit conversion between US and SI. */
-    CONVERTIBLE_FIELDS: ['height', 'waist', 'fastGlu', 'cholHDL', 'cholTri']
+    CONVERTIBLE_FIELDS: ['height', 'waist', 'fastGlu', 'cholHDL', 'cholTri'],
+
+    /** Treatment color palette for timeline chart and legends. */
+    TREATMENT_COLORS: {
+        'Blood Sugar Management':              '#e74c3c',
+        'Blood Pressure Control':              '#2ecc71',
+        'HDL Improvement':                     '#f39c12',
+        'Blood Fats (Triglycerides) Treatment': '#9b59b6',
+        'Weight Management':                    '#1abc9c'
+    }
 });

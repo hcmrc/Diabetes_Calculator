@@ -13,6 +13,13 @@
 DRC.ConversionService = (() => {
     const CFG = DRC.CONFIG;
 
+    /** Shared multiplier lookup — single source of truth for all conversions. */
+    const _getMultiplier = (field) => {
+        const c = CFG.CONVERSIONS;
+        return { height: c.heightToCm, waist: c.waistToCm, fastGlu: c.gluToMmol,
+                 cholHDL: c.hdlToMmol, cholTri: c.triToMmol }[field] ?? null;
+    };
+
     /**
      * Convert raw input values to SI units.
      * @param {Object} inputs — Object with raw input values
@@ -61,16 +68,8 @@ DRC.ConversionService = (() => {
      * @returns {number} Converted value
      */
     const convertField = (field, value, toMetric) => {
-        const c = CFG.CONVERSIONS;
-        const multiplier = {
-            height:  c.heightToCm,
-            waist:   c.waistToCm,
-            fastGlu: c.gluToMmol,
-            cholHDL: c.hdlToMmol,
-            cholTri: c.triToMmol
-        }[field];
-
-        if (multiplier == null) return value; // No conversion needed for this field
+        const multiplier = _getMultiplier(field);
+        if (multiplier === null) return value; // No conversion needed for this field
         return toMetric ? value * multiplier : value / multiplier;
     };
 
@@ -95,13 +94,7 @@ DRC.ConversionService = (() => {
             if (isMetric) {
                 val = siVal; // Already in SI
             } else {
-                const multiplier = {
-                    height:  CFG.CONVERSIONS.heightToCm,
-                    waist:   CFG.CONVERSIONS.waistToCm,
-                    fastGlu: CFG.CONVERSIONS.gluToMmol,
-                    cholHDL: CFG.CONVERSIONS.hdlToMmol,
-                    cholTri: CFG.CONVERSIONS.triToMmol
-                }[field];
+                const multiplier = _getMultiplier(field);
                 val = multiplier ? siVal / multiplier : siVal;
             }
 
@@ -123,16 +116,7 @@ DRC.ConversionService = (() => {
      * @param {string} field — Field name
      * @returns {number|null} Conversion factor or null
      */
-    const getConversionFactor = (field) => {
-        const c = CFG.CONVERSIONS;
-        return {
-            height:  c.heightToCm,
-            waist:   c.waistToCm,
-            fastGlu: c.gluToMmol,
-            cholHDL: c.hdlToMmol,
-            cholTri: c.triToMmol
-        }[field] || null;
-    };
+    const getConversionFactor = (field) => _getMultiplier(field);
 
     return {
         toSI,

@@ -458,64 +458,6 @@ body {
     height: 16px;
 }
 
-.scenario-comparison-panel {
-    display: flex;
-    justify-content: center;
-    gap: 16px;
-    margin: 12px 0;
-    padding: 12px 16px;
-    background: rgba(0, 102, 204, 0.05);
-    border-radius: var(--radius);
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.scenario-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-}
-
-.scenario-label {
-    font-size: 10px;
-    color: var(--text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.scenario-value {
-    font-size: 16px;
-    font-weight: 700;
-}
-
-.scenario-item.baseline .scenario-value {
-    color: var(--text-primary);
-}
-
-.scenario-item.current .scenario-value {
-    color: var(--blue);
-}
-
-.scenario-delta {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 0 12px;
-}
-
-.scenario-delta-value {
-    font-size: 16px;
-    font-weight: 700;
-}
-
-.scenario-delta-value.improved {
-    color: var(--safe);
-}
-
-.scenario-delta-value.worsened {
-    color: var(--danger);
-}
 
 .hero-section[data-risk-level="safe"] {
     background: linear-gradient(180deg, rgba(52, 199, 89, 0.04) 0%, #ffffff 100%);

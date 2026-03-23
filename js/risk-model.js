@@ -46,8 +46,14 @@ DRC.RiskModel = (() => {
      * @param {Object} siVals — Risk-factor values in SI units.
      * @returns {number} Probability in [0, 1].
      */
-    const computeProbability = (siVals) =>
-        1 / (1 + Math.exp(-linearPredictor(siVals)));
+    const computeProbability = (siVals) => {
+        const lp = linearPredictor(siVals);
+        if (!isFinite(lp)) {
+            console.warn('RiskModel: non-finite linear predictor, returning NaN');
+            return NaN;
+        }
+        return 1 / (1 + Math.exp(-lp));
+    };
 
     /**
      * Compute per-factor contribution (deviation from population mean).
@@ -97,7 +103,10 @@ DRC.RiskModel = (() => {
         const baseProb = computeProbability(toSI(rawInputs, isMetric));
         const mode = isMetric ? 'si' : 'us';
         const step = RANGES[field]?.[mode]?.[2] ?? 1;
-        const altered = { ...rawInputs, [field]: rawInputs[field] + direction * step * 5 };
+        const range = RANGES[field]?.[mode];
+        let perturbedVal = rawInputs[field] + direction * step * 5;
+        if (range) perturbedVal = Math.min(Math.max(perturbedVal, range[0]), range[1]);
+        const altered = { ...rawInputs, [field]: perturbedVal };
         return (computeProbability(toSI(altered, isMetric)) - baseProb) * 100;
     };
 

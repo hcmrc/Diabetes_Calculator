@@ -12,9 +12,13 @@ const fs = require('fs');
 const path = require('path');
 
 // ─── Load ORIGINAL monolithic module in a VM context ────────────────
-const originalCode = fs.readFileSync(
-    path.join(__dirname, '..', '..', 'MA Versionen',
-        '01_Code-Versionen', 'v3.7_Refactoring', 'calculator.js'), 'utf8');
+const originalPath = path.join(__dirname, '..', '..', 'MA Versionen',
+    '01_Code-Versionen', 'v3.7_Refactoring', 'calculator.js');
+if (!fs.existsSync(originalPath)) {
+    console.log('\x1b[33m⚠ SKIPPED: Comparison test requires original calculator.js at:\n  ' + originalPath + '\n  This file is outside the repository and only available in the thesis workspace.\x1b[0m');
+    process.exit(0);
+}
+const originalCode = fs.readFileSync(originalPath, 'utf8');
 
 // Strip DOMContentLoaded bootstrap
 const cleanedCode = originalCode.replace(

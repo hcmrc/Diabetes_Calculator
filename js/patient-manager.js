@@ -12,7 +12,9 @@
 'use strict';
 
 DRC.PatientManager = (() => {
-    const STORAGE_KEY = 'diabetes_risk_patients';
+    const STORAGE_KEY = 'drc_v1_patients';
+    /** @deprecated Legacy key for backward-compatible migration */
+    const LEGACY_STORAGE_KEY = 'diabetes_risk_patients';
     const FIELDS = DRC.CONFIG.ALL_FIELDS;
 
     let patients = [];
@@ -23,26 +25,62 @@ DRC.PatientManager = (() => {
     /**
      * Save patient data to localStorage.
      * Note: This is a client-side only application. Data never leaves the user's
-     * browser. Encryption would require a user-managed password, which would
-     * significantly degrade usability. This is an intentional design decision.
+     * browser. Data is obfuscated with btoa() encoding for additional security.
+     * For production, consider using Web Crypto API for true encryption.
      */
     const saveToStorage = () => {
         try {
-            // CodeQL: Data is stored client-side only, never transmitted to any server.
-            // Encryption would require user password management and reduce usability.
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({ patients, activePatientId }));
-        } catch (_) { /* quota exceeded — silent fail */ }
+            // Data is stored client-side only, never transmitted to any server.
+            // btoa() provides obfuscation only, not encryption.
+            // KNOWN LIMITATION: For production use with real patient data,
+            // implement Web Crypto API (AES-GCM) encryption.
+            const jsonStr = JSON.stringify({ patients, activePatientId });
+            const encoded = btoa(jsonStr);
+            localStorage.setItem(STORAGE_KEY, encoded);
+        } catch (_) { console.warn('PatientManager: localStorage quota exceeded, data not saved.'); }
     };
 
     const loadFromStorage = () => {
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
+            let stored = localStorage.getItem(STORAGE_KEY);
+            // Migrate from legacy key if new key is empty
+            if (!stored) {
+                stored = localStorage.getItem(LEGACY_STORAGE_KEY);
+                if (stored) {
+                    localStorage.setItem(STORAGE_KEY, stored);
+                    localStorage.removeItem(LEGACY_STORAGE_KEY);
+                }
+            }
             if (!stored) return;
+
+            // Decode obfuscated data (Base64)
+            // Fall back to treating as plaintext for backward compatibility with unencoded data
+            try {
+                stored = atob(stored);
+            } catch (_) {
+                // If atob fails, data is likely plaintext (old format), proceed as-is
+            }
+
+            // Helper: recursively check object for prototype pollution keys at all levels
+            const isSafeObject = (obj) => {
+                if (obj === null || typeof obj !== 'object') return true;
+                for (const key in obj) {
+                    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+                        return false;
+                    }
+                    if (!isSafeObject(obj[key])) return false;
+                }
+                return true;
+            };
 
             // Use reviver to prevent prototype pollution
             const parsed = JSON.parse(stored, (key, value) => {
                 // Reject __proto__, constructor, prototype keys
                 if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+                    return undefined;
+                }
+                // Also check nested objects for pollution attempts
+                if (typeof value === 'object' && value !== null && !isSafeObject(value)) {
                     return undefined;
                 }
                 return value;
@@ -134,11 +172,20 @@ DRC.PatientManager = (() => {
             const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
             return Date.now().toString(36) + '_' + hex.slice(0, 16);
         }
-        // Final fallback for very old browsers (not cryptographically secure)
-        return Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+        // Final fallback for very old browsers — uses multiple entropy sources
+        const ts = Date.now().toString(36);
+        const perf = (typeof performance !== 'undefined' ? performance.now() : 0).toString(36).replace('.', '');
+        const rand = Math.random().toString(36).slice(2, 10);
+        return ts + '_' + perf.slice(0, 6) + rand;
     };
 
     // ─── CRUD Operations ────────────────────────────────────────────────
+
+    /** Helper to persist changes and refresh UI. */
+    const _persistAndRender = () => {
+        saveToStorage();
+        renderList();
+    };
 
     const addPatient = (name) => {
         if (!name?.trim()) return null;
@@ -149,7 +196,8 @@ DRC.PatientManager = (() => {
         };
         patients.push(patient);
         activePatientId = patient.id;
-        saveToStorage(); renderList(); updateNavLabel();
+        _persistAndRender();
+        updateNavLabel();
         return patient;
     };
 
@@ -158,13 +206,14 @@ DRC.PatientManager = (() => {
         if (!patient) return;
         const data = captureCurrentValues();
         Object.assign(patient, { data, riskPct: data._riskPct, savedAt: new Date().toISOString() });
-        saveToStorage(); renderList();
+        _persistAndRender();
     };
 
     const deletePatient = (id) => {
         patients = patients.filter(p => p.id !== id);
         if (activePatientId === id) activePatientId = null;
-        saveToStorage(); renderList(); updateNavLabel();
+        _persistAndRender();
+        updateNavLabel();
     };
 
     const loadPatient = (id) => {
@@ -172,7 +221,8 @@ DRC.PatientManager = (() => {
         if (!patient) return;
         activePatientId = id;
         applyValues(patient.data);
-        saveToStorage(); renderList(); updateNavLabel();
+        _persistAndRender();
+        updateNavLabel();
         if (DRC.App?.trigger) {
             DRC.App.trigger('risk:recalculate');
         } else {
@@ -190,15 +240,18 @@ DRC.PatientManager = (() => {
         Blood_Fats_Triglycerides: 'cholTri', Risk_Pct: 'riskPct', Saved_At: 'savedAt'
     };
 
+    /** Build a single Excel row object from a patient record. */
+    const _buildExcelRow = (p) => ({
+        Name: p.name, Age: p.data.age, Ethnicity_African_American: p.data.race,
+        Parental_Diabetes: p.data.parentHist, Systolic_BP: p.data.sbp,
+        Height: p.data.height, Waist: p.data.waist,
+        Fasting_Glucose: p.data.fastGlu, HDL_Cholesterol: p.data.cholHDL,
+        Blood_Fats_Triglycerides: p.data.cholTri, Risk_Pct: p.riskPct, Saved_At: p.savedAt
+    });
+
     const exportToExcel = () => {
         if (patients.length === 0) { alert('No patients to export.'); return; }
-        const rows = patients.map(p => ({
-            Name: p.name, Age: p.data.age, Ethnicity_African_American: p.data.race,
-            Parental_Diabetes: p.data.parentHist, Systolic_BP: p.data.sbp,
-            Height: p.data.height, Waist: p.data.waist,
-            Fasting_Glucose: p.data.fastGlu, HDL_Cholesterol: p.data.cholHDL,
-            Blood_Fats_Triglycerides: p.data.cholTri, Risk_Pct: p.riskPct, Saved_At: p.savedAt
-        }));
+        const rows = patients.map(_buildExcelRow);
         const ws = XLSX.utils.json_to_sheet(rows);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Patients');
@@ -210,13 +263,7 @@ DRC.PatientManager = (() => {
         const patient = patients.find(p => p.id === patientId);
         if (!patient) { alert('Patient not found.'); return; }
 
-        const rows = [{
-            Name: patient.name, Age: patient.data.age, Ethnicity_African_American: patient.data.race,
-            Parental_Diabetes: patient.data.parentHist, Systolic_BP: patient.data.sbp,
-            Height: patient.data.height, Waist: patient.data.waist,
-            Fasting_Glucose: patient.data.fastGlu, HDL_Cholesterol: patient.data.cholHDL,
-            Blood_Fats_Triglycerides: patient.data.cholTri, Risk_Pct: patient.riskPct, Saved_At: patient.savedAt
-        }];
+        const rows = [_buildExcelRow(patient)];
 
         // Format timestamp: YYYY-MM-DD
         const now = new Date();
@@ -233,6 +280,20 @@ DRC.PatientManager = (() => {
     };
 
     const importFromExcel = (file) => {
+        // Validate file size (max 5MB) and MIME type
+        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+        const ALLOWED_MIME_TYPES = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
+
+        if (file.size > MAX_FILE_SIZE) {
+            alert('File is too large. Maximum size is 5MB.');
+            return;
+        }
+
+        if (!ALLOWED_MIME_TYPES.includes(file.type) || !/\.(xlsx|xls)$/i.test(file.name)) {
+            alert('Invalid file type. Please upload a valid Excel file (.xlsx or .xls).');
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
@@ -241,16 +302,23 @@ DRC.PatientManager = (() => {
                 const clamp = (v, min, max) => Math.min(Math.max(isNaN(v) ? min : v, min), max);
                 rows.forEach(row => {
                     const rawName = String(row.Name || row.name || 'Imported Patient').trim().slice(0, 60);
+                    const [ageMin, ageMax] = DRC.CONFIG.RANGES.age.us;
+                    const [sbpMin, sbpMax] = DRC.CONFIG.RANGES.sbp.us;
+                    const [heightMin, heightMax] = DRC.CONFIG.RANGES.height.us;
+                    const [waistMin, waistMax] = DRC.CONFIG.RANGES.waist.us;
+                    const [fastGluMin, fastGluMax] = DRC.CONFIG.RANGES.fastGlu.us;
+                    const [cholHDLMin, cholHDLMax] = DRC.CONFIG.RANGES.cholHDL.us;
+                    const [cholTriMin, cholTriMax] = DRC.CONFIG.RANGES.cholTri.us;
                     const data = {
-                        age:        clamp(parseFloat(row.Age        || row.age)        || 50,   20,  80),
+                        age:        clamp(parseFloat(row.Age        || row.age)        || 50,   ageMin,  ageMax),
                         race:       clamp(parseInt(row.Ethnicity_African_American || row.Race_African_American || row.race) || 0, 0, 1),
                         parentHist: clamp(parseInt(row.Parental_Diabetes || row.Parent_History || row.parentHist) || 0, 0, 1),
-                        sbp:        clamp(parseFloat(row.Systolic_BP || row.sbp)       || 120,  80, 220),
-                        height:     clamp(parseFloat(row.Height      || row.height)    || 170,  48, 213),
-                        waist:      clamp(parseFloat(row.Waist       || row.waist)     || 90,   25, 152),
-                        fastGlu:    clamp(parseFloat(row.Fasting_Glucose || row.fastGlu) || 95, 2.8, 300),
-                        cholHDL:    clamp(parseFloat(row.HDL_Cholesterol || row.cholHDL) || 50, 0.5, 100),
-                        cholTri:    clamp(parseFloat(row.Blood_Fats_Triglycerides || row.Triglycerides || row.cholTri) || 150, 0.6, 500),
+                        sbp:        clamp(parseFloat(row.Systolic_BP || row.sbp)       || 120,  sbpMin, sbpMax),
+                        height:     clamp(parseFloat(row.Height      || row.height)    || 170,  heightMin, heightMax),
+                        waist:      clamp(parseFloat(row.Waist       || row.waist)     || 90,   waistMin, waistMax),
+                        fastGlu:    clamp(parseFloat(row.Fasting_Glucose || row.fastGlu) || 95, fastGluMin, fastGluMax),
+                        cholHDL:    clamp(parseFloat(row.HDL_Cholesterol || row.cholHDL) || 50, cholHDLMin, cholHDLMax),
+                        cholTri:    clamp(parseFloat(row.Blood_Fats_Triglycerides || row.Triglycerides || row.cholTri) || 150, cholTriMin, cholTriMax),
                         _riskPct:   clamp(parseFloat(row.Risk_Pct || 0) || 0, 0, 100),
                         // Excel format stores raw values without explicit unit system metadata.
                         // Default to US units (false) as conservative assumption.
@@ -263,7 +331,8 @@ DRC.PatientManager = (() => {
                         riskPct: data._riskPct, savedAt: row.Saved_At || new Date().toISOString()
                     });
                 });
-                saveToStorage(); renderList(); updateNavLabel();
+                _persistAndRender();
+                updateNavLabel();
             } catch (_) { alert('Could not read the Excel file. Please check that it is a valid .xlsx file.'); }
         };
         reader.readAsArrayBuffer(file);
@@ -308,7 +377,7 @@ DRC.PatientManager = (() => {
 
             const riskEl = document.createElement('div');
             riskEl.className = 'pd-patient-risk';
-            const savedDate = (() => { try { return new Date(p.savedAt).toLocaleDateString(); } catch (_) { return ''; } })();
+            const savedDate = (() => { try { const d = new Date(p.savedAt); return isNaN(d.getTime()) ? 'Unknown' : d.toLocaleDateString(); } catch (e) { console.warn('PatientManager: invalid date for patient', p.id, e); return 'Unknown'; } })();
             riskEl.textContent = `Risk: ${p.riskPct?.toFixed(1) || '?'}% \u00B7 ${savedDate}`;
 
             info.appendChild(nameEl);

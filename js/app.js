@@ -128,10 +128,15 @@ DRC.App = (() => {
         state.prevRiskPct = Model().computeProbability(Model().toSI(raw, state.isMetric)) * 100;
     };
 
+    /** @type {Object<string, number>} Active badge-clear timeouts per field. */
+    const _badgeTimeouts = {};
+
     const onSliderEnd = (field) => {
-        setTimeout(() => {
+        if (_badgeTimeouts[field]) clearTimeout(_badgeTimeouts[field]);
+        _badgeTimeouts[field] = setTimeout(() => {
             const badge = document.getElementById(`what-if-${field}`);
             if (badge) badge.className = 'what-if-badge';
+            delete _badgeTimeouts[field];
         }, 2000);
         state.prevRiskPct = null;
         state.activeField = null;
@@ -320,24 +325,31 @@ DRC.App = (() => {
 
         // Toggle inputs
         ['race-toggle', 'parentHist-toggle'].forEach(id => {
-            document.getElementById(id)?.addEventListener('change', calculate);
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('change', calculate);
         });
 
         // Unit toggle
-        document.getElementById('unit-toggle')?.addEventListener('change', onToggleUnits);
+        const unitToggle = document.getElementById('unit-toggle');
+        if (unitToggle) unitToggle.addEventListener('change', onToggleUnits);
 
         // Action buttons
-        document.getElementById('resetBtn')?.addEventListener('click', onReset);
-        document.getElementById('snapshotBtn')?.addEventListener('click', onSnapshot);
-        document.getElementById('compareScenarioBtn')?.addEventListener('click', onCompareScenario);
+        const resetBtn = document.getElementById('resetBtn');
+        if (resetBtn) resetBtn.addEventListener('click', onReset);
+        const snapshotBtn = document.getElementById('snapshotBtn');
+        if (snapshotBtn) snapshotBtn.addEventListener('click', onSnapshot);
+        const compareScenarioBtn = document.getElementById('compareScenarioBtn');
+        if (compareScenarioBtn) compareScenarioBtn.addEventListener('click', onCompareScenario);
 
         // Timeline expandable toggle
-        document.getElementById('timelineToggleBtn')?.addEventListener('click', () => {
-            const area = document.getElementById('timeline-expandable');
-            if (!area) return;
-            const isOpen = area.classList.toggle('open');
-            document.getElementById('timelineToggleBtn')?.classList.toggle('active', isOpen);
-        });
+        const timelineToggleBtn = document.getElementById('timelineToggleBtn');
+        const timelineExpandable = document.getElementById('timeline-expandable');
+        if (timelineToggleBtn && timelineExpandable) {
+            timelineToggleBtn.addEventListener('click', () => {
+                const isOpen = timelineExpandable.classList.toggle('open');
+                timelineToggleBtn.classList.toggle('active', isOpen);
+            });
+        }
 
         // Hero expandable toggle
         const expandHeroBtn = document.getElementById('expandHeroBtn');

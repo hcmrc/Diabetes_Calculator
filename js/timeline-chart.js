@@ -24,6 +24,12 @@
 DRC.TimelineChart = (() => {
     const snapshots = [];
     const MAX_SNAPSHOTS = 20;
+
+    /** Safely read a CSS custom property (returns fallback in Node.js / test environments). */
+    const cssVar = (name, fallback) => {
+        try { return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback; }
+        catch (_) { return fallback; }
+    };
     let _baselineRisk = null;
 
     /** Set the baseline reference line value. */
@@ -40,12 +46,13 @@ DRC.TimelineChart = (() => {
      */
     const addSnapshot = (riskPct, siVals, treatmentLabel = null) => {
         if (snapshots.length >= MAX_SNAPSHOTS) snapshots.shift();
+        const isFirst = snapshots.length === 0 ||
+            !snapshots.some(s => s.isBaseline);
         snapshots.push({
             timestamp: new Date(),
             riskPct,
             siVals: { ...siVals },
-            // Note: isBaseline was previously set here but never used.
-            // _baselineRisk check in render() is sufficient for baseline display.
+            isBaseline: _baselineRisk !== null && isFirst,
             treatmentLabel
         });
         render();
@@ -62,26 +69,15 @@ DRC.TimelineChart = (() => {
         return `${h}:${m}`;
     };
 
-    /**
-     * Treatment color palette for distinguishing different treatment types.
-     */
-    const TREATMENT_COLORS = {
-        'Blood Sugar Management':              '#e74c3c',
-        'Blood Pressure Control':              '#2ecc71',
-        'HDL Improvement':                     '#f39c12',
-        'Blood Fats (Triglycerides) Treatment': '#9b59b6',
-        'Weight Management':                    '#1abc9c'
-    };
-
-    /** Get a consistent color for a treatment label. */
-    const getTreatmentColor = (label) => TREATMENT_COLORS[label] || '#007aff';
+    /** Get a consistent color for a treatment label from centralized config. */
+    const getTreatmentColor = (label) => DRC.CONFIG.TREATMENT_COLORS[label] || '#007aff';
 
     /**
      * Compute nice Y-axis grid steps that adapt to data range.
      * Returns an array of values from 0 up to ceil.
      */
     const computeGridSteps = (maxVal) => {
-        const ceil = Math.ceil(maxVal);
+        const ceil = Math.max(0, Math.ceil(maxVal));
         let step;
         if (ceil <= 10) step = 2;
         else if (ceil <= 25) step = 5;
@@ -156,7 +152,7 @@ DRC.TimelineChart = (() => {
             line.setAttribute('y1', y.toFixed(1));
             line.setAttribute('x2', VW - PAD.right);
             line.setAttribute('y2', y.toFixed(1));
-            line.setAttribute('stroke', 'var(--border-light, #e5e5e5)');
+            line.setAttribute('stroke', cssVar('--border-light', '#e5e5e5'));
             line.setAttribute('stroke-width', '0.5');
             line.setAttribute('opacity', '0.5');
             svg.appendChild(line);
@@ -176,7 +172,7 @@ DRC.TimelineChart = (() => {
         axisLine.setAttribute('y1', PAD.top);
         axisLine.setAttribute('x2', PAD.left);
         axisLine.setAttribute('y2', VH - PAD.bottom);
-        axisLine.setAttribute('stroke', 'var(--border, #d2d2d7)');
+        axisLine.setAttribute('stroke', cssVar('--border', '#d2d2d7'));
         axisLine.setAttribute('stroke-width', '0.7');
         svg.appendChild(axisLine);
 
@@ -355,7 +351,8 @@ DRC.TimelineChart = (() => {
         const titleIcon = document.createElement('i');
         titleIcon.setAttribute('data-lucide', 'history');
         titleIcon.className = 'lucide-icon';
-        titleIcon.style.cssText = 'width:14px; height:14px; color:#007aff;';
+        const accentColor = cssVar('--accent-color', '#007aff');
+        titleIcon.style.cssText = `width:14px; height:14px; color:${accentColor};`;
 
         titleDiv.appendChild(titleIcon);
         titleDiv.appendChild(document.createTextNode(' Treatment History'));

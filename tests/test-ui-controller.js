@@ -366,13 +366,13 @@ assert(ELEMS['summary-tri'].textContent     === 'TG: 2.1 mmol/L',   'summary-tri
 
 console.log('\n═══ TEST SUITE 7: applyConvertedValues() ═══');
 
-// US → SI conversion: height 66 in × 2.54 = 167.64 → clamped to [122,213] step=1 → 168
-const usVals = { height: 66, waist: 38, fastGlu: 100, cholHDL: 50, cholTri: 150 };
-UIC.applyConvertedValues(usVals, true);
-assert(ELEMS['height-value'].value  === 168, 'US 66 in → SI 168 cm (applied to height-value)');
-assert(ELEMS['waist-value'].value   === 97,  'US 38 in → SI 97 cm (96.52 rounded to step 1)');
-assert(ELEMS['fastGlu-value'].value === 5.6, 'US 100 mg/dL → SI 5.6 mmol/L');
-assert(ELEMS['cholHDL-value'].value === 1.3, 'US 50 mg/dL → SI 1.3 mmol/L (step 0.1)');
+// SI values applied with isMetric=true: values stay in SI with clamping
+const siValsTest = { height: 168, waist: 97, fastGlu: 5.6, cholHDL: 1.3, cholTri: 150 };
+UIC.applyConvertedValues(siValsTest, true);
+assert(ELEMS['height-value'].value  === 168, 'SI 168 cm applied directly (clamped to [122,213] step=1)');
+assert(ELEMS['waist-value'].value   === 97,  'SI 97 cm applied directly (clamped to [64,152] step=1)');
+assert(ELEMS['fastGlu-value'].value === 5.6, 'SI 5.6 mmol/L applied directly (clamped to [2.8,16.7] step=0.1)');
+assert(ELEMS['cholHDL-value'].value === 1.3, 'SI 1.3 mmol/L applied directly (clamped to [0.5,2.6] step=0.1)');
 
 // SI → US back-conversion: fastGlu 5.5556 mmol/L / (1/18) = 100 mg/dL
 const siVals = { fastGlu: 5.5556 };

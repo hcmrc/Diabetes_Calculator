@@ -21,8 +21,9 @@ DRC.UIController = (() => {
     const { el, setText, clampAndRound, formatAxisValue, escapeHtml } = DRC.UIHelpers;
     const CFG = DRC.CONFIG;
 
-    // Module-scope guard: contribution chart filter listener registered at most once
+    // Module-scope guards: delegated listeners registered at most once
     let _filterHandlerAttached = false;
+    let _treatmentDelegationAttached = false;
 
     // ─── Risk-level color mapping ───────────────────────────────────────
     // High-risk threshold (26%) aligns with Schmidt et al. (2005) published cutoff:
@@ -49,8 +50,10 @@ DRC.UIController = (() => {
         const slider = el(`${field}-slider`);
         const fill   = el(`${field}-fill`);
         if (!slider || !fill) return;
-        const pct = ((parseFloat(slider.value) - parseFloat(slider.min)) /
-                     (parseFloat(slider.max) - parseFloat(slider.min))) * 100;
+        const range = parseFloat(slider.max) - parseFloat(slider.min);
+        const pct = range > 0
+            ? ((parseFloat(slider.value) - parseFloat(slider.min)) / range) * 100
+            : 0;
         fill.style.width = `${pct}%`;
     };
 
@@ -135,17 +138,17 @@ DRC.UIController = (() => {
 
     // ─── Reading inputs ─────────────────────────────────────────────────
 
-    /** Read all current input values from the DOM. */
+    /** Read all current input values from the DOM (null-safe). */
     const readInputs = () => ({
-        age:        parseFloat(el('age-value').value)      || 0,
-        race:       el('race-toggle').checked  ? 1 : 0,
-        parentHist: el('parentHist-toggle').checked ? 1 : 0,
-        sbp:        parseFloat(el('sbp-value').value)      || 0,
-        height:     parseFloat(el('height-value').value)   || 0,
-        waist:      parseFloat(el('waist-value').value)    || 0,
-        fastGlu:    parseFloat(el('fastGlu-value').value)  || 0,
-        cholHDL:    parseFloat(el('cholHDL-value').value)  || 0,
-        cholTri:    parseFloat(el('cholTri-value').value)  || 0
+        age:        parseFloat(el('age-value')?.value)      || 0,
+        race:       el('race-toggle')?.checked  ? 1 : 0,
+        parentHist: el('parentHist-toggle')?.checked ? 1 : 0,
+        sbp:        parseFloat(el('sbp-value')?.value)      || 0,
+        height:     parseFloat(el('height-value')?.value)   || 0,
+        waist:      parseFloat(el('waist-value')?.value)    || 0,
+        fastGlu:    parseFloat(el('fastGlu-value')?.value)  || 0,
+        cholHDL:    parseFloat(el('cholHDL-value')?.value)  || 0,
+        cholTri:    parseFloat(el('cholTri-value')?.value)  || 0
     });
 
     // ─── Rendering: Risk score (EID SBB) ────────────────────────────────
@@ -157,7 +160,7 @@ DRC.UIController = (() => {
 
         // Color the percentage text
         const riskEl = el('risk-percentage');
-        const pctEl  = document.querySelector('.risk-unit');
+        const pctEl  = el('risk-unit-percent') || document.querySelector('.risk-unit');
         if (riskEl) riskEl.style.color = color;
         if (pctEl)  pctEl.style.color  = color;
 
@@ -264,7 +267,7 @@ DRC.UIController = (() => {
             .sort((a, b) => b.abs - a.abs);
 
         const filteredItems = filterState ? items.filter(i => i.deltaI > 0) : items;
-        const maxAbs = Math.max(...filteredItems.map(i => i.abs), 0.001);
+        const maxAbs = filteredItems.reduce((max, i) => i.abs > max ? i.abs : max, 0.001);
 
         filteredItems.forEach(({ key, deltaI }, idx) => {
             const barWidth = (Math.abs(deltaI) / maxAbs) * 100;
@@ -297,7 +300,6 @@ DRC.UIController = (() => {
 
             const row = document.createElement('div');
             row.className = 'contrib-row';
-            row.style.cssText = 'display:flex;align-items:flex-start;gap:8px;padding:6px 4px;border-bottom:1px solid rgba(0,0,0,0.04);flex-wrap:wrap;border-radius:6px;';
             row.setAttribute('data-field', key);
             row.setAttribute('data-tooltip', tooltipText);
 
@@ -371,10 +373,16 @@ DRC.UIController = (() => {
         // When risk-filter active: show only treatments for above-average factors
         const displayItems = filterRiskOnly ? items.filter(i => i.isAboveAverage) : items;
 
-        const maxPct = Math.max(...displayItems.map(i => i.pct), 1);
+        const maxPct = displayItems.reduce((max, i) => i.pct > max ? i.pct : max, 1);
 
         displayItems.forEach(({ factor, treatment, pct, marginalDelta, isIndicated, isElevated, isAboveAverage }) => {
             const barWidth = (pct / maxPct) * 100;
+
+            // Compute risk contribution text
+            const v = Math.abs(marginalDelta) * 100;
+            const sign = marginalDelta >= 0 ? '+' : '−';
+            const disp = v < 0.1 ? '<0.1' : v.toFixed(1);
+            const riskContribText = `${sign}${disp}`;
 
             // Build therapy HTML
             let therapies = [...treatment.therapies];
@@ -424,7 +432,7 @@ DRC.UIController = (() => {
                     <div class="tov-bar-container">
                         <div class="tov-bar ${isAboveAverage ? 'bar-indicated' : 'bar-normal'}" style="width:${barWidth}%;"></div>
                     </div>
-                    <div class="tov-pct">${(() => { const v = Math.abs(marginalDelta) * 100; const sign = marginalDelta >= 0 ? '+' : '−'; const disp = v < 0.1 ? '<0.1' : v.toFixed(1); return `${sign}${disp}`; })()}% risk contribution compared to average</div>
+                    <div class="tov-pct">${riskContribText}% risk contribution compared to average</div>
                     <div class="tov-details ${isIndicated ? 'expanded' : ''}">
                         <div class="tov-details-inner">
                             ${therapiesHTML}
@@ -445,23 +453,32 @@ DRC.UIController = (() => {
             if (iconCol) iconCol.style.background = mBg;
             if (iconEl)  iconEl.style.setProperty('color', mColor, 'important');
 
-            // Expand/collapse handler
-            row.querySelector('.tov-clickable').addEventListener('click', () => {
-                row.querySelector('.tov-details').classList.toggle('expanded');
-                row.querySelector('.tov-chevron').classList.toggle('collapsed');
-            });
-
-            // Simulate treatment handler
-            const simBtn = row.querySelector('.btn-simulate-treatment');
-            if (simBtn) {
-                simBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    if (DRC.TreatmentSimulator) DRC.TreatmentSimulator.simulate(factor);
-                });
-            }
-
             container.appendChild(row);
         });
+
+        // Event delegation: attach once on the container, handles all dynamic rows
+        if (!_treatmentDelegationAttached) {
+            container.addEventListener('click', (e) => {
+                // Expand/collapse handler
+                const clickable = e.target.closest('.tov-clickable');
+                if (clickable) {
+                    const row = clickable.closest('.treatment-overview-row');
+                    if (row) {
+                        row.querySelector('.tov-details')?.classList.toggle('expanded');
+                        row.querySelector('.tov-chevron')?.classList.toggle('collapsed');
+                    }
+                    return;
+                }
+                // Simulate treatment handler
+                const simBtn = e.target.closest('.btn-simulate-treatment');
+                if (simBtn) {
+                    e.stopPropagation();
+                    const simFactor = simBtn.getAttribute('data-sim-factor');
+                    if (simFactor && DRC.TreatmentSimulator) DRC.TreatmentSimulator.simulate(simFactor);
+                }
+            });
+            _treatmentDelegationAttached = true;
+        }
 
         // Re-initialize Lucide icons for dynamically added content
         if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -554,8 +571,7 @@ DRC.UIController = (() => {
         if (!panel) return;
 
         const delta = currentRisk - baselineRisk;
-        const cls   = delta < 0 ? 'improved' : 'worsened';
-        // Note: 'trending-flat' does not exist in Lucide — use 'minus' for no change
+        const cls   = delta < 0 ? 'improved' : delta > 0 ? 'worsened' : 'unchanged';
         const icon  = delta < 0 ? 'trending_down' : delta > 0 ? 'trending_up' : 'minus';
 
         panel.innerHTML = `

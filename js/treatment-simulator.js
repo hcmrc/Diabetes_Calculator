@@ -38,7 +38,7 @@ DRC.TreatmentSimulator = (() => {
     /**
      * Compute the target slider value after treatment, clamped to range.
      * @param {string} factor — Risk factor key.
-     * @returns {{ currentVal: number, targetVal: number, step: number }|null}
+     * @returns {{ currentVal: number, targetVal: number, step: number, decimals: number }|null}
      */
     const computeTarget = (factor) => {
         const input  = document.getElementById(`${factor}-value`);
@@ -51,8 +51,9 @@ DRC.TreatmentSimulator = (() => {
         const max     = parseFloat(slider.max);
         const step    = parseFloat(slider.step) || 1;
         const clamped = DRC.UIHelpers.clampAndRound(raw, min, max, step);
+        const decimals = step >= 1 ? 0 : Math.max(0, -Math.floor(Math.log10(step)));
 
-        return { currentVal: current, targetVal: clamped, step };
+        return { currentVal: current, targetVal: clamped, step, decimals };
     };
 
     /** Ease-out cubic interpolation: t in [0,1] → decelerated output. */
@@ -68,7 +69,7 @@ DRC.TreatmentSimulator = (() => {
         const info = computeTarget(factor);
         if (!info || info.currentVal === info.targetVal) return;
 
-        const { currentVal, targetVal, step } = info;
+        const { currentVal, targetVal, step, decimals } = info;
         const label = DRC.CONFIG.SIMULATION_EFFECTS[factor]?.label || factor;
         _animating = true;
 
@@ -117,7 +118,7 @@ DRC.TreatmentSimulator = (() => {
             frame++;
             const progress     = easeOutCubic(frame / STEPS);
             const interpolated = currentVal + (targetVal - currentVal) * progress;
-            const val = step < 1 ? parseFloat(interpolated.toFixed(1)) : Math.round(interpolated);
+            const val = parseFloat(interpolated.toFixed(decimals));
 
             const input  = document.getElementById(`${factor}-value`);
             const slider = document.getElementById(`${factor}-slider`);

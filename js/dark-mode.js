@@ -27,6 +27,7 @@ DRC.DarkMode = (() => {
         }
 
         applyTheme(currentTheme);
+        mediaQuery.removeEventListener('change', handleSystemPreferenceChange);
         mediaQuery.addEventListener('change', handleSystemPreferenceChange);
         setupToggleButton();
     };
@@ -103,4 +104,9 @@ DRC.DarkMode = (() => {
     return { init, toggle, getTheme, isDark, setTheme };
 })();
 
-document.addEventListener('DOMContentLoaded', () => DRC.DarkMode.init());
+// Initialize dark mode early, accounting for late script load
+if (document.readyState === 'interactive' || document.readyState === 'complete') {
+    DRC.DarkMode.init();
+} else {
+    document.addEventListener('DOMContentLoaded', () => DRC.DarkMode.init());
+}

@@ -27,7 +27,10 @@ DRC.RadarChart = (() => {
      * HDL is inverted (higher = better = lower risk).
      */
     const normalizeAxis = (field, siValue) => {
-        const [min, max] = DRC.CONFIG.RANGES[field].si;
+        const range = DRC.CONFIG.RANGES[field];
+        if (!range?.si) return 0.5;
+        const [min, max] = range.si;
+        if (max === min) return 0.5;
         let ratio = Math.min(Math.max((siValue - min) / (max - min), 0), 1);
         if (field === 'cholHDL') ratio = 1 - ratio;
         return ratio;

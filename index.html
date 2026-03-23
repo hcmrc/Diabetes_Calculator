@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- CSP: 'unsafe-inline' in style-src is required for JS dynamic styling (element.style).
+         Mitigated by strict script-src, object-src 'none', and base-uri/form-action restrictions. -->
     <meta http-equiv="Content-Security-Policy"
           content="default-src 'self';
                    script-src 'self' https://cdn.sheetjs.com;
@@ -10,15 +12,22 @@
                    font-src https://fonts.gstatic.com https://fonts.googleapis.com;
                    connect-src 'none';
                    img-src 'self' data:;
-                   object-src 'none';">
+                   object-src 'none';
+                   base-uri 'self';
+                   form-action 'self';
+                   frame-ancestors 'none';">
+    <meta http-equiv="X-Frame-Options" content="DENY">
     <title>Diabetes Risk Calculator</title>
     <meta name="theme-color" content="#f2f4f8">
 
     <!-- Google Fonts -->
+    <!-- Note: SRI hash should be computed for the live stylesheet for production use -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" crossorigin="anonymous">
     <!-- Lucide Icons (local) -->
+    <!-- SRI omitted: integrity checks on same-origin local scripts can fail
+         when opened via file:// protocol. SRI is intended for CDN/third-party resources. -->
     <script src="js/lib/lucide.min.js"></script>
 
     <!-- SheetJS for Excel Import/Export -->
@@ -114,7 +123,7 @@
             <label class="pd-btn-io pd-btn-import" for="pdImportFile">
                 <i data-lucide="upload" class="lucide-icon"></i> Import .xlsx
             </label>
-            <input type="file" id="pdImportFile" accept=".xlsx,.xls" style="display:none;" />
+            <input type="file" id="pdImportFile" accept=".xlsx,.xls" style="display:none;" aria-label="Import patient profiles from Excel file" />
         </div>
     </div>
 </aside>
@@ -219,7 +228,7 @@
                     </div>
                     <div class="slider-labels slider-labels-numeric"><span>20</span><span>50</span><span>80</span></div>
                     <div class="factor-value-row">
-                        <input type="number" id="age-value" value="50" min="20" max="80" step="1" class="value-input">
+                        <input type="number" id="age-value" value="50" min="20" max="80" step="1" class="value-input" aria-label="Age in years">
                         <span class="value-unit-label">years</span>
                         <span class="what-if-badge" id="what-if-age"></span>
                     </div>
@@ -260,7 +269,7 @@
                     </div>
                     <div class="slider-labels slider-labels-numeric"><span id="height-min">48</span><span id="height-mid">66</span><span id="height-max">84</span></div>
                     <div class="factor-value-row">
-                        <input type="number" id="height-value" value="66" min="48" max="84" step="1" class="value-input">
+                        <input type="number" id="height-value" value="66" min="48" max="84" step="1" class="value-input" aria-label="Height">
                         <span class="value-unit-label" id="height-value-unit">in</span>
                         <span class="what-if-badge" id="what-if-height"></span>
                     </div>
@@ -298,7 +307,7 @@
                 </div>
                 <div class="slider-labels"><span style="flex:50">Normal</span><span style="flex:26">Pre-Diab.</span><span style="flex:174">Diabetes</span></div>
                 <div class="factor-value-row">
-                    <input type="number" id="fastGlu-value" value="95" min="50" max="300" step="1" class="value-input">
+                    <input type="number" id="fastGlu-value" value="95" min="50" max="300" step="1" class="value-input" aria-label="Fasting glucose">
                     <span class="value-unit-label" id="fastGlu-value-unit">mg/dL</span>
                     <span class="what-if-badge" id="what-if-fastGlu"></span>
                 </div>
@@ -310,16 +319,16 @@
                     <label for="waist-slider"><i data-lucide="ruler" class="lucide-icon ig-icon"></i> Waist <span class="unit-label" id="waist-unit">(in)</span></label>
                 </div>
                 <div class="slider-wrapper">
-                    <input type="range" id="waist-slider" min="25" max="60" value="36" step="1" class="slider">
+                    <input type="range" id="waist-slider" min="26" max="60" value="36" step="1" class="slider">
                     <div class="slider-track-bg segmented" id="waist-track">
                         <div class="slider-segment safe" style="flex:12"></div>
                         <div class="slider-segment alert" style="flex:3"></div>
                         <div class="slider-segment danger" style="flex:20"></div>
                     </div>
                 </div>
-                <div class="slider-labels slider-labels-numeric"><span id="waist-min">25</span><span id="waist-mid">42</span><span id="waist-max">60</span></div>
+                <div class="slider-labels slider-labels-numeric"><span id="waist-min">26</span><span id="waist-mid">43</span><span id="waist-max">60</span></div>
                 <div class="factor-value-row">
-                    <input type="number" id="waist-value" value="36" min="25" max="60" step="1" class="value-input">
+                    <input type="number" id="waist-value" value="36" min="26" max="60" step="1" class="value-input" aria-label="Waist circumference">
                     <span class="value-unit-label" id="waist-value-unit">in</span>
                     <span class="what-if-badge" id="what-if-waist"></span>
                 </div>
@@ -341,7 +350,7 @@
                 </div>
                 <div class="slider-labels"><span style="flex:50">Normal</span><span style="flex:10;text-align:right">Elev.</span><span style="flex:20;text-align:left;padding-left:2px">Stg1</span><span style="flex:60">Stage 2</span></div>
                 <div class="factor-value-row">
-                    <input type="number" id="sbp-value" value="120" min="80" max="220" step="1" class="value-input">
+                    <input type="number" id="sbp-value" value="120" min="80" max="220" step="1" class="value-input" aria-label="Systolic blood pressure">
                     <span class="value-unit-label">mmHg</span>
                     <span class="what-if-badge" id="what-if-sbp"></span>
                 </div>
@@ -362,7 +371,7 @@
                 </div>
                 <div class="slider-labels"><span style="flex:20">Low</span><span style="flex:19;text-align:left;padding-left:2px">Brdl.</span><span style="flex:61">Normal</span></div>
                 <div class="factor-value-row">
-                    <input type="number" id="cholHDL-value" value="50" min="20" max="100" step="1" class="value-input">
+                    <input type="number" id="cholHDL-value" value="50" min="20" max="100" step="1" class="value-input" aria-label="HDL cholesterol">
                     <span class="value-unit-label" id="cholHDL-value-unit">mg/dL</span>
                     <span class="what-if-badge" id="what-if-cholHDL"></span>
                 </div>
@@ -384,7 +393,7 @@
                 </div>
                 <div class="slider-labels"><span style="flex:100">Normal</span><span style="flex:100">Borderline</span><span style="flex:250">High</span></div>
                 <div class="factor-value-row">
-                    <input type="number" id="cholTri-value" value="150" min="50" max="500" step="1" class="value-input">
+                    <input type="number" id="cholTri-value" value="150" min="50" max="500" step="1" class="value-input" aria-label="Triglycerides">
                     <span class="value-unit-label" id="cholTri-value-unit">mg/dL</span>
                     <span class="what-if-badge" id="what-if-cholTri"></span>
                 </div>

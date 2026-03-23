@@ -38,6 +38,7 @@ DRC.UIHelpers = (() => {
      * @returns {number} Clamped and rounded value.
      */
     const clampAndRound = (value, min, max, step) => {
+        if (!isFinite(value)) value = min;
         const clamped = Math.min(Math.max(value, min), max);
         if (step >= 1) return Math.round(clamped);
         // Handle scientific notation (e.g., 1e-7) correctly
