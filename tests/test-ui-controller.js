@@ -312,7 +312,7 @@ assert(html2.includes('trending-up'), 'Worsening uses trending-up icon');
 // No change (delta = 0)
 UIC.renderScenarioComparison(15.0, 15.0);
 const html3 = ELEMS['scenario-comparison'].innerHTML;
-assert(html3.includes('worsened'),       'delta=0 → classified as "worsened"');
+assert(html3.includes('unchanged'),       'delta=0 → classified as "unchanged"');
 assert(html3.includes('data-lucide="minus"'), 'delta=0 → uses minus icon (trending-flat does not exist in Lucide)');
 assert(html3.includes('+0.00%'),         'delta=0 → shows "+0.00%"');
 

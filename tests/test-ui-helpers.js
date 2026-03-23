@@ -11,7 +11,7 @@ global.document = { getElementById: () => null };
 require('../js/config.js');
 require('../js/ui-helpers.js');
 
-const { clampAndRound, formatAxisValue, escapeHtml } = DRC.UIHelpers;
+const { clampAndRound, formatAxisValue, escapeHtml, formatPercent, formatDeltaPercent } = DRC.UIHelpers;
 
 let passed = 0, failed = 0;
 function assert(condition, name) {
@@ -45,6 +45,30 @@ console.log('\n═══ UIHelpers: formatAxisValue ═══');
 assert(formatAxisValue(5, false) === '5', 'Integer: 5 → "5"');
 assert(formatAxisValue(5.0, true) === '5.0', 'Float: 5.0 → "5.0"');
 assert(formatAxisValue(3.14, true) === '3.1', 'Float: 3.14 → "3.1"');
+
+console.log('\n═══ UIHelpers: formatPercent ═══');
+assert(formatPercent(50) === '50.0%', 'formatPercent(50) = "50.0%"');
+assert(formatPercent(0) === '0.0%', 'formatPercent(0) = "0.0%"');
+assert(formatPercent(33.333) === '33.3%', 'formatPercent(33.333) = "33.3%"');
+assert(formatPercent(99.999) === '100.0%', 'formatPercent(99.999) rounds to "100.0%"');
+assert(formatPercent(100) === '100.0%', 'formatPercent(100) = "100.0%"');
+assert(formatPercent(0.5) === '0.5%', 'formatPercent(0.5) = "0.5%"');
+assert(formatPercent(12.5) === '12.5%', 'formatPercent(12.5) = "12.5%"');
+// Edge cases
+assert(formatPercent(Infinity) === '0%', 'formatPercent(Infinity) returns "0%"');
+assert(formatPercent(-5) === '-5.0%', 'formatPercent(-5) = "-5.0%"');
+assert(formatPercent(-5, 0) === '-5%', 'formatPercent(-5, 0) = "-5%"');
+
+console.log('\n═══ UIHelpers: formatDeltaPercent ═══');
+assert(formatDeltaPercent(5) === '+5.00%', 'formatDeltaPercent(5) = "+5.00%"');
+assert(formatDeltaPercent(-3) === '-3.00%', 'formatDeltaPercent(-3) = "-3.00%"');
+assert(formatDeltaPercent(0) === '0.00%', 'formatDeltaPercent(0) = "0.00%" (no sign for zero)');
+assert(formatDeltaPercent(2.5) === '+2.50%', 'formatDeltaPercent(2.5) = "+2.50%"');
+assert(formatDeltaPercent(-0.5) === '-0.50%', 'formatDeltaPercent(-0.5) = "-0.50%"');
+assert(formatDeltaPercent(10.123) === '+10.12%', 'formatDeltaPercent(10.123) = "+10.12%"');
+// Edge cases: non-finite values return '0%'
+assert(formatDeltaPercent(Infinity) === '0%', 'formatDeltaPercent(Infinity) returns "0%"');
+assert(formatDeltaPercent(NaN) === '0%', 'formatDeltaPercent(NaN) returns "0%"');
 
 console.log(`\n  TOTAL: ${passed + failed} tests — ${passed} passed, ${failed} failed\n`);
 process.exit(failed > 0 ? 1 : 0);

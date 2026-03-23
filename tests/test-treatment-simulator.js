@@ -65,7 +65,10 @@ function setupStubs() {
                                            height: 66, waist: 36, fastGlu: 100,
                                            cholHDL: 50, cholTri: 150 }),
         updateSliderFill:        () => {},
-        renderScenarioComparison:() => {}
+        renderScenarioComparison:() => {},
+        getSliderElements:       () => ({ input: null, slider: null }),
+        getUnitToggleState:      () => false,
+        setComparisonMode:       () => {}
     };
     DRC.RiskModel = {
         toSI:               (v)    => v,
@@ -74,7 +77,8 @@ function setupStubs() {
     DRC.App = {
         _getState:           () => ({ isComparingScenario: false, baselineRisk: null }),
         _setCompareScenario: () => {},
-        _calculate:          () => {}
+        _calculate:          () => {},
+        trigger:             () => {}
     };
     DRC.TimelineChart = {
         hasBaseline:    () => false,
@@ -107,7 +111,8 @@ const TS = DRC.TreatmentSimulator;
 assert(typeof TS                === 'object',   'DRC.TreatmentSimulator is an object');
 assert(typeof TS.simulate       === 'function', 'TreatmentSimulator.simulate is a function');
 assert(typeof TS.resetSimulated === 'function', 'TreatmentSimulator.resetSimulated is a function');
-assert(Object.keys(TS).length   === 2,          'Public API has exactly 2 members');
+assert(typeof TS.cancel         === 'function', 'TreatmentSimulator.cancel is a function');
+assert(Object.keys(TS).length   === 3,          'Public API has exactly 3 members');
 
 // ─── TEST SUITE 2: Resilience — null DOM ──────────────────────────────────────
 

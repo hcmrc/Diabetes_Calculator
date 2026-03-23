@@ -23,7 +23,19 @@
 // ─── Bootstrap ───────────────────────────────────────────────────────────────
 
 global.window = global;
-global.DRC    = {};
+global.DRC    = {
+    CONFIG: {
+        TREATMENT_COLORS: {
+            'Blood Sugar Management': '#FF6B6B',
+            'Blood Pressure Control': '#4ECDC4'
+        },
+        MAX_SNAPSHOTS: 20,
+        MIN_Y_AXIS: 25
+    },
+    UIHelpers: {
+        refreshIcons: () => {}
+    }
+};
 
 // Capture container HTML so render output can be inspected
 let containerHTML = '';

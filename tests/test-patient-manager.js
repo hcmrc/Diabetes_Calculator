@@ -135,8 +135,29 @@ function loadPatientManager(localStorageInstance, domOverrides) {
             }
         },
         ConversionService: { convertField: (field, val) => val },
-        UIController:      { updateSliderFill: () => {} },
-        App:               { _calculate: () => {}, _getState: () => ({ isMetric: false }) }
+        UIHelpers: {
+            safeStorage: {
+                get: (key) => { try { return localStorage.getItem(key); } catch { return null; } },
+                set: (key, val) => { try { localStorage.setItem(key, val); } catch {} },
+                remove: (key) => { try { localStorage.removeItem(key); } catch {} }
+            },
+            clampAndRound: (val, min, max, step) => {
+                const clamped = Math.min(Math.max(val, min), max);
+                if (step >= 1) return Math.round(clamped);
+                const decimals = String(step).includes('.') ? String(step).split('.')[1].length : 1;
+                return parseFloat(clamped.toFixed(decimals));
+            },
+            refreshIcons: () => {}
+        },
+        UIController: {
+            updateSliderFill: () => {},
+            readInputs: () => ({ age: 50, race: 0, parentHist: 0, sbp: 120, height: 66, waist: 36, fastGlu: 95, cholHDL: 50, cholTri: 150 })
+        },
+        App: {
+            _calculate: () => {},
+            _getState: () => ({ isMetric: false }),
+            trigger: () => {}
+        }
     };
 
     require('../js/patient-manager.js');
@@ -302,6 +323,20 @@ console.log('\n═══ TEST SUITE 6: captureCurrentValues() returns correct st
     };
 
     const pm = loadPatientManager(ls, domFields);
+
+    // Override UIController.readInputs to read from the test's DOM fields
+    DRC.UIController.readInputs = () => ({
+        age:        parseFloat(domFields['age-value'].value) || 0,
+        race:       domFields['race-toggle'].checked ? 1 : 0,
+        parentHist: domFields['parentHist-toggle'].checked ? 1 : 0,
+        sbp:        parseFloat(domFields['sbp-value'].value) || 0,
+        height:     parseFloat(domFields['height-value'].value) || 0,
+        waist:      parseFloat(domFields['waist-value'].value) || 0,
+        fastGlu:    parseFloat(domFields['fastGlu-value'].value) || 0,
+        cholHDL:    parseFloat(domFields['cholHDL-value'].value) || 0,
+        cholTri:    parseFloat(domFields['cholTri-value'].value) || 0
+    });
+
     pm.init();
 
     const vals = pm.captureCurrentValues();
@@ -352,12 +387,39 @@ console.log('\n═══ TEST SUITE 7: captureCurrentValues() tolerates missing 
             ALL_FIELDS: ['age', 'race', 'parentHist', 'sbp', 'height', 'waist',
                          'fastGlu', 'cholHDL', 'cholTri']
         },
-        UIController: { updateSliderFill: () => {} },
-        App:           { _calculate: () => {} }
+        UIHelpers: {
+            safeStorage: {
+                get: (key) => { try { return localStorage.getItem(key); } catch { return null; } },
+                set: (key, val) => { try { localStorage.setItem(key, val); } catch {} },
+                remove: (key) => { try { localStorage.removeItem(key); } catch {} }
+            },
+            clampAndRound: (val, min, max, step) => {
+                const clamped = Math.min(Math.max(val, min), max);
+                if (step >= 1) return Math.round(clamped);
+                const decimals = String(step).includes('.') ? String(step).split('.')[1].length : 1;
+                return parseFloat(clamped.toFixed(decimals));
+            },
+            refreshIcons: () => {}
+        },
+        UIController: {
+            updateSliderFill: () => {},
+            readInputs: () => ({ age: 50, race: 0, parentHist: 0, sbp: 120, height: 66, waist: 36, fastGlu: 95, cholHDL: 50, cholTri: 150 })
+        },
+        App: {
+            _calculate: () => {},
+            _getState: () => ({ isMetric: false }),
+            trigger: () => {}
+        }
     };
 
     require('../js/patient-manager.js');
     const pm = DRC.PatientManager;
+
+    // Override readInputs to return fallback values when DOM is null
+    DRC.UIController.readInputs = () => ({
+        age: 0, race: 0, parentHist: 0, sbp: 0, height: 0, waist: 0, fastGlu: 0, cholHDL: 0, cholTri: 0
+    });
+
     pm.init();
 
     let threw = false;
@@ -436,12 +498,27 @@ console.log('\n═══ TEST SUITE 8: applyValues() unit conversion ═══')
                 return val;
             }
         },
-        UIHelpers:    { clampAndRound: (v, min, max, step) => {
-            const clamped = Math.min(Math.max(v, min), max);
-            return step < 1 ? parseFloat(clamped.toFixed(1)) : Math.round(clamped);
-        }},
-        UIController: { updateSliderFill: () => {} },
-        App:          { _calculate: () => {}, _getState: () => ({ isMetric: true }) }
+        UIHelpers: {
+            safeStorage: {
+                get: (key) => { try { return localStorage.getItem(key); } catch { return null; } },
+                set: (key, val) => { try { localStorage.setItem(key, val); } catch {} },
+                remove: (key) => { try { localStorage.removeItem(key); } catch {} }
+            },
+            clampAndRound: (v, min, max, step) => {
+                const clamped = Math.min(Math.max(v, min), max);
+                return step < 1 ? parseFloat(clamped.toFixed(1)) : Math.round(clamped);
+            },
+            refreshIcons: () => {}
+        },
+        UIController: {
+            updateSliderFill: () => {},
+            readInputs: () => ({ age: 50, race: 0, parentHist: 0, sbp: 120, height: 66, waist: 36, fastGlu: 95, cholHDL: 50, cholTri: 150 })
+        },
+        App: {
+            _calculate: () => {},
+            _getState: () => ({ isMetric: true }),
+            trigger: () => {}
+        }
     };
 
     require('../js/patient-manager.js');

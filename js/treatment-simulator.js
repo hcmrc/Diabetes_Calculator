@@ -18,10 +18,10 @@
 'use strict';
 
 DRC.TreatmentSimulator = (() => {
-    const DURATION = 1500;   // Animation duration in ms
-    const STEPS    = 30;     // Number of animation frames
+    const CFG = DRC.CONFIG;
     let _animating = false;
     const _simulated = new Set();  // Track already-simulated factors
+    let _animationTimeoutId = null;  // Track active animation timeout
 
     /**
      * Get the unit-appropriate treatment delta for a factor.
@@ -31,7 +31,7 @@ DRC.TreatmentSimulator = (() => {
     const getEffectDelta = (factor) => {
         const fx = DRC.CONFIG.SIMULATION_EFFECTS[factor];
         if (!fx) return 0;
-        const isMetric = document.getElementById('unit-toggle')?.checked || false;
+        const isMetric = DRC.UIController.getUnitToggleState();
         return isMetric ? fx.si : fx.us;
     };
 
@@ -41,8 +41,7 @@ DRC.TreatmentSimulator = (() => {
      * @returns {{ currentVal: number, targetVal: number, step: number, decimals: number }|null}
      */
     const computeTarget = (factor) => {
-        const input  = document.getElementById(`${factor}-value`);
-        const slider = document.getElementById(`${factor}-slider`);
+        const { input, slider } = DRC.UIController.getSliderElements(factor);
         if (!input || !slider) return null;
 
         const current = parseFloat(input.value);
@@ -79,22 +78,12 @@ DRC.TreatmentSimulator = (() => {
         // Auto-set baseline on first simulation
         if (_simulated.size === 0) {
             const raw = DRC.UIController.readInputs();
-            const isMetric = document.getElementById('unit-toggle')?.checked || false;
+            const isMetric = DRC.UIController.getUnitToggleState();
             const si  = DRC.RiskModel.toSI(raw, isMetric);
             const risk = DRC.RiskModel.computeProbability(si) * 100;
 
-            // Activate comparison mode via explicit setter (avoids mutating the state copy)
-            DRC.App._setCompareScenario?.(risk);
-
-            // Update Set Baseline button UI
-            const baseBtn = document.getElementById('compareScenarioBtn');
-            if (baseBtn) {
-                baseBtn.classList.add('active');
-                baseBtn.innerHTML = '<i data-lucide="flag" class="lucide-icon"></i> Reset Baseline';
-            }
-            const panel = document.getElementById('scenario-comparison');
-            if (panel) panel.style.display = 'flex';
-            DRC.UIController.renderScenarioComparison(risk, risk);
+            // Activate comparison mode via UIController (centralized UI updates)
+            DRC.UIController.setComparisonMode(true, risk);
 
             // Add baseline line + unlabelled baseline snapshot — only if not already set manually
             if (!DRC.TimelineChart.hasBaseline()) {
@@ -103,52 +92,55 @@ DRC.TreatmentSimulator = (() => {
             if (DRC.TimelineChart.getLastSnapshot() === null) {
                 DRC.TimelineChart.addSnapshot(risk, si, null);
             }
-
-            // Auto-open timeline
-            const area = document.getElementById('timeline-expandable');
-            if (area && !area.classList.contains('open')) {
-                area.classList.add('open');
-                document.getElementById('timelineToggleBtn')?.classList.add('active');
-            }
         }
 
         // Animate
         let frame = 0;
         const tick = () => {
             frame++;
-            const progress     = easeOutCubic(frame / STEPS);
+            const progress     = easeOutCubic(frame / CFG.ANIMATION_STEPS);
             const interpolated = currentVal + (targetVal - currentVal) * progress;
             const val = parseFloat(interpolated.toFixed(decimals));
 
-            const input  = document.getElementById(`${factor}-value`);
-            const slider = document.getElementById(`${factor}-slider`);
+            const { input, slider } = DRC.UIController.getSliderElements(factor);
             if (input)  input.value  = val;
             if (slider) slider.value = val;
             DRC.UIController.updateSliderFill(factor);
             DRC.App.trigger('risk:recalculate');
 
-            if (frame < STEPS) {
-                setTimeout(tick, DURATION / STEPS);
+            if (frame < CFG.ANIMATION_STEPS) {
+                _animationTimeoutId = setTimeout(tick, CFG.ANIMATION_DURATION / CFG.ANIMATION_STEPS);
             } else {
+                _animationTimeoutId = null;
                 onComplete(factor, label);
             }
         };
         tick();
     };
 
+    /** Cancel any running animation and cleanup. */
+    const cancel = () => {
+        if (_animationTimeoutId) {
+            clearTimeout(_animationTimeoutId);
+            _animationTimeoutId = null;
+        }
+        _animating = false;
+        document.querySelectorAll('.btn-simulate-treatment').forEach(b => b.disabled = false);
+    };
+
     /** Finalize simulation: take snapshot, flash row, re-enable buttons. */
     const onComplete = (factor, label) => {
-        const isMetric = document.getElementById('unit-toggle')?.checked || false;
+        const isMetric = DRC.UIController.getUnitToggleState();
         const raw  = DRC.UIController.readInputs();
         const si   = DRC.RiskModel.toSI(raw, isMetric);
         const risk = DRC.RiskModel.computeProbability(si) * 100;
         DRC.TimelineChart.addSnapshot(risk, si, label);
 
-        // Flash completion animation
+        // Flash completion animation (1200ms for visual feedback)
         const row = document.querySelector(`.treatment-overview-row[data-field="${factor}"]`);
         if (row) {
             row.classList.add('sim-complete');
-            setTimeout(() => row.classList.remove('sim-complete'), 1200);
+            setTimeout(() => row.classList.remove('sim-complete'), CFG.ANIMATION_FLASH_MS);
         }
 
         _animating = false;
@@ -168,15 +160,12 @@ DRC.TreatmentSimulator = (() => {
         });
 
         // Initialize Lucide icons for updated buttons
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-
-        // Auto-open timeline if hidden
-        const area = document.getElementById('timeline-expandable');
-        if (area && !area.classList.contains('open')) {
-            area.classList.add('open');
-            document.getElementById('timelineToggleBtn')?.classList.add('active');
-        }
+        DRC.UIHelpers.refreshIcons();
     };
 
-    return { simulate, resetSimulated: () => { _simulated.clear(); _animating = false; } };
+    return {
+        simulate,
+        resetSimulated: () => { cancel(); _simulated.clear(); },
+        cancel
+    };
 })();

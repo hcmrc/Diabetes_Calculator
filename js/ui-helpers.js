@@ -76,5 +76,84 @@ DRC.UIHelpers = (() => {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
 
-    return { el, setText, clampAndRound, formatAxisValue, escapeHtml };
+    /**
+     * Refresh Lucide icons after dynamic DOM updates.
+     * Centralized to eliminate DRY violations across the codebase.
+     */
+    const refreshIcons = () => {
+        if (typeof lucide !== 'undefined') {
+            try {
+                lucide.createIcons();
+            } catch (e) {
+                console.warn('Failed to refresh Lucide icons:', e);
+            }
+        }
+    };
+
+    /**
+     * Format a value as percentage string.
+     * @param {number} value - The value to format.
+     * @param {number} decimals - Number of decimal places (default: 1).
+     * @returns {string} Formatted percentage string.
+     */
+    const formatPercent = (value, decimals = 1) => {
+        if (!isFinite(value)) return '0%';
+        return value.toFixed(decimals) + '%';
+    };
+
+    /**
+     * Format a delta value as percentage string with sign.
+     * @param {number} value - The delta value.
+     * @param {number} decimals - Number of decimal places (default: 2).
+     * @returns {string} Formatted delta percentage string.
+     */
+    const formatDeltaPercent = (value, decimals = 2) => {
+        if (!isFinite(value)) return '0%';
+        const sign = value > 0 ? '+' : '';
+        return `${sign}${value.toFixed(decimals)}%`;
+    };
+
+    /**
+     * Safe localStorage wrapper with try-catch error handling.
+     * Prevents crashes when localStorage is disabled or quota is exceeded.
+     */
+    const safeStorage = {
+        /**
+         * Get item from localStorage.
+         * @param {string} key — Storage key.
+         * @returns {string|null} Stored value or null on error.
+         */
+        get: (key) => {
+            try {
+                return localStorage.getItem(key);
+            } catch {
+                return null;
+            }
+        },
+        /**
+         * Set item in localStorage.
+         * @param {string} key — Storage key.
+         * @param {string} value — Value to store.
+         */
+        set: (key, value) => {
+            try {
+                localStorage.setItem(key, value);
+            } catch (e) {
+                console.warn('Storage failed:', e);
+            }
+        },
+        /**
+         * Remove item from localStorage.
+         * @param {string} key — Storage key.
+         */
+        remove: (key) => {
+            try {
+                localStorage.removeItem(key);
+            } catch {
+                // Silently ignore
+            }
+        }
+    };
+
+    return { el, setText, clampAndRound, formatAxisValue, escapeHtml, refreshIcons, safeStorage, formatPercent, formatDeltaPercent };
 })();

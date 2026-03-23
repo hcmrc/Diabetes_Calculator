@@ -18,12 +18,12 @@ DRC.DarkMode = (() => {
         mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
         systemPreference = mediaQuery.matches ? THEME_DARK : THEME_LIGHT;
 
-        const savedPreference = localStorage.getItem(STORAGE_KEY);
+        const savedPreference = DRC.UIHelpers.safeStorage.get(STORAGE_KEY);
 
         if (savedPreference === THEME_DARK || savedPreference === THEME_LIGHT) {
             currentTheme = savedPreference;
         } else {
-            currentTheme = systemPreference;
+            currentTheme = THEME_LIGHT; // Default to light mode
         }
 
         applyTheme(currentTheme);
@@ -34,7 +34,7 @@ DRC.DarkMode = (() => {
 
     const handleSystemPreferenceChange = (e) => {
         systemPreference = e.matches ? THEME_DARK : THEME_LIGHT;
-        const savedPreference = localStorage.getItem(STORAGE_KEY);
+        const savedPreference = DRC.UIHelpers.safeStorage.get(STORAGE_KEY);
         if (!savedPreference) {
             currentTheme = systemPreference;
             applyTheme(currentTheme);
@@ -72,17 +72,15 @@ DRC.DarkMode = (() => {
         toggleBtn.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
         toggleBtn.setAttribute('aria-pressed', String(isDark));
         toggleBtn.classList.toggle('active', isDark);
-        if (typeof lucide !== 'undefined') {
-            const icon = toggleBtn.querySelector('.lucide-icon');
-            if (icon) icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
-            lucide.createIcons();
-        }
+        const icon = toggleBtn.querySelector('.lucide-icon');
+        if (icon) icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+        DRC.UIHelpers.refreshIcons();
     };
 
     const toggle = () => {
         const isDark = document.documentElement.classList.contains('dark');
         const newTheme = isDark ? THEME_LIGHT : THEME_DARK;
-        localStorage.setItem(STORAGE_KEY, newTheme);
+        DRC.UIHelpers.safeStorage.set(STORAGE_KEY, newTheme);
         currentTheme = newTheme;
         document.body.classList.add('theme-transition');
         applyTheme(newTheme);
@@ -94,7 +92,7 @@ DRC.DarkMode = (() => {
     const getTheme = () => currentTheme;
     const setTheme = (theme) => {
         if (theme === THEME_LIGHT || theme === THEME_DARK) {
-            localStorage.setItem(STORAGE_KEY, theme);
+            DRC.UIHelpers.safeStorage.set(STORAGE_KEY, theme);
             currentTheme = theme;
             applyTheme(theme);
             updateToggleButton();

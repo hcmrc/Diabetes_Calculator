@@ -26,7 +26,7 @@ require('../js/conversion-service.js');
 require('../js/risk-model.js');
 
 const { CONFIG } = DRC;
-const { toSI, computeProbability, computeContributions, getElevatedFactors, computeWhatIfDelta } = DRC.RiskModel;
+const { toSI, computeProbability, computeContributions, computeBaselineRisk, computeMarginalContributions, computeMarginalSummary, getElevatedFactors, computeWhatIfDelta } = DRC.RiskModel;
 
 // ─── Test harness ───────────────────────────────────────────────────
 let passed = 0;
@@ -180,6 +180,89 @@ assert(computeProbability(higherHDL) < baseRisk, 'Higher HDL → lower risk');
 // Protective factor: greater height should decrease risk
 const taller = { ...popMeans, height: 190 };
 assert(computeProbability(taller) < baseRisk, 'Greater height → lower risk (negative beta)');
+
+results.forEach(r => console.log(r));
+results.length = 0;
+
+// =====================================================================
+// TEST SUITE 3b: Baseline Risk (computeBaselineRisk)
+// =====================================================================
+console.log('\n═══ TEST SUITE 3b: Baseline Risk (computeBaselineRisk) ═══');
+
+// computeBaselineRisk should return risk for population means
+const baselineRisk = computeBaselineRisk() * 100;
+assertApprox(baselineRisk, 12.93, 0.1, 'computeBaselineRisk() returns population mean risk ~12.93%');
+
+// Should match computeProbability(CONFIG.MEANS)
+const computedViaMeans = computeProbability(CONFIG.MEANS) * 100;
+assertApprox(baselineRisk, computedViaMeans, 0.0001, 'computeBaselineRisk() equals computeProbability(CONFIG.MEANS)');
+
+results.forEach(r => console.log(r));
+results.length = 0;
+
+// =====================================================================
+// TEST SUITE 3c: Marginal Contributions
+// =====================================================================
+console.log('\n═══ TEST SUITE 3c: Marginal Contributions ═══');
+
+// At population means, sum of marginals should be zero
+const marginalsAtMean = computeMarginalContributions(popMeans);
+const sumMarginalsAtMean = Object.values(marginalsAtMean).reduce((a, b) => a + b, 0);
+assertApprox(sumMarginalsAtMean, 0, 0.0001, 'At population means: sum of marginal contributions = 0');
+
+// All fields should have marginal entries
+CONFIG.ALL_FIELDS.forEach(field => {
+    assert(field in marginalsAtMean, `Marginals includes field: ${field}`);
+});
+
+// For elevated values, sum should be positive
+const elevatedVals = { ...popMeans, fastGlu: 7.0, age: 65 };
+const marginalsElevated = computeMarginalContributions(elevatedVals);
+const sumMarginalsElevated = Object.values(marginalsElevated).reduce((a, b) => a + b, 0);
+assert(sumMarginalsElevated > 0, 'Above-mean values produce positive sum of marginal contributions');
+
+// Higher glucose should have positive marginal contribution
+assert(marginalsElevated.fastGlu > 0, 'Elevated glucose has positive marginal contribution');
+
+// Higher HDL (protective) should have negative marginal contribution
+const highHDLVals = { ...popMeans, cholHDL: 2.0 };
+const marginalsHighHDL = computeMarginalContributions(highHDLVals);
+assert(marginalsHighHDL.cholHDL < 0, 'Higher HDL has negative marginal contribution (protective)');
+
+results.forEach(r => console.log(r));
+results.length = 0;
+
+// =====================================================================
+// TEST SUITE 3d: Marginal Summary
+// =====================================================================
+console.log('\n═══ TEST SUITE 3d: Marginal Summary ═══');
+
+// At population means
+const summaryAtMean = computeMarginalSummary(popMeans);
+assertApprox(summaryAtMean.pFull, summaryAtMean.pBaseline, 0.0001, 'At population means: pFull equals pBaseline');
+assertApprox(summaryAtMean.netDeviation, 0, 0.0001, 'At population means: netDeviation = 0');
+assert(typeof summaryAtMean.contributions === 'object' && summaryAtMean.contributions !== null, 'MarginalSummary includes contributions object');
+assert(typeof summaryAtMean.pFull === 'number', 'pFull is a number');
+assert(typeof summaryAtMean.pBaseline === 'number', 'pBaseline is a number');
+assert(typeof summaryAtMean.sumMarginals === 'number', 'sumMarginals is a number');
+assert(typeof summaryAtMean.netDeviation === 'number', 'netDeviation is a number');
+
+// For elevated values, pFull > pBaseline
+const summaryElevated = computeMarginalSummary(elevatedVals);
+assert(summaryElevated.pFull > summaryElevated.pBaseline, 'Elevated values: pFull > pBaseline');
+assert(summaryElevated.netDeviation > 0, 'Elevated values: netDeviation > 0');
+assertApprox(summaryElevated.netDeviation, summaryElevated.pFull - summaryElevated.pBaseline, 0.0001, 'netDeviation = pFull - pBaseline');
+
+// Contributions object should have entries for each field
+CONFIG.ALL_FIELDS.forEach(field => {
+    assert(field in summaryElevated.contributions, `Contributions object has field: ${field}`);
+});
+
+// Contributions should be numbers
+Object.entries(summaryElevated.contributions).forEach(([field, value]) => {
+    assert(typeof value === 'number', `Contribution for ${field} is a number`);
+    assert(!isNaN(value), `Contribution for ${field} is not NaN`);
+});
 
 results.forEach(r => console.log(r));
 results.length = 0;
