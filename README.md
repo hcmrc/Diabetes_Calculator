@@ -1,7 +1,7 @@
 # Diabetes Risk Calculator
 
 [![License: BSD 3-Clause](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
-[![Tests](https://img.shields.io/badge/tests-192%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-481%20passing-brightgreen.svg)](tests/)
 
 An interactive, web-based interface for communicating the logistic regression model by Schmidt et al. (2005) to medical laypersons. The interface was developed as part of a master's thesis based on the Ecological Interface Design (EID) methodology (Vicente & Rasmussen, 1992).
 
@@ -65,7 +65,7 @@ The interface follows the core principles of Ecological Interface Design:
 ```
 index.html                Main interface file
 style.css                 Complete stylesheet
-LICENSE                   MIT License
+LICENSE                   BSD 3-Clause License
 js/
   config.js               Model coefficients, thresholds, treatment data
   conversion-service.js   Unit conversion (US ↔ SI)
@@ -121,10 +121,11 @@ node tests/test-ui-controller.js           # 16 tests - UI controller
 node tests/test-timeline-chart.js          # 8 tests - Timeline functionality
 node tests/test-patient-manager.js         # 14 tests - Patient management
 node tests/test-treatment-simulator.js     # 10 tests - Treatment simulations
+node tests/test-radar-chart.js             # 8 tests - Radar chart functionality
 node tests/test-event-system.js            # 6 tests - Event system
 ```
 
-**Total: 192+ tests** validate the correct implementation of the Schmidt et al. model.
+**Total: 481+ tests** validate the correct implementation of the Schmidt et al. model.
 
 ## Security
 
