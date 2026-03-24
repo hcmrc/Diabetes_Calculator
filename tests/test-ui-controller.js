@@ -330,7 +330,13 @@ UIC.updateNonModSummary();
 
 assert(ELEMS['summary-age'].textContent    === 'Age: 58',     'summary-age = "Age: 58"');
 assert(ELEMS['summary-race'].textContent   === 'Black',       'summary-race = "Black" (toggle checked)');
-assert(ELEMS['summary-parent'].textContent === 'No family hist.', 'summary-parent = "No family hist." (toggle unchecked)');
+assert(ELEMS['summary-parent'].textContent === 'No history of diabetes in family', 'summary-parent = "No history of diabetes in family" (toggle unchecked)');
+
+// Test checked case
+ELEMS['parentHist-toggle'].checked = true;
+UIC.updateNonModSummary();
+assert(ELEMS['summary-parent'].textContent === 'History of diabetes in family', 'summary-parent = "History of diabetes in family" (toggle checked)');
+ELEMS['parentHist-toggle'].checked = false;  // restore for next test
 assert(ELEMS['summary-height'].textContent === '175 cm',      'summary-height = "175 cm"');
 
 // Restore defaults
@@ -356,9 +362,9 @@ ELEMS['cholTri-value-unit'].textContent = 'mmol/L';
 
 UIC.updateModSummary();
 
-assert(ELEMS['summary-fastGlu'].textContent === 'Gluc: 5.8 mmol/L', 'summary-fastGlu correct');
+assert(ELEMS['summary-fastGlu'].textContent === 'Glucose: 5.8 mmol/L', 'summary-fastGlu correct');
 assert(ELEMS['summary-waist'].textContent   === 'Waist: 98 cm',     'summary-waist correct');
-assert(ELEMS['summary-sbp'].textContent     === 'BP: 135 mmHg',     'summary-sbp correct');
+assert(ELEMS['summary-sbp'].textContent     === 'Blood Pressure: 135 mmHg', 'summary-sbp correct');
 assert(ELEMS['summary-hdl'].textContent     === 'HDL: 1.1 mmol/L',  'summary-hdl correct');
 assert(ELEMS['summary-tri'].textContent     === 'TG: 2.1 mmol/L',   'summary-tri correct');
 

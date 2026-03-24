@@ -630,7 +630,7 @@ DRC.UIController = (() => {
         const age    = el('age-value')?.value || '50';
         const sex    = el('sex-toggle')?.checked ? 'Male' : 'Female';
         const race   = el('race-toggle')?.checked ? 'Black' : 'Other';
-        const parent = el('parentHist-toggle')?.checked ? 'Family history' : 'No family hist.';
+        const parent = el('parentHist-toggle')?.checked ? 'History of diabetes in family' : 'No history of diabetes in family';
         const hVal   = el('height-value')?.value || '66';
         const hUnit  = el('height-value-unit')?.textContent || 'in';
 
@@ -685,9 +685,9 @@ DRC.UIController = (() => {
         const tVal    = el('cholTri-value')?.value || '150';
         const tUnit   = el('cholTri-value-unit')?.textContent || 'mg/dL';
 
-        setText('summary-fastGlu', 'Gluc: ' + gVal + ' ' + gUnit);
+        setText('summary-fastGlu', 'Glucose: ' + gVal + ' ' + gUnit);
         setText('summary-waist',   'Waist: ' + wVal + ' ' + wUnit);
-        setText('summary-sbp',     'BP: ' + bp + ' mmHg');
+        setText('summary-sbp',     'Blood Pressure: ' + bp + ' mmHg');
         setText('summary-hdl',     'HDL: ' + hdlVal + ' ' + hdlUnit);
         setText('summary-tri',     'TG: ' + tVal + ' ' + tUnit);
     };
