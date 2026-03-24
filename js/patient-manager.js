@@ -20,6 +20,20 @@ DRC.PatientManager = (() => {
     let patients = [];
     let activePatientId = null;
 
+    // ─── Encryption Storage Helpers ─────────────────────────────────────
+    // NOTE: sessionStorage is used instead of localStorage for password storage
+    // as it is cleared when the page session ends, providing better security
+    const ENCRYPTION_STORAGE = {
+        getLastPassword: () => sessionStorage.getItem('drc_last_password'),
+        setLastPassword: (pwd) => sessionStorage.setItem('drc_last_password', pwd),
+        clearLastPassword: () => sessionStorage.removeItem('drc_last_password'),
+        getDefaultPassword: () => sessionStorage.getItem('drc_default_password'),
+        setDefaultPassword: (pwd) => sessionStorage.setItem('drc_default_password', pwd),
+        clearDefaultPassword: () => sessionStorage.removeItem('drc_default_password'),
+        isDefaultEnabled: () => sessionStorage.getItem('drc_default_enabled') === 'true',
+        setDefaultEnabled: (enabled) => sessionStorage.setItem('drc_default_enabled', enabled ? 'true' : 'false')
+    };
+
     // ─── Persistence ────────────────────────────────────────────────────
 
     /**
@@ -132,7 +146,7 @@ DRC.PatientManager = (() => {
             if (f === 'sex' || f === 'race' || f === 'parentHist') {
                 const toggleId = f === 'sex' ? 'sex-toggle' : (f === 'race' ? 'race-toggle' : 'parentHist-toggle');
                 const toggle = document.getElementById(toggleId);
-                // Legacy profiles without sex field → default to Male (1)
+                // Legacy profiles without sex field -> default to Male (1)
                 if (toggle) toggle.checked = f === 'sex' ? (data[f] ?? 1) : !!data[f];
             } else {
                 // Convert value if the saved unit system differs from the current display unit
@@ -180,6 +194,342 @@ DRC.PatientManager = (() => {
         const perf = (typeof performance !== 'undefined' ? performance.now() : 0).toString(36).replace('.', '');
         const rand = Math.random().toString(36).slice(2, 10);
         return ts + '_' + perf.slice(0, 6) + rand;
+    };
+
+    // ─── Encryption Modal Controllers ─────────────────────────────────
+
+    let _encryptionResolve = null;
+    let _passwordPromptResolve = null;
+
+    /** Initialize encryption modal event listeners. */
+    const initEncryptionModal = () => {
+        const modal = document.getElementById('encryptionModal');
+        if (!modal) return;
+
+        // Radio button changes - show/hide password section
+        const optionNone = document.getElementById('encOptionNone');
+        const optionPassword = document.getElementById('encOptionPassword');
+        const passwordSection = document.getElementById('encPasswordSection');
+
+        const togglePasswordSection = () => {
+            if (passwordSection) {
+                passwordSection.style.display = optionPassword?.checked ? 'block' : 'none';
+            }
+        };
+
+        optionNone?.addEventListener('change', togglePasswordSection);
+        optionPassword?.addEventListener('change', togglePasswordSection);
+
+        // Password visibility toggle
+        const passwordInput = document.getElementById('encPasswordInput');
+        const passwordToggle = document.getElementById('encPasswordToggle');
+        const passwordToggleIcon = document.getElementById('encPasswordToggleIcon');
+
+        passwordToggle?.addEventListener('click', () => {
+            if (passwordInput) {
+                const isPassword = passwordInput.type === 'password';
+                passwordInput.type = isPassword ? 'text' : 'password';
+                if (passwordToggleIcon) {
+                    passwordToggleIcon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+            }
+        });
+
+        // Quick options buttons
+        const lastPasswordBtn = document.getElementById('encUseLastPassword');
+        const defaultPasswordBtn = document.getElementById('encUseDefaultPassword');
+
+        lastPasswordBtn?.addEventListener('click', () => {
+            const lastPwd = ENCRYPTION_STORAGE.getLastPassword();
+            if (lastPwd && passwordInput) {
+                passwordInput.value = lastPwd;
+                optionPassword.checked = true;
+                togglePasswordSection();
+            }
+        });
+
+        defaultPasswordBtn?.addEventListener('click', () => {
+            const defaultPwd = ENCRYPTION_STORAGE.getDefaultPassword();
+            if (defaultPwd && passwordInput) {
+                passwordInput.value = defaultPwd;
+                optionPassword.checked = true;
+                togglePasswordSection();
+            }
+        });
+
+        // Close button
+        document.getElementById('encModalClose')?.addEventListener('click', () => {
+            _hideEncryptionModal();
+            if (_encryptionResolve) {
+                _encryptionResolve({ cancelled: true, useEncryption: false, password: '' });
+                _encryptionResolve = null;
+            }
+        });
+
+        // Cancel button
+        document.getElementById('encCancelBtn')?.addEventListener('click', () => {
+            _hideEncryptionModal();
+            if (_encryptionResolve) {
+                _encryptionResolve({ cancelled: true, useEncryption: false, password: '' });
+                _encryptionResolve = null;
+            }
+        });
+
+        // Download/Confirm button
+        document.getElementById('encDownloadBtn')?.addEventListener('click', () => {
+            const useEnc = optionPassword?.checked ?? false;
+            const password = passwordInput?.value ?? '';
+
+            // Validate password if encryption is selected
+            if (useEnc && password.length < 8) {
+                const errorEl = document.getElementById('encPasswordError');
+                if (errorEl) errorEl.style.display = 'block';
+                return;
+            }
+
+            // Handle "remember for session" checkbox
+            const rememberSession = document.getElementById('encRememberSession')?.checked ?? false;
+            if (rememberSession && useEnc && password) {
+                ENCRYPTION_STORAGE.setLastPassword(password);
+            }
+
+            // Handle "set as default" checkbox
+            const setDefault = document.getElementById('encSetDefault')?.checked ?? false;
+            if (setDefault && useEnc && password) {
+                ENCRYPTION_STORAGE.setDefaultPassword(password);
+                ENCRYPTION_STORAGE.setDefaultEnabled(true);
+            }
+
+            _hideEncryptionModal();
+            if (_encryptionResolve) {
+                _encryptionResolve({ cancelled: false, useEncryption: useEnc, password });
+                _encryptionResolve = null;
+            }
+        });
+    };
+
+    /** Hide encryption modal. */
+    const _hideEncryptionModal = () => {
+        const modal = document.getElementById('encryptionModal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.classList.remove('open');
+        }
+        // Clear password input
+        const passwordInput = document.getElementById('encPasswordInput');
+        if (passwordInput) passwordInput.value = '';
+        // Hide error
+        const errorEl = document.getElementById('encPasswordError');
+        if (errorEl) errorEl.style.display = 'none';
+    };
+
+    /**
+     * Show encryption modal and return Promise with user selection.
+     * @returns {Promise<{cancelled: boolean, useEncryption: boolean, password: string}>}
+     */
+    const showEncryptionModal = () => {
+        return new Promise((resolve) => {
+            _encryptionResolve = resolve;
+
+            const modal = document.getElementById('encryptionModal');
+            const optionNone = document.getElementById('encOptionNone');
+            const optionPassword = document.getElementById('encOptionPassword');
+            const passwordSection = document.getElementById('encPasswordSection');
+            const passwordInput = document.getElementById('encPasswordInput');
+            const quickOptions = document.getElementById('encQuickOptions');
+
+            // Reset form state
+            if (optionNone) optionNone.checked = true;
+            if (optionPassword) optionPassword.checked = false;
+            if (passwordSection) passwordSection.style.display = 'none';
+            if (passwordInput) passwordInput.value = '';
+
+            // Populate quick options using safe DOM methods
+            if (quickOptions) {
+                // Clear existing quick options
+                while (quickOptions.firstChild) {
+                    quickOptions.removeChild(quickOptions.firstChild);
+                }
+
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'quick-options-label';
+                labelSpan.textContent = 'Schnellauswahl:';
+                quickOptions.appendChild(labelSpan);
+
+                // Last password button
+                const lastPwd = ENCRYPTION_STORAGE.getLastPassword();
+                if (lastPwd) {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'quick-option-btn';
+
+                    const icon = document.createElement('i');
+                    icon.setAttribute('data-lucide', 'history');
+                    icon.className = 'lucide-icon';
+                    btn.appendChild(icon);
+
+                    btn.appendChild(document.createTextNode(' Letztes Passwort'));
+
+                    btn.addEventListener('click', () => {
+                        if (passwordInput) passwordInput.value = lastPwd;
+                        if (optionPassword) optionPassword.checked = true;
+                        if (passwordSection) passwordSection.style.display = 'block';
+                    });
+
+                    quickOptions.appendChild(btn);
+                }
+
+                // Default password button
+                const defaultPwd = ENCRYPTION_STORAGE.getDefaultPassword();
+                if (defaultPwd && ENCRYPTION_STORAGE.isDefaultEnabled()) {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'quick-option-btn';
+
+                    const icon = document.createElement('i');
+                    icon.setAttribute('data-lucide', 'star');
+                    icon.className = 'lucide-icon';
+                    btn.appendChild(icon);
+
+                    btn.appendChild(document.createTextNode(' Standardpasswort'));
+
+                    btn.addEventListener('click', () => {
+                        if (passwordInput) passwordInput.value = defaultPwd;
+                        if (optionPassword) optionPassword.checked = true;
+                        if (passwordSection) passwordSection.style.display = 'block';
+                    });
+
+                    quickOptions.appendChild(btn);
+                }
+
+                // Initialize icons
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+
+            // Show modal
+            if (modal) {
+                modal.style.display = 'flex';
+                // Force reflow for animation
+                void modal.offsetWidth;
+                modal.classList.add('open');
+            }
+        });
+    };
+
+    /** Initialize password prompt modal event listeners. */
+    const initPasswordPromptModal = () => {
+        const modal = document.getElementById('passwordPromptModal');
+        if (!modal) return;
+
+        // Password visibility toggle
+        const passwordInput = document.getElementById('pwdPromptInput');
+        const passwordToggle = document.getElementById('pwdPromptToggle');
+        const passwordToggleIcon = document.getElementById('pwdPromptToggleIcon');
+
+        passwordToggle?.addEventListener('click', () => {
+            if (passwordInput) {
+                const isPassword = passwordInput.type === 'password';
+                passwordInput.type = isPassword ? 'text' : 'password';
+                if (passwordToggleIcon) {
+                    passwordToggleIcon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+            }
+        });
+
+        // Close button
+        document.getElementById('pwdPromptClose')?.addEventListener('click', () => {
+            _hidePasswordPromptModal();
+            if (_passwordPromptResolve) {
+                _passwordPromptResolve(null);
+                _passwordPromptResolve = null;
+            }
+        });
+
+        // Cancel button
+        document.getElementById('pwdPromptCancelBtn')?.addEventListener('click', () => {
+            _hidePasswordPromptModal();
+            if (_passwordPromptResolve) {
+                _passwordPromptResolve(null);
+                _passwordPromptResolve = null;
+            }
+        });
+
+        // Decrypt button
+        document.getElementById('pwdPromptDecryptBtn')?.addEventListener('click', () => {
+            const password = passwordInput?.value ?? '';
+            if (password.length < 8) {
+                const errorEl = document.getElementById('pwdPromptError');
+                const errorText = document.getElementById('pwdPromptErrorText');
+                if (errorEl) errorEl.style.display = 'block';
+                if (errorText) errorText.textContent = 'Passwort muss mindestens 8 Zeichen lang sein';
+                return;
+            }
+            _hidePasswordPromptModal();
+            if (_passwordPromptResolve) {
+                _passwordPromptResolve(password);
+                _passwordPromptResolve = null;
+            }
+        });
+
+        // Enter key support
+        passwordInput?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('pwdPromptDecryptBtn')?.click();
+            }
+        });
+    };
+
+    /** Hide password prompt modal. */
+    const _hidePasswordPromptModal = () => {
+        const modal = document.getElementById('passwordPromptModal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.classList.remove('open');
+        }
+        const passwordInput = document.getElementById('pwdPromptInput');
+        if (passwordInput) passwordInput.value = '';
+        const errorEl = document.getElementById('pwdPromptError');
+        if (errorEl) errorEl.style.display = 'none';
+    };
+
+    /**
+     * Show password prompt modal for importing encrypted files.
+     * @param {string} filename - Name of the file being imported
+     * @returns {Promise<string|null>} Password or null if cancelled
+     */
+    const showPasswordPrompt = (filename) => {
+        return new Promise((resolve) => {
+            _passwordPromptResolve = resolve;
+
+            const modal = document.getElementById('passwordPromptModal');
+            const passwordInput = document.getElementById('pwdPromptInput');
+            const titleEl = document.getElementById('pwdPromptTitle');
+
+            // Update title with filename if provided (using safe DOM methods)
+            if (titleEl && filename) {
+                // Clear existing content safely
+                while (titleEl.firstChild) {
+                    titleEl.removeChild(titleEl.firstChild);
+                }
+                // Add icon
+                const icon = document.createElement('i');
+                icon.setAttribute('data-lucide', 'lock');
+                icon.className = 'lucide-icon';
+                titleEl.appendChild(icon);
+                // Add text
+                titleEl.appendChild(document.createTextNode(' Verschlusselte Datei'));
+            }
+
+            if (passwordInput) passwordInput.value = '';
+
+            if (modal) {
+                modal.style.display = 'flex';
+                void modal.offsetWidth;
+                modal.classList.add('open');
+            }
+        });
     };
 
     // ─── CRUD Operations ────────────────────────────────────────────────
@@ -235,7 +585,7 @@ DRC.PatientManager = (() => {
 
     // ─── Excel Import/Export ────────────────────────────────────────────
 
-    /** Column mappings for Excel (column name → field key). */
+    /** Column mappings for Excel (column name -> field key). */
     const EXCEL_COLUMNS = {
         Name: 'name', Age: 'age', Sex_Male: 'sex', Ethnicity_African_American: 'race',
         Parental_Diabetes: 'parentHist', Systolic_BP: 'sbp', Height: 'height',
@@ -252,19 +602,62 @@ DRC.PatientManager = (() => {
         Blood_Fats_Triglycerides: p.data.cholTri, Risk_Pct: p.riskPct, Saved_At: p.savedAt
     });
 
-    const exportToExcel = () => {
+    /** Trigger file download with given data. */
+    const _downloadFile = (data, filename, mimeType) => {
+        const blob = new Blob([data], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    const exportToExcel = async () => {
         if (patients.length === 0) { alert('No patients to export.'); return; }
+
+        // Show encryption modal
+        const result = await showEncryptionModal();
+        if (result.cancelled) return;
+
         const rows = patients.map(_buildExcelRow);
         const ws = XLSX.utils.json_to_sheet(rows);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Patients');
-        XLSX.writeFile(wb, 'diabetes_risk_patients.xlsx');
+
+        // Generate Excel file as array buffer
+        const excelData = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        const excelBytes = new Uint8Array(excelData);
+
+        if (result.useEncryption && result.password) {
+            // Encrypt the data
+            if (!DRC.CryptoService) {
+                alert('Encryption service not available.');
+                return;
+            }
+            try {
+                const encrypted = await DRC.CryptoService.encrypt(excelBytes, result.password);
+                _downloadFile(encrypted, 'diabetes_risk_patients.drc', 'application/octet-stream');
+            } catch (e) {
+                console.error('Encryption failed:', e);
+                alert('Encryption failed. Please try again.');
+            }
+        } else {
+            // Download as regular Excel file
+            _downloadFile(excelBytes, 'diabetes_risk_patients.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        }
     };
 
     /** Export a single patient profile with formatted filename. */
-    const exportSinglePatient = (patientId) => {
+    const exportSinglePatient = async (patientId) => {
         const patient = patients.find(p => p.id === patientId);
         if (!patient) { alert('Patient not found.'); return; }
+
+        // Show encryption modal
+        const result = await showEncryptionModal();
+        if (result.cancelled) return;
 
         const rows = [_buildExcelRow(patient)];
 
@@ -274,33 +667,83 @@ DRC.PatientManager = (() => {
 
         // Sanitize filename: remove special chars, limit length
         const sanitizedName = patient.name.replace(/[<>:"/\\|?*]/g, '_').slice(0, 50);
-        const filename = `${sanitizedName}_${timestamp}_DRC_Export.xlsx`;
+        const baseFilename = `${sanitizedName}_${timestamp}_DRC_Export`;
 
         const ws = XLSX.utils.json_to_sheet(rows);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Profile');
-        XLSX.writeFile(wb, filename);
+
+        // Generate Excel file as array buffer
+        const excelData = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        const excelBytes = new Uint8Array(excelData);
+
+        if (result.useEncryption && result.password) {
+            // Encrypt the data
+            if (!DRC.CryptoService) {
+                alert('Encryption service not available.');
+                return;
+            }
+            try {
+                const encrypted = await DRC.CryptoService.encrypt(excelBytes, result.password);
+                _downloadFile(encrypted, `${baseFilename}.drc`, 'application/octet-stream');
+            } catch (e) {
+                console.error('Encryption failed:', e);
+                alert('Encryption failed. Please try again.');
+            }
+        } else {
+            // Download as regular Excel file
+            _downloadFile(excelBytes, `${baseFilename}.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        }
     };
 
     const importFromExcel = (file) => {
-        // Validate file size (max 5MB) and MIME type
+        // Validate file size (max 5MB)
         const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-        const ALLOWED_MIME_TYPES = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
 
         if (file.size > MAX_FILE_SIZE) {
             alert('File is too large. Maximum size is 5MB.');
             return;
         }
 
-        if (!ALLOWED_MIME_TYPES.includes(file.type) || !/\.(xlsx|xls)$/i.test(file.name)) {
-            alert('Invalid file type. Please upload a valid Excel file (.xlsx or .xls).');
-            return;
-        }
+        // Check if file is encrypted .drc file
+        const isDrcFile = file.name.toLowerCase().endsWith('.drc');
 
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
             try {
-                const wb   = XLSX.read(e.target.result, { type: 'array' });
+                let fileData = new Uint8Array(e.target.result);
+
+                // Check if encrypted
+                if (DRC.CryptoService && DRC.CryptoService.isEncrypted(fileData)) {
+                    // Show password prompt
+                    const password = await showPasswordPrompt(file.name);
+                    if (!password) return; // User cancelled
+
+                    // Decrypt
+                    try {
+                        fileData = await DRC.CryptoService.decrypt(fileData, password);
+                    } catch (err) {
+                        const errorEl = document.getElementById('pwdPromptError');
+                        const errorText = document.getElementById('pwdPromptErrorText');
+                        if (errorEl) errorEl.style.display = 'block';
+                        if (errorText) errorText.textContent = 'Falsches Passwort oder beschädigte Datei';
+                        // Re-show modal
+                        const passwordRetry = await showPasswordPrompt(file.name);
+                        if (!passwordRetry) return;
+                        try {
+                            fileData = await DRC.CryptoService.decrypt(fileData, passwordRetry);
+                        } catch (retryErr) {
+                            alert('Fehler beim Entschlusseln. Bitte uberprufen Sie das Passwort.');
+                            return;
+                        }
+                    }
+                } else if (isDrcFile) {
+                    alert('Diese Datei scheint verschlusselt zu sein, aber das Verschlusselungsformat wird nicht erkannt.');
+                    return;
+                }
+
+                // Now process as Excel
+                const wb = XLSX.read(fileData, { type: 'array' });
                 const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
                 const clamp = (v, min, max) => Math.min(Math.max(isNaN(v) ? min : v, min), max);
                 rows.forEach(row => {
@@ -326,8 +769,6 @@ DRC.PatientManager = (() => {
                         _riskPct:   clamp(parseFloat(row.Risk_Pct || 0) || 0, 0, 100),
                         // Excel format stores raw values without explicit unit system metadata.
                         // Default to US units (false) as conservative assumption.
-                        // Known limitation: SI-valued Excel exports will be misinterpreted.
-                        // TODO: Add Unit_System column to Excel format for proper round-trip support.
                         _isMetric: false
                     };
                     patients.push({
@@ -443,6 +884,10 @@ DRC.PatientManager = (() => {
 
         // Initialize Lucide icons for patient drawer elements
         if (typeof lucide !== 'undefined') lucide.createIcons();
+
+        // Initialize encryption modals
+        initEncryptionModal();
+        initPasswordPromptModal();
 
         document.getElementById('patientMenuBtn')?.addEventListener('click', () => {
             const isOpen = document.getElementById('patientDrawer')?.classList.contains('open');

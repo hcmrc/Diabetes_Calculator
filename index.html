@@ -115,15 +115,15 @@
 
     <!-- Import / Export -->
     <div class="pd-section pd-io-section">
-        <div class="pd-section-label">Import / Export (Excel)</div>
+        <div class="pd-section-label">Import / Export (Excel / Encrypted)</div>
         <div class="pd-io-actions">
             <button id="pdExportBtn" type="button" class="pd-btn-io">
-                <i data-lucide="download" class="lucide-icon"></i> Export .xlsx
+                <i data-lucide="download" class="lucide-icon"></i> Export .xlsx / .drc
             </button>
             <label class="pd-btn-io pd-btn-import" for="pdImportFile">
-                <i data-lucide="upload" class="lucide-icon"></i> Import .xlsx
+                <i data-lucide="upload" class="lucide-icon"></i> Import .xlsx / .drc
             </label>
-            <input type="file" id="pdImportFile" accept=".xlsx,.xls" style="display:none;" aria-label="Import patient profiles from Excel file" />
+            <input type="file" id="pdImportFile" accept=".xlsx,.xls,.drc" style="display:none;" aria-label="Import patient profiles from Excel or encrypted .drc file" />
         </div>
     </div>
 </aside>
