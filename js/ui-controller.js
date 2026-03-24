@@ -23,6 +23,7 @@ DRC.UIController = (() => {
 
     // Module-scope guards: delegated listeners registered at most once
     let _filterHandlerAttached = false;
+    let _rowClickHandlerAttached = false;
     let _treatmentDelegationAttached = false;
 
     // ─── Risk-level color mapping ───────────────────────────────────────
@@ -184,8 +185,10 @@ DRC.UIController = (() => {
     /**
      * Render the diverging bar (tornado) chart of factor contributions.
      *
-     * Mathematical basis (Van Belle & Calster, 2015):
-     *   percentage_i = |contribution_i| / sum(|contribution_j|) * 100
+     * Renders marginal probability contributions (Robnik-Šikonja & Kononenko, 2008)
+     * computed via RiskModel.computeMarginalContributions (Linear SHAP decomposition
+     * in log-odds space per Lundberg & Lee, 2017, transformed to probability space).
+     * Bar width scaled relative to the largest absolute contribution in the visible set.
      */
     const renderContributionChart = (summaryData) => {
         const container = el('contribution-chart');
@@ -197,7 +200,8 @@ DRC.UIController = (() => {
         const pBaseline = summaryData.pBaseline;
         const netDeviation = summaryData.netDeviation;
 
-        const filterState = container.getAttribute('data-filter-risk') !== 'false';
+        // Default: show all factors (false = no filter active)
+        const filterState = container.getAttribute('data-filter-risk') === 'true';
 
         if (!_filterHandlerAttached) {
             container.addEventListener('change', (e) => {
@@ -209,16 +213,30 @@ DRC.UIController = (() => {
             _filterHandlerAttached = true;
         }
 
+        if (!_rowClickHandlerAttached) {
+            container.addEventListener('click', (e) => {
+                const row = e.target.closest('.contrib-row[data-field]');
+                if (!row) return;
+                const wasOpen = row.classList.contains('expanded');
+                container.querySelectorAll('.contrib-row.expanded').forEach(r => r.classList.remove('expanded'));
+                if (!wasOpen) row.classList.add('expanded');
+            });
+            _rowClickHandlerAttached = true;
+        }
+
         // Summary card — prominent comparison at top
         const pFullPct = (pFull * 100).toFixed(1);
         const pBaselinePct = (pBaseline * 100).toFixed(1);
         const netDeviationPct = Math.abs(netDeviation * 100).toFixed(1);
         const isLower = netDeviation < 0;
         const comparisonWord = isLower ? 'lower' : 'higher';
-        const comparisonColor = isLower ? '#34c759' : '#ff3b30';
+
+        const { level: riskLevel } = getRiskLevel(pFull * 100);
 
         const summaryBanner = document.createElement('div');
         summaryBanner.className = 'contrib-summary-card';
+        summaryBanner.setAttribute('data-direction', isLower ? 'lower' : 'higher');
+        summaryBanner.setAttribute('data-risk-level', riskLevel);
         summaryBanner.innerHTML = `
             <div class="contrib-summary-main">
                 <span class="contrib-summary-your-risk">${pFullPct}%</span>
@@ -227,7 +245,7 @@ DRC.UIController = (() => {
             <div class="contrib-summary-divider"></div>
             <div class="contrib-summary-comparison">
                 <div class="contrib-summary-sentence">
-                    <span style="color:${comparisonColor};font-weight:700;">${netDeviationPct}% ${comparisonWord}</span>
+                    <span class="contrib-summary-delta ${isLower ? 'is-lower' : 'is-higher'}">${netDeviationPct}% ${comparisonWord}</span>
                     than the average of <strong>${pBaselinePct}%</strong>
                 </div>
             </div>
@@ -270,57 +288,57 @@ DRC.UIController = (() => {
         const filteredItems = filterState ? items.filter(i => i.deltaI > 0) : items;
         const maxAbs = filteredItems.reduce((max, i) => i.abs > max ? i.abs : max, 0.001);
 
-        filteredItems.forEach(({ key, deltaI }, idx) => {
+        filteredItems.forEach(({ key, deltaI }) => {
             const barWidth = (Math.abs(deltaI) / maxAbs) * 100;
             const isPositive = deltaI >= 0;
             const absDeltaPct = Math.abs(deltaI) * 100;
             const pctDisplay = absDeltaPct < 0.1 ? '<0.1%' : (absDeltaPct.toFixed(1) + '%');
             const signedDisplay = isPositive ? '+' + pctDisplay : '−' + pctDisplay;
 
-            const barColor = isPositive
-                ? 'linear-gradient(90deg, #ff3b30, #ff453a)'
-                : 'linear-gradient(270deg, #34c759, #30d158)';
-            const textColor = isPositive ? '#ff3b30' : '#34c759';
-
-            // Tooltip - protective factors have negative beta coefficients (height, cholHDL)
+            // Protective factors have negative beta coefficients (height, cholHDL)
             // Binary factors (race, parentHist) don't have "above/below average" values
             const isProtectiveFactor = CFG.BETAS[key] < 0;
             const isBinaryFactor = ['race', 'parentHist'].includes(key);
             const isAboveAverage = isProtectiveFactor ? !isPositive : isPositive;
+            const label = CFG.LABELS[key];
 
-            let tooltipText;
+            const actionVerb = isProtectiveFactor ? 'Increasing' : 'Lowering';
+            let infoText;
             if (isBinaryFactor) {
-                tooltipText = isPositive
-                    ? `Your ${CFG.LABELS[key].toLowerCase()} increases your risk by ${pctDisplay}.`
-                    : `Your ${CFG.LABELS[key].toLowerCase()} decreases your risk by ${pctDisplay} compared to average.`;
+                infoText = isPositive
+                    ? `Your ${label.toLowerCase()} increases your overall diabetes risk by ${pctDisplay}. <strong>Check the treatment section on the right.</strong>`
+                    : `Your ${label.toLowerCase()} decreases your overall diabetes risk by ${pctDisplay} compared to an average person.`;
             } else {
-                tooltipText = isPositive
-                    ? `Your ${CFG.LABELS[key].toLowerCase()} is ${isAboveAverage ? 'above' : 'below'} average and increases your risk by ${pctDisplay}.`
-                    : `Your ${CFG.LABELS[key].toLowerCase()} is ${isAboveAverage ? 'above' : 'below'} average and decreases your risk by ${pctDisplay}.`;
+                infoText = isPositive
+                    ? `Your ${label.toLowerCase()} is ${isAboveAverage ? 'above' : 'below'} average and increases your overall diabetes risk by ${pctDisplay} compared to an average value. <strong>${actionVerb} it would help to decrease your overall risk. Check the treatment section on the right.</strong>`
+                    : `Your ${label.toLowerCase()} is ${isAboveAverage ? 'above' : 'below'} average and decreases your overall diabetes risk by ${pctDisplay} compared to an average value.`;
             }
 
             const row = document.createElement('div');
             row.className = 'contrib-row';
             row.setAttribute('data-field', key);
-            row.setAttribute('data-tooltip', tooltipText);
 
-            // Risk-decreasing: Name | Percentage | Bar  |  Risk-increasing: Name | Bar | Percentage
             row.innerHTML = `
-                <div style="display:flex;align-items:center;gap:8px;width:100%;">
-                    <div style="width:140px;flex-shrink:0;display:flex;align-items:center;gap:6px;">
-                        <span style="font-size:11px;font-weight:500;color:#6e6e73;text-align:left;flex:1;">${CFG.LABELS[key]}</span>
-                        ${!isPositive ? `<span style="font-size:10px;font-weight:600;color:${textColor};">${signedDisplay}</span>` : ''}
+                <div class="contrib-row-inner">
+                    <div class="contrib-row-label-cell">
+                        <span class="contrib-row-label">${label}</span>
                     </div>
-                    <div style="flex:1;display:flex;height:22px;position:relative;align-items:center;">
-                        <div style="flex:1;display:flex;justify-content:flex-end;padding-right:1px;height:100%;align-items:center;">
-                            ${!isPositive ? `<div style="height:16px;width:${barWidth}%;border-radius:4px;transition:width 0.4s cubic-bezier(0.25,0.46,0.45,0.94);min-width:3px;background:${barColor};"></div>` : ''}
+                    <div class="contrib-bar">
+                        <div class="contrib-bar-half contrib-bar-left">
+                            ${!isPositive ? `<div class="contrib-bar-fill bar-negative" style="width:${barWidth}%"></div>` : ''}
                         </div>
-                        <div style="width:2px;height:100%;background:#d1d1d6;border-radius:1px;flex-shrink:0;"></div>
-                        <div style="flex:1;display:flex;justify-content:flex-start;padding-left:1px;height:100%;align-items:center;">
-                            ${isPositive ? `<div style="height:16px;width:${barWidth}%;border-radius:4px;transition:width 0.4s cubic-bezier(0.25,0.46,0.45,0.94);min-width:3px;background:${barColor};"></div>` : ''}
+                        <div class="contrib-bar-center"></div>
+                        <div class="contrib-bar-half contrib-bar-right">
+                            ${isPositive ? `<div class="contrib-bar-fill bar-positive" style="width:${barWidth}%"></div>` : ''}
                         </div>
                     </div>
-                    ${isPositive ? `<div style="width:60px;flex-shrink:0;font-size:10px;font-weight:600;color:${textColor};text-align:left;">${signedDisplay}</div>` : '<div style="width:60px;flex-shrink:0;"></div>'}
+                    <div class="contrib-row-value ${isPositive ? 'value-positive' : 'value-negative'}">
+                        <span class="contrib-value-pct">${signedDisplay}</span>
+                        <span class="contrib-value-hint">Click for info</span>
+                    </div>
+                </div>
+                <div class="contrib-row-detail">
+                    <p class="contrib-detail-text">${infoText}</p>
                 </div>
             `;
             container.appendChild(row);

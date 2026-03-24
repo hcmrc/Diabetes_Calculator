@@ -58,11 +58,16 @@ DRC.RiskModel = (() => {
     /**
      * Compute per-factor contribution (deviation from population mean).
      *
-     * Mathematical basis (Van Belle & Calster, 2015):
-     *   contribution_i = beta_i * (x_i - mean_i)
+     * Mathematical basis — Linear SHAP (Lundberg & Lee, 2017):
+     *   phi_i = beta_i * (x_i - mean_i)
+     *
+     * For additive models (logistic regression in log-odds space) this is the
+     * unique attribution satisfying local accuracy, missingness, and consistency.
+     * Used internally (log-odds space); the chart renders marginal probability
+     * contributions via computeMarginalContributions.
      *
      * @param {Object} siVals — Risk-factor values in SI units.
-     * @returns {Object} Contribution per factor.
+     * @returns {Object} Log-odds contribution per factor.
      */
     const computeContributions = (siVals) => {
         const result = {};
@@ -135,9 +140,21 @@ DRC.RiskModel = (() => {
 
     /**
      * Compute marginal probability contributions per factor.
-     * Δᵢ = P_full - P_without_i where P_without_i = 1/(1 + e^(-(LP - cᵢ)))
+     *
+     * Method (Robnik-Šikonja & Kononenko, 2008; probability-space adaptation of
+     * the Linear SHAP decomposition by Lundberg & Lee, 2017):
+     *   cᵢ        = βᵢ · (xᵢ − μᵢ)          — SHAP log-odds contribution
+     *   LP₋ᵢ      = LP_full − cᵢ             — LP with xᵢ set to population mean
+     *   P_without_i = 1 / (1 + e^(−LP₋ᵢ))   — counterfactual probability
+     *   Δᵢ        = P_full − P_without_i     — marginal probability contribution
+     *
+     * Δᵢ answers: "By how many percentage points would this patient's risk drop
+     * if only factor i were at the population mean, all others unchanged?"
+     *
+     * Note: Δᵢ values are NOT additive in probability space (sigmoid nonlinearity).
+     *
      * @param {Object} siVals — Risk-factor values in SI units.
-     * @returns {Object} Marginal contribution per factor (decimal, e.g. 0.042).
+     * @returns {Object} Marginal probability contribution per factor (e.g. 0.042 = 4.2 pp).
      */
     const computeMarginalContributions = (siVals) => {
         const result = {};
