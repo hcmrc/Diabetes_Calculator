@@ -3,7 +3,7 @@
 [![License: BSD 3-Clause](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![Tests](https://img.shields.io/badge/tests-481%20passing-brightgreen.svg)](tests/)
 
-An interactive, web-based interface for communicating the logistic regression model by Schmidt et al. (2005) to medical laypersons. The interface was developed as part of a master's thesis based on the Ecological Interface Design (EID) methodology (Vicente & Rasmussen, 1992).
+An interactive, web-based interface for communicating the logistic regression model by Schmidt et al. (2005) to medical laypersons. The interface is based on the Ecological Interface Design (EID) methodology (Vicente & Rasmussen, 1992).
 
 ## Scientific Background
 
