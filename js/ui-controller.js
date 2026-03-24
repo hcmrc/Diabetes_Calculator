@@ -270,9 +270,9 @@ DRC.UIController = (() => {
         headerRow.innerHTML = `
             <div class="contrib-header-left"></div>
             <div class="contrib-header-center">
-                <div class="contrib-header-left-side">Better than average</div>
-                <div class="contrib-header-center-label">Average</div>
-                <div class="contrib-header-right-side">Worse than average</div>
+                <div class="contrib-header-left-side"><span class="contrib-label-full">Better than average</span><span class="contrib-label-short">Better</span></div>
+                <div class="contrib-header-center-label"><span class="contrib-label-full">Average</span><span class="contrib-label-short">Avg</span></div>
+                <div class="contrib-header-right-side"><span class="contrib-label-full">Worse than average</span><span class="contrib-label-short">Worse</span></div>
             </div>
             <div class="contrib-header-right"></div>
         `;
