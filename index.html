@@ -480,10 +480,154 @@
 <script src="js/ui-controller.js"></script>
 <script src="js/timeline-chart.js"></script>
 <script src="js/app.js"></script>
+<script src="js/crypto-service.js"></script>
 <script src="js/patient-manager.js"></script>
 <script src="js/treatment-simulator.js"></script>
 <script src="js/dark-mode.js"></script>
 <script src="js/main.js"></script>
+
+<!-- ===================== ENCRYPTION MODALS ===================== -->
+
+<!-- Export Encryption Modal -->
+<div class="modal-overlay" id="encryptionModal" role="dialog" aria-modal="true" aria-labelledby="encModalTitle" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="encModalTitle"><i data-lucide="shield" class="lucide-icon"></i> Excel-Export sichern</h3>
+            <button type="button" class="modal-close-btn" id="encModalClose" aria-label="Close">
+                <i data-lucide="x" class="lucide-icon"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p class="modal-description">Wahlen Sie, wie Ihre Patientendaten geschutzt werden sollen.</p>
+
+            <!-- Radio Options -->
+            <div class="radio-group" role="radiogroup" aria-label="Verschlusselungsoptionen">
+                <label class="radio-option">
+                    <input type="radio" name="encryptionOption" value="none" id="encOptionNone" checked>
+                    <span class="radio-custom"></span>
+                    <span class="radio-label">
+                        <i data-lucide="unlock" class="lucide-icon"></i>
+                        <span>
+                            <strong>Kein Passwort</strong>
+                            <small>Datei ist direkt lesbar</small>
+                        </span>
+                    </span>
+                </label>
+                <label class="radio-option">
+                    <input type="radio" name="encryptionOption" value="password" id="encOptionPassword">
+                    <span class="radio-custom"></span>
+                    <span class="radio-label">
+                        <i data-lucide="lock" class="lucide-icon"></i>
+                        <span>
+                            <strong>Mit Passwort verschlusseln</strong>
+                            <small>AES-256 Verschlusselung</small>
+                        </span>
+                    </span>
+                </label>
+            </div>
+
+            <!-- Password Section (hidden by default) -->
+            <div class="password-section" id="encPasswordSection" style="display:none;">
+                <div class="password-input-wrapper">
+                    <input
+                        type="password"
+                        id="encPasswordInput"
+                        class="password-input"
+                        placeholder="Passwort eingeben (min. 8 Zeichen)"
+                        minlength="8"
+                        autocomplete="new-password"
+                        aria-describedby="encPasswordError"
+                    >
+                    <button type="button" class="password-toggle-btn" id="encPasswordToggle" aria-label="Passwort anzeigen">
+                        <i data-lucide="eye" class="lucide-icon" id="encPasswordToggleIcon"></i>
+                    </button>
+                </div>
+                <p class="password-error" id="encPasswordError" role="alert" style="display:none;">
+                    <i data-lucide="alert-circle" class="lucide-icon"></i>
+                    Passwort muss mindestens 8 Zeichen lang sein
+                </p>
+
+                <!-- Quick Options -->
+                <div class="quick-options" id="encQuickOptions" style="display:none;">
+                    <span class="quick-options-label">Schnellauswahl:</span>
+                    <button type="button" class="quick-option-btn" id="encUseLastPassword" style="display:none;">
+                        <i data-lucide="history" class="lucide-icon"></i>
+                        Letztes Passwort
+                    </button>
+                    <button type="button" class="quick-option-btn" id="encUseDefaultPassword" style="display:none;">
+                        <i data-lucide="star" class="lucide-icon"></i>
+                        Standardpasswort
+                    </button>
+                </div>
+
+                <!-- Checkboxes -->
+                <div class="checkbox-group">
+                    <label class="checkbox-option">
+                        <input type="checkbox" id="encRememberSession">
+                        <span class="checkbox-custom"></span>
+                        <span>Passwort fur diese Session merken</span>
+                    </label>
+                    <label class="checkbox-option">
+                        <input type="checkbox" id="encSetDefault">
+                        <span class="checkbox-custom"></span>
+                        <span>Als Standard fur alle Exports setzen</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="modal-btn modal-btn-secondary" id="encCancelBtn">
+                Abbrechen
+            </button>
+            <button type="button" class="modal-btn modal-btn-primary" id="encDownloadBtn">
+                <i data-lucide="download" class="lucide-icon"></i>
+                Herunterladen
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Import Password Prompt Modal -->
+<div class="modal-overlay" id="passwordPromptModal" role="dialog" aria-modal="true" aria-labelledby="pwdPromptTitle" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="pwdPromptTitle"><i data-lucide="lock" class="lucide-icon"></i> Verschlusselte Datei</h3>
+            <button type="button" class="modal-close-btn" id="pwdPromptClose" aria-label="Close">
+                <i data-lucide="x" class="lucide-icon"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p class="modal-description">Diese Datei ist passwortgeschutzt. Bitte geben Sie das Passwort ein, um sie zu entschlusseln.</p>
+
+            <div class="password-input-wrapper">
+                <input
+                    type="password"
+                    id="pwdPromptInput"
+                    class="password-input"
+                    placeholder="Passwort eingeben"
+                    autocomplete="current-password"
+                    aria-describedby="pwdPromptError"
+                >
+                <button type="button" class="password-toggle-btn" id="pwdPromptToggle" aria-label="Passwort anzeigen">
+                    <i data-lucide="eye" class="lucide-icon" id="pwdPromptToggleIcon"></i>
+                </button>
+            </div>
+            <p class="password-error" id="pwdPromptError" role="alert" style="display:none;">
+                <i data-lucide="alert-circle" class="lucide-icon"></i>
+                <span id="pwdPromptErrorText">Falsches Passwort</span>
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="modal-btn modal-btn-secondary" id="pwdPromptCancelBtn">
+                Abbrechen
+            </button>
+            <button type="button" class="modal-btn modal-btn-primary" id="pwdPromptDecryptBtn">
+                <i data-lucide="unlock" class="lucide-icon"></i>
+                Entschlusseln
+            </button>
+        </div>
+    </div>
+</div>
 
 <!-- Initialize Lucide Icons -->
 <script>

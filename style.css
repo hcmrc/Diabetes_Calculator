@@ -3966,3 +3966,576 @@ body {
     background: var(--bg-elevated);
     border-color: var(--border);
 }
+
+
+/* ============================================
+   35. ENCRYPTION MODALS
+   ============================================ */
+
+/* Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 300;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Modal Content */
+.modal-content {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    max-width: 420px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: translateY(20px) scale(0.98);
+    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.modal-overlay.open .modal-content {
+    transform: translateY(0) scale(1);
+}
+
+/* Modal Header */
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.modal-header h3 .lucide-icon {
+    width: 20px;
+    height: 20px;
+    color: var(--blue);
+}
+
+.modal-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.modal-close-btn:hover {
+    background: rgba(0, 0, 0, 0.08);
+    color: var(--text-primary);
+}
+
+.modal-close-btn .lucide-icon {
+    width: 18px;
+    height: 18px;
+}
+
+/* Modal Body */
+.modal-body {
+    padding: 20px;
+}
+
+.modal-description {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+/* Radio Options */
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.radio-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.radio-option:hover {
+    background: rgba(0, 102, 204, 0.04);
+    border-color: rgba(0, 102, 204, 0.2);
+}
+
+.radio-option:has(input:checked) {
+    background: var(--blue-light);
+    border-color: rgba(0, 113, 227, 0.3);
+    box-shadow: 0 0 0 1px rgba(0, 113, 227, 0.15);
+}
+
+.radio-option input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.radio-custom {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--border-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.radio-option:has(input:checked) .radio-custom {
+    border-color: var(--blue);
+    background: var(--blue);
+}
+
+.radio-custom::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: white;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 0.2s ease;
+}
+
+.radio-option:has(input:checked) .radio-custom::after {
+    transform: scale(1);
+}
+
+.radio-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    flex: 1;
+}
+
+.radio-label .lucide-icon {
+    width: 20px;
+    height: 20px;
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.radio-label span {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.radio-label strong {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.radio-label small {
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+.radio-option:has(input:checked) .radio-label .lucide-icon {
+    color: var(--blue);
+}
+
+/* Password Section */
+.password-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    animation: fadeIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.password-input-wrapper {
+    position: relative;
+    margin-bottom: 8px;
+}
+
+.password-input {
+    width: 100%;
+    padding: 12px 44px 12px 14px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.password-input:focus {
+    outline: none;
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.1);
+}
+
+.password-input.error {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 3px rgba(255, 59, 48, 0.1);
+}
+
+.password-toggle-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.password-toggle-btn:hover {
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--text-secondary);
+}
+
+.password-toggle-btn .lucide-icon {
+    width: 18px;
+    height: 18px;
+}
+
+.password-error {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--danger);
+    margin-bottom: 12px;
+}
+
+.password-error .lucide-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+/* Quick Options */
+.quick-options {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.quick-options-label {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-right: 4px;
+}
+
+.quick-option-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--blue);
+    background: var(--blue-light);
+    border: 1px solid rgba(0, 113, 227, 0.2);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.quick-option-btn:hover {
+    background: var(--blue-glow);
+    border-color: var(--blue);
+    transform: translateY(-1px);
+}
+
+.quick-option-btn .lucide-icon {
+    width: 14px;
+    height: 14px;
+}
+
+/* Checkbox Group */
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.checkbox-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.checkbox-option:hover {
+    color: var(--text-primary);
+}
+
+.checkbox-option input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.checkbox-custom {
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    border: 2px solid var(--border-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.checkbox-option:hover .checkbox-custom {
+    border-color: var(--text-tertiary);
+}
+
+.checkbox-option:has(input:checked) .checkbox-custom {
+    background: var(--blue);
+    border-color: var(--blue);
+}
+
+.checkbox-custom::after {
+    content: '';
+    width: 5px;
+    height: 8px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg) scale(0);
+    margin-bottom: 2px;
+    transition: transform 0.15s ease;
+}
+
+.checkbox-option:has(input:checked) .checkbox-custom::after {
+    transform: rotate(45deg) scale(1);
+}
+
+/* Modal Footer */
+.modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 20px 20px;
+    border-top: 1px solid var(--border);
+}
+
+.modal-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.modal-btn-secondary {
+    color: var(--text-secondary);
+    background: transparent;
+}
+
+.modal-btn-secondary:hover {
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--text-primary);
+}
+
+.modal-btn-primary {
+    color: white;
+    background: var(--blue);
+}
+
+.modal-btn-primary:hover {
+    background: var(--blue-hover);
+    transform: translateY(-1px);
+}
+
+.modal-btn-primary:active {
+    transform: translateY(0);
+}
+
+.modal-btn .lucide-icon {
+    width: 16px;
+    height: 16px;
+}
+
+/* Responsive Modals */
+@media (max-width: 480px) {
+    .modal-overlay {
+        padding: 12px;
+    }
+
+    .modal-content {
+        max-height: 95vh;
+    }
+
+    .modal-header {
+        padding: 16px 16px 12px;
+    }
+
+    .modal-body {
+        padding: 16px;
+    }
+
+    .modal-footer {
+        padding: 14px 16px 16px;
+        flex-direction: column-reverse;
+    }
+
+    .modal-btn {
+        width: 100%;
+    }
+
+    .radio-option {
+        padding: 12px 14px;
+    }
+
+    .radio-label strong {
+        font-size: 13px;
+    }
+}
+
+
+/* ============================================
+   36. DARK MODE - ENCRYPTION MODALS
+   ============================================ */
+
+.dark .modal-content {
+    background: var(--bg-card);
+    box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.dark .modal-close-btn {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-tertiary);
+}
+
+.dark .modal-close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.dark .radio-option {
+    background: var(--bg-elevated);
+    border-color: var(--border);
+}
+
+.dark .radio-option:hover {
+    background: rgba(0, 102, 204, 0.1);
+    border-color: rgba(0, 113, 227, 0.3);
+}
+
+.dark .radio-option:has(input:checked) {
+    background: var(--blue-light);
+    border-color: rgba(0, 113, 227, 0.4);
+    box-shadow: 0 0 0 1px rgba(0, 113, 227, 0.2);
+}
+
+.dark .radio-custom {
+    border-color: var(--border-strong);
+}
+
+.dark .radio-option:hover .radio-custom {
+    border-color: var(--text-tertiary);
+}
+
+.dark .radio-option:has(input:checked) .radio-custom {
+    border-color: var(--blue);
+}
+
+.dark .password-input {
+    background: var(--bg-elevated);
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+}
+
+.dark .password-input:focus {
+    border-color: var(--blue);
+}
+
+.dark .password-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-secondary);
+}
+
+.dark .checkbox-option:hover {
+    color: var(--text-primary);
+}
+
+.dark .checkbox-custom {
+    border-color: var(--border-strong);
+}
+
+.dark .modal-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.dark .quick-option-btn {
+    background: rgba(0, 113, 227, 0.15);
+    border-color: rgba(0, 113, 227, 0.3);
+}
+
+.dark .quick-option-btn:hover {
+    background: rgba(0, 113, 227, 0.25);
+}
