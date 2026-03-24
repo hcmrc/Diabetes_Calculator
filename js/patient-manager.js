@@ -354,7 +354,7 @@ DRC.PatientManager = (() => {
 
                 const labelSpan = document.createElement('span');
                 labelSpan.className = 'quick-options-label';
-                labelSpan.textContent = 'Schnellauswahl:';
+                labelSpan.textContent = 'Quick select:';
                 quickOptions.appendChild(labelSpan);
 
                 // Last password button
@@ -369,7 +369,7 @@ DRC.PatientManager = (() => {
                     icon.className = 'lucide-icon';
                     btn.appendChild(icon);
 
-                    btn.appendChild(document.createTextNode(' Letztes Passwort'));
+                    btn.appendChild(document.createTextNode(' Last Password'));
 
                     btn.addEventListener('click', () => {
                         if (passwordInput) passwordInput.value = lastPwd;
@@ -392,7 +392,7 @@ DRC.PatientManager = (() => {
                     icon.className = 'lucide-icon';
                     btn.appendChild(icon);
 
-                    btn.appendChild(document.createTextNode(' Standardpasswort'));
+                    btn.appendChild(document.createTextNode(' Default Password'));
 
                     btn.addEventListener('click', () => {
                         if (passwordInput) passwordInput.value = defaultPwd;
@@ -463,7 +463,7 @@ DRC.PatientManager = (() => {
                 const errorEl = document.getElementById('pwdPromptError');
                 const errorText = document.getElementById('pwdPromptErrorText');
                 if (errorEl) errorEl.style.display = 'block';
-                if (errorText) errorText.textContent = 'Passwort muss mindestens 8 Zeichen lang sein';
+                if (errorText) errorText.textContent = 'Password must be at least 8 characters long';
                 return;
             }
             _hidePasswordPromptModal();
@@ -726,19 +726,19 @@ DRC.PatientManager = (() => {
                         const errorEl = document.getElementById('pwdPromptError');
                         const errorText = document.getElementById('pwdPromptErrorText');
                         if (errorEl) errorEl.style.display = 'block';
-                        if (errorText) errorText.textContent = 'Falsches Passwort oder beschädigte Datei';
+                        if (errorText) errorText.textContent = 'Wrong password or corrupted file';
                         // Re-show modal
                         const passwordRetry = await showPasswordPrompt(file.name);
                         if (!passwordRetry) return;
                         try {
                             fileData = await DRC.CryptoService.decrypt(fileData, passwordRetry);
                         } catch (retryErr) {
-                            alert('Fehler beim Entschlusseln. Bitte uberprufen Sie das Passwort.');
+                            alert('Error decrypting. Please check the password.');
                             return;
                         }
                     }
                 } else if (isDrcFile) {
-                    alert('Diese Datei scheint verschlusselt zu sein, aber das Verschlusselungsformat wird nicht erkannt.');
+                    alert('This file appears to be encrypted, but the encryption format is not recognized.');
                     return;
                 }
 
