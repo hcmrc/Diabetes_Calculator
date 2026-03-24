@@ -430,26 +430,12 @@
             <!-- Model Tabs Navigation -->
             <div class="model-tabs">
                 <button class="model-tab active" data-tab="contributions">Contributions</button>
-                <button class="model-tab" data-tab="radar">Risk Profile</button>
                 <button class="model-tab" data-tab="causality">Connections</button>
             </div>
 
             <!-- Tab Content: Contributions -->
             <div class="model-tab-content active" id="tab-contributions">
                 <div class="contribution-chart" id="contribution-chart" role="img" aria-label="Risk factor contribution chart"></div>
-            </div>
-
-            <!-- Tab Content: Radar -->
-            <div class="model-tab-content" id="tab-radar">
-                <h3>Risk Profile Shape</h3>
-                <p class="card-desc">Symmetric hexagon = healthy baseline. Distortion = deviation.</p>
-                <div class="radar-container">
-                    <svg id="radar-svg" viewBox="0 0 300 300" aria-label="Radar chart"></svg>
-                </div>
-                <div class="radar-legend">
-                    <div class="radar-legend-item"><span class="legend-swatch population"></span><span>Population Avg</span></div>
-                    <div class="radar-legend-item"><span class="legend-swatch patient"></span><span>You</span></div>
-                </div>
             </div>
 
             <!-- Tab Content: Causality -->
@@ -492,7 +478,6 @@
 <script src="js/risk-model.js"></script>
 <script src="js/ui-helpers.js"></script>
 <script src="js/ui-controller.js"></script>
-<script src="js/radar-chart.js"></script>
 <script src="js/timeline-chart.js"></script>
 <script src="js/app.js"></script>
 <script src="js/patient-manager.js"></script>
