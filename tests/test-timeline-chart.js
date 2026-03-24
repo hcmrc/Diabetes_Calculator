@@ -26,7 +26,7 @@ global.window = global;
 global.DRC    = {
     CONFIG: {
         TREATMENT_COLORS: {
-            'Blood Sugar Management': '#FF6B6B',
+            'Fasting Glucose Management': '#FF6B6B',
             'Blood Pressure Control': '#4ECDC4'
         },
         MAX_SNAPSHOTS: 20,
@@ -148,10 +148,10 @@ assert(snap1.treatmentLabel === null, 'Default treatmentLabel = null');
 assert(snap1.timestamp instanceof Date, 'Snapshot has a Date timestamp');
 
 // Second snapshot — with treatment label
-TC.addSnapshot(11.2, SI, 'Blood Sugar Management');
+TC.addSnapshot(11.2, SI, 'Fasting Glucose Management');
 const snap2 = TC.getLastSnapshot();
 assert(snap2.riskPct       === 11.2,                  'Second snapshot riskPct = 11.2');
-assert(snap2.treatmentLabel === 'Blood Sugar Management', 'Treatment label preserved');
+assert(snap2.treatmentLabel === 'Fasting Glucose Management', 'Treatment label preserved');
 assert(snap2 !== snap1,                               'Each addSnapshot creates a new entry');
 
 // Third snapshot — explicit null label
@@ -279,7 +279,7 @@ console.log('\n═══ TEST SUITE 10: Treatment color palette ═══');
 TC.clear();
 TC.setBaseline(30.0);
 TC.addSnapshot(30.0, SI, null);
-TC.addSnapshot(25.0, SI, 'Blood Sugar Management');
+TC.addSnapshot(25.0, SI, 'Fasting Glucose Management');
 TC.addSnapshot(20.0, SI, 'Blood Pressure Control');
 
 // Check SVG was created with proper structure

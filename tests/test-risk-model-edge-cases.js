@@ -6,7 +6,7 @@
  *
  *   1. toSI() immutability  — original object must not be mutated
  *   2. getElevatedFactors() boundary values — exactly AT each clinical threshold
- *   3. Waist "elevated" vs "high" distinction (94 cm vs 102 cm)
+ *   3. Waist "elevated" vs "high" distinction (88 cm vs 102 cm)
  *   4. computeWhatIfDelta() in SI (metric) mode
  *   5. computeWhatIfDelta() for an unknown field — falls back to step = 1
  *   6. computeContributions() sign verification for all 9 factors
@@ -92,7 +92,7 @@ console.log('\n═══ TEST SUITE 2: getElevatedFactors() exact clinical thres
 {
     // Base: all factors in normal range
     const base = {
-        ...popMeans, fastGlu: 5.0, sbp: 120,
+        ...popMeans, fastGlu: 5.0, sbp: 115,
         cholHDL: 1.5, cholTri: 1.5, waist: 85
     };
 
@@ -110,16 +110,16 @@ console.log('\n═══ TEST SUITE 2: getElevatedFactors() exact clinical thres
         'Glucose 5.59 mmol/L → NOT elevated (< threshold)'
     );
 
-    // ── Systolic BP: threshold = 130 mmHg ────────────────────────────────────
-    const atSBPThreshold = { ...base, sbp: 130 };
+    // ── Systolic BP: threshold = 120 mmHg (ACC/AHA 2017) ────────────────────
+    const atSBPThreshold = { ...base, sbp: 120 };
     assert(
         getElevatedFactors(atSBPThreshold).elevatedFactors.includes('sbp'),
-        'SBP exactly 130 mmHg → elevated (>= threshold)'
+        'SBP exactly 120 mmHg → elevated (>= threshold)'
     );
-    const belowSBPThreshold = { ...base, sbp: 129 };
+    const belowSBPThreshold = { ...base, sbp: 119 };
     assert(
         !getElevatedFactors(belowSBPThreshold).elevatedFactors.includes('sbp'),
-        'SBP 129 mmHg → NOT elevated (< threshold)'
+        'SBP 119 mmHg → NOT elevated (< threshold)'
     );
 
     // ── HDL Cholesterol: threshold = 1.03 mmol/L (NCEP male, low when <= 1.03)
@@ -150,33 +150,40 @@ console.log('\n═══ TEST SUITE 2: getElevatedFactors() exact clinical thres
 
 // ─── TEST SUITE 3: Waist "elevated" vs "high" distinction ────────────────────
 
-console.log('\n═══ TEST SUITE 3: Waist elevated (≥94 cm) vs high (≥102 cm) ═══');
+console.log('\n═══ TEST SUITE 3: Waist sex-specific thresholds (♀≥88 cm, ♂≥102 cm) ═══');
 {
-    const base = { ...popMeans, fastGlu: 5.0, sbp: 120, cholHDL: 1.5, cholTri: 1.5 };
+    const base = { ...popMeans, fastGlu: 5.0, sbp: 115, cholHDL: 1.5, cholTri: 1.5 };
 
-    // Exactly at elevated threshold (94 cm) — elevated, but NOT high
-    const atElevatedWaist = { ...base, waist: 94 };
-    const result94 = getElevatedFactors(atElevatedWaist);
-    assert(result94.elevatedFactors.includes('waist'), 'Waist 94 cm → in elevatedFactors');
-    assert(result94.waistIsHigh === false,             'Waist 94 cm → waistIsHigh: false (below 102)');
+    // ── Female (isMale=false): threshold = 88 cm ────────────────────────────
+    const atFemaleThreshold = { ...base, waist: 88 };
+    const result88f = getElevatedFactors(atFemaleThreshold, false);
+    assert(result88f.elevatedFactors.includes('waist'), 'Female: Waist 88 cm → elevated (>= 88)');
+    assert(result88f.waistIsHigh === false,             'Waist 88 cm → waistIsHigh: false (< 102)');
 
-    // Just below elevated threshold (93 cm) — NOT elevated, NOT high
-    const belowElevated = { ...base, waist: 93 };
-    const result93 = getElevatedFactors(belowElevated);
-    assert(!result93.elevatedFactors.includes('waist'), 'Waist 93 cm → NOT in elevatedFactors');
-    assert(result93.waistIsHigh === false,              'Waist 93 cm → waistIsHigh: false');
+    const belowFemale = { ...base, waist: 87 };
+    const result87f = getElevatedFactors(belowFemale, false);
+    assert(!result87f.elevatedFactors.includes('waist'), 'Female: Waist 87 cm → NOT elevated (< 88)');
 
-    // Between thresholds: 96 cm — elevated, NOT high
+    // ── Male (isMale=true, default): threshold = 102 cm ─────────────────────
+    const atMaleThreshold = { ...base, waist: 102 };
+    const result102m = getElevatedFactors(atMaleThreshold, true);
+    assert(result102m.elevatedFactors.includes('waist'), 'Male: Waist 102 cm → elevated (>= 102)');
+    assert(result102m.waistIsHigh === true,              'Waist 102 cm → waistIsHigh: true');
+
+    const belowMale = { ...base, waist: 101 };
+    const result101m = getElevatedFactors(belowMale, true);
+    assert(!result101m.elevatedFactors.includes('waist'), 'Male: Waist 101 cm → NOT elevated (< 102)');
+
+    // Between thresholds: 96 cm — elevated for female, NOT for male
     const between = { ...base, waist: 96 };
-    const result96 = getElevatedFactors(between);
-    assert(result96.elevatedFactors.includes('waist'), 'Waist 96 cm → in elevatedFactors');
-    assert(result96.waistIsHigh === false,             'Waist 96 cm → waistIsHigh: false (< 102)');
+    assert(getElevatedFactors(between, false).elevatedFactors.includes('waist'),
+        'Female: Waist 96 cm → elevated (>= 88)');
+    assert(!getElevatedFactors(between, true).elevatedFactors.includes('waist'),
+        'Male: Waist 96 cm → NOT elevated (< 102)');
 
-    // Exactly at high threshold (102 cm) — elevated AND high
-    const atHigh = { ...base, waist: 102 };
-    const result102 = getElevatedFactors(atHigh);
-    assert(result102.elevatedFactors.includes('waist'), 'Waist 102 cm → in elevatedFactors');
-    assert(result102.waistIsHigh === true,              'Waist 102 cm → waistIsHigh: true (>= 102)');
+    // Default isMale=true
+    const defaultResult = getElevatedFactors(atMaleThreshold);
+    assert(defaultResult.elevatedFactors.includes('waist'), 'Default (male): Waist 102 cm → elevated');
 }
 
 // ─── TEST SUITE 4: computeWhatIfDelta() in SI (metric) mode ──────────────────
@@ -258,10 +265,10 @@ console.log('\n═══ TEST SUITE 6: computeContributions() sign verification 
     assert(computeContributions(aboveMeanHeight).height  < 0,
         'Above-mean height → negative contribution (negative beta, positive deviation → -)');
 
-    // ── All 9 fields present in contributions object ──────────────────────────
+    // ── All 9 model fields present in contributions object (sex excluded) ─────
     const contrib = computeContributions(popMeans);
-    assert(Object.keys(contrib).length === 9, 'computeContributions() returns exactly 9 entries');
-    CONFIG.ALL_FIELDS.forEach(f => {
+    assert(Object.keys(contrib).length === 9, 'computeContributions() returns exactly 9 entries (model fields only)');
+    CONFIG.ALL_FIELDS.filter(f => CONFIG.BETAS[f] != null).forEach(f => {
         assert(f in contrib, `computeContributions() includes field: ${f}`);
     });
 }

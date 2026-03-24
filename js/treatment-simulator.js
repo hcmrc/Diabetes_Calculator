@@ -161,6 +161,13 @@ DRC.TreatmentSimulator = (() => {
 
         // Initialize Lucide icons for updated buttons
         DRC.UIHelpers.refreshIcons();
+
+        // Auto-open timeline if hidden
+        const area = document.getElementById('timeline-expandable');
+        if (area && !area.classList.contains('open')) {
+            area.classList.add('open');
+            document.getElementById('timelineToggleBtn')?.classList.add('active');
+        }
     };
 
     return {

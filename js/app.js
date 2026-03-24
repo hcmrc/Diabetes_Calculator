@@ -72,7 +72,8 @@ DRC.App = (() => {
         const riskPct       = Model().computeProbability(siVals) * 100;
         const logOddsContributions = Model().computeContributions(siVals);
         const marginalSummary = Model().computeMarginalSummary(siVals);
-        const treatStatus   = Model().getElevatedFactors(siVals);
+        const isMale        = rawInputs.sex === 1;
+        const treatStatus   = Model().getElevatedFactors(siVals, isMale);
 
         // Render all views with the calculated data
         _renderAllViews(riskPct, logOddsContributions, marginalSummary, treatStatus, siVals);
@@ -196,6 +197,8 @@ DRC.App = (() => {
             });
         }
 
+        const sexIsMale = document.getElementById('sex-toggle')?.checked ?? true;
+        UI().updateWaistSegments(sexIsMale, state.isMetric);
         UI().updateAllSliderFills();
 
         // Render with precise SI values (no rounding in the model path)
@@ -203,7 +206,7 @@ DRC.App = (() => {
         const riskPct       = Model().computeProbability(preciseSI) * 100;
         const logOddsContributions = Model().computeContributions(preciseSI);
         const marginalSummary = Model().computeMarginalSummary(preciseSI);
-        const treatStatus   = Model().getElevatedFactors(preciseSI);
+        const treatStatus   = Model().getElevatedFactors(preciseSI, sexIsMale);
 
         _renderAllViews(riskPct, logOddsContributions, marginalSummary, treatStatus, preciseSI);
     };
@@ -249,6 +252,7 @@ DRC.App = (() => {
             setField('cholHDL', D.cholHDL.us);
             setField('cholTri', D.cholTri.us);
 
+            document.getElementById('sex-toggle').checked        = true; // Default: Male
             document.getElementById('race-toggle').checked      = D.race;
             document.getElementById('parentHist-toggle').checked = D.parentHist;
         }
@@ -258,6 +262,8 @@ DRC.App = (() => {
             if (badge) badge.className = 'what-if-badge';
         });
 
+        const isMale = document.getElementById('sex-toggle')?.checked ?? true;
+        UI().updateWaistSegments(isMale, state.isMetric);
         UI().updateAllSliderFills();
         Timeline().clear();
         if (DRC.TreatmentSimulator?.resetSimulated) DRC.TreatmentSimulator.resetSimulated();
@@ -327,6 +333,14 @@ DRC.App = (() => {
         ['race-toggle', 'parentHist-toggle'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('change', calculate);
+        });
+
+        // Sex toggle — also updates waist slider segments
+        const sexToggle = document.getElementById('sex-toggle');
+        if (sexToggle) sexToggle.addEventListener('change', () => {
+            const isMale = sexToggle.checked;
+            UI().updateWaistSegments(isMale, state.isMetric);
+            calculate();
         });
 
         // Unit toggle
@@ -441,6 +455,8 @@ DRC.App = (() => {
 
         // Initialize sub-modules and run first calculation
         Radar().init();
+        const initMale = document.getElementById('sex-toggle')?.checked ?? true;
+        UI().updateWaistSegments(initMale, state.isMetric);
         UI().updateAllSliderFills();
         calculate();
     };

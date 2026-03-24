@@ -67,6 +67,7 @@ DRC.RiskModel = (() => {
     const computeContributions = (siVals) => {
         const result = {};
         for (const key of DRC.CONFIG.ALL_FIELDS) {
+            if (B[key] == null) continue; // skip non-model fields (e.g. sex)
             result[key] = B[key] * (siVals[key] - M[key]);
         }
         return result;
@@ -77,16 +78,19 @@ DRC.RiskModel = (() => {
      * All comparisons use SI values to ensure consistent results regardless
      * of the active UI unit system.
      * @param {Object} siVals — Risk-factor values in SI units.
+     * @param {boolean} [isMale=true] — Sex for waist threshold selection.
+     *   Male: ≥102 cm (NCEP ATP III), Female: ≥88 cm (NCEP ATP III).
      * @returns {{ elevatedFactors: string[], waistIsHigh: boolean }}
      */
-    const getElevatedFactors = (siVals) => {
+    const getElevatedFactors = (siVals, isMale = true) => {
         const elevated = [];
+        const waistThreshold = isMale ? T.waist.high : T.waist.elevated;
 
         if (siVals.fastGlu >= T.fastGlu.elevated)  elevated.push('fastGlu');
         if (siVals.sbp     >= T.sbp.elevated)       elevated.push('sbp');
         if (siVals.cholHDL <= T.cholHDL.low)        elevated.push('cholHDL');
         if (siVals.cholTri >= T.cholTri.elevated)   elevated.push('cholTri');
-        if (siVals.waist   >= T.waist.elevated)     elevated.push('waist');
+        if (siVals.waist   >= waistThreshold)        elevated.push('waist');
 
         return { elevatedFactors: elevated, waistIsHigh: siVals.waist >= T.waist.high };
     };
@@ -140,6 +144,7 @@ DRC.RiskModel = (() => {
         const lpFull = linearPredictor(siVals);
         const pFull = 1 / (1 + Math.exp(-lpFull));
         for (const key of DRC.CONFIG.ALL_FIELDS) {
+            if (B[key] == null) continue; // skip non-model fields (e.g. sex)
             const ci = B[key] * (siVals[key] - M[key]);
             const pWithoutI = 1 / (1 + Math.exp(-(lpFull - ci)));
             result[key] = pFull - pWithoutI;

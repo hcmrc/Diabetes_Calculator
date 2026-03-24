@@ -107,7 +107,8 @@ DRC.PatientManager = (() => {
     const captureCurrentValues = () => {
         const vals = {};
         FIELDS.forEach(f => {
-            if (f === 'race')       vals[f] = document.getElementById('race-toggle')?.checked ? 1 : 0;
+            if (f === 'sex')        vals[f] = document.getElementById('sex-toggle')?.checked ? 1 : 0;
+            else if (f === 'race')       vals[f] = document.getElementById('race-toggle')?.checked ? 1 : 0;
             else if (f === 'parentHist') vals[f] = document.getElementById('parentHist-toggle')?.checked ? 1 : 0;
             else                    vals[f] = parseFloat(document.getElementById(`${f}-value`)?.value) || 0;
         });
@@ -128,9 +129,11 @@ DRC.PatientManager = (() => {
         const savedIsMetric = data._isMetric ?? false;
 
         FIELDS.forEach(f => {
-            if (f === 'race' || f === 'parentHist') {
-                const toggle = document.getElementById(f === 'race' ? 'race-toggle' : 'parentHist-toggle');
-                if (toggle) toggle.checked = !!data[f];
+            if (f === 'sex' || f === 'race' || f === 'parentHist') {
+                const toggleId = f === 'sex' ? 'sex-toggle' : (f === 'race' ? 'race-toggle' : 'parentHist-toggle');
+                const toggle = document.getElementById(toggleId);
+                // Legacy profiles without sex field → default to Male (1)
+                if (toggle) toggle.checked = f === 'sex' ? (data[f] ?? 1) : !!data[f];
             } else {
                 // Convert value if the saved unit system differs from the current display unit
                 let val = data[f] ?? 0;
@@ -234,7 +237,7 @@ DRC.PatientManager = (() => {
 
     /** Column mappings for Excel (column name → field key). */
     const EXCEL_COLUMNS = {
-        Name: 'name', Age: 'age', Ethnicity_African_American: 'race',
+        Name: 'name', Age: 'age', Sex_Male: 'sex', Ethnicity_African_American: 'race',
         Parental_Diabetes: 'parentHist', Systolic_BP: 'sbp', Height: 'height',
         Waist: 'waist', Fasting_Glucose: 'fastGlu', HDL_Cholesterol: 'cholHDL',
         Blood_Fats_Triglycerides: 'cholTri', Risk_Pct: 'riskPct', Saved_At: 'savedAt'
@@ -242,7 +245,7 @@ DRC.PatientManager = (() => {
 
     /** Build a single Excel row object from a patient record. */
     const _buildExcelRow = (p) => ({
-        Name: p.name, Age: p.data.age, Ethnicity_African_American: p.data.race,
+        Name: p.name, Age: p.data.age, Sex_Male: p.data.sex ?? 1, Ethnicity_African_American: p.data.race,
         Parental_Diabetes: p.data.parentHist, Systolic_BP: p.data.sbp,
         Height: p.data.height, Waist: p.data.waist,
         Fasting_Glucose: p.data.fastGlu, HDL_Cholesterol: p.data.cholHDL,
@@ -311,6 +314,7 @@ DRC.PatientManager = (() => {
                     const [cholTriMin, cholTriMax] = DRC.CONFIG.RANGES.cholTri.us;
                     const data = {
                         age:        clamp(parseFloat(row.Age        || row.age)        || 50,   ageMin,  ageMax),
+                        sex:        clamp(parseInt(row.Sex_Male || row.sex) ?? 1, 0, 1),
                         race:       clamp(parseInt(row.Ethnicity_African_American || row.Race_African_American || row.race) || 0, 0, 1),
                         parentHist: clamp(parseInt(row.Parental_Diabetes || row.Parent_History || row.parentHist) || 0, 0, 1),
                         sbp:        clamp(parseFloat(row.Systolic_BP || row.sbp)       || 120,  sbpMin, sbpMax),

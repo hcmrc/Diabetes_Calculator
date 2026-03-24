@@ -141,6 +141,7 @@ DRC.UIController = (() => {
     /** Read all current input values from the DOM (null-safe). */
     const readInputs = () => ({
         age:        parseFloat(el('age-value')?.value)      || 0,
+        sex:        el('sex-toggle')?.checked  ? 1 : 0,
         race:       el('race-toggle')?.checked  ? 1 : 0,
         parentHist: el('parentHist-toggle')?.checked ? 1 : 0,
         sbp:        parseFloat(el('sbp-value')?.value)      || 0,
@@ -474,7 +475,31 @@ DRC.UIController = (() => {
                 if (simBtn) {
                     e.stopPropagation();
                     const simFactor = simBtn.getAttribute('data-sim-factor');
-                    if (simFactor && DRC.TreatmentSimulator) DRC.TreatmentSimulator.simulate(simFactor);
+                    if (simFactor && DRC.TreatmentSimulator) {
+                        // Expand treatment panel if collapsed
+                        const panel = el('panel-treatment');
+                        if (panel) {
+                            const body = panel.querySelector('.panel-body');
+                            const subtitle = panel.querySelector('.panel-subtitle');
+                            const collapseBtn = panel.querySelector('.panel-collapse-btn');
+                            if (body?.classList.contains('panel-hidden')) {
+                                body.classList.remove('panel-hidden');
+                                if (subtitle) subtitle.classList.remove('panel-hidden');
+                                if (collapseBtn) {
+                                    collapseBtn.classList.remove('collapsed');
+                                    collapseBtn.setAttribute('aria-expanded', 'true');
+                                }
+                            }
+                        }
+                        // Expand timeline section if collapsed
+                        const timelineExpandable = el('timeline-expandable');
+                        const timelineToggleBtn = el('timelineToggleBtn');
+                        if (timelineExpandable && !timelineExpandable.classList.contains('open')) {
+                            timelineExpandable.classList.add('open');
+                            if (timelineToggleBtn) timelineToggleBtn.classList.add('active');
+                        }
+                        DRC.TreatmentSimulator.simulate(simFactor);
+                    }
                 }
             });
             _treatmentDelegationAttached = true;
@@ -603,15 +628,49 @@ DRC.UIController = (() => {
     /** Update the collapsed summary line for non-modifiable factors. */
     const updateNonModSummary = () => {
         const age    = el('age-value')?.value || '50';
+        const sex    = el('sex-toggle')?.checked ? 'Male' : 'Female';
         const race   = el('race-toggle')?.checked ? 'Black' : 'Other';
         const parent = el('parentHist-toggle')?.checked ? 'Family history' : 'No family hist.';
         const hVal   = el('height-value')?.value || '66';
         const hUnit  = el('height-value-unit')?.textContent || 'in';
 
         setText('summary-age',    'Age: ' + age);
+        setText('summary-sex',    sex);
         setText('summary-race',   race);
         setText('summary-parent', parent);
         setText('summary-height', hVal + ' ' + hUnit);
+    };
+
+    /**
+     * Update waist slider segments and labels based on selected sex.
+     * Male threshold: >102 cm / >40 in. Female threshold: >88 cm / >35 in.
+     * @param {boolean} isMale — true if male is selected
+     * @param {boolean} isMetric — true if SI units
+     */
+    const updateWaistSegments = (isMale, isMetric) => {
+        const track  = el('waist-track');
+        const labels = el('waist-labels');
+        if (!track || !labels) return;
+
+        // Threshold in display units
+        const threshold = isMale
+            ? (isMetric ? 102 : 40)
+            : (isMetric ?  88 : 35);
+        const range = CFG.RANGES.waist[isMetric ? 'si' : 'us'];
+        const min = range[0], max = range[1];
+
+        // 2-zone layout: safe (green) | danger (red) — hard cutoff at threshold
+        const safeFlex   = Math.max(1, threshold - min);
+        const dangerFlex = Math.max(1, max - threshold);
+
+        track.innerHTML =
+            '<div class="slider-segment safe" style="flex:' + safeFlex + '"></div>' +
+            '<div class="slider-segment danger" style="flex:' + dangerFlex + '"></div>';
+
+        labels.innerHTML =
+            '<span style="flex:' + safeFlex + ';text-align:left">' + min + '</span>' +
+            '<span style="flex:0;white-space:nowrap">' + threshold + '</span>' +
+            '<span style="flex:' + dangerFlex + ';text-align:right">' + max + '</span>';
     };
 
     /** Update the collapsed summary line for modifiable factors. */
@@ -633,6 +692,52 @@ DRC.UIController = (() => {
         setText('summary-tri',     'TG: ' + tVal + ' ' + tUnit);
     };
 
+    // ─── Helpers for TreatmentSimulator ─────────────────────────────────
+
+    /**
+     * Return the input + slider DOM elements for a given factor.
+     * @param {string} factor — Risk factor key (e.g. 'fastGlu').
+     * @returns {{ input: HTMLElement|null, slider: HTMLElement|null }}
+     */
+    const getSliderElements = (factor) => ({
+        input:  document.getElementById(`${factor}-value`),
+        slider: document.getElementById(`${factor}-slider`)
+    });
+
+    /**
+     * Return current unit toggle state.
+     * @returns {boolean} true if metric (SI), false if US.
+     */
+    const getUnitToggleState = () =>
+        document.getElementById('unit-toggle')?.checked ?? false;
+
+    /**
+     * Activate or deactivate scenario-comparison mode from external callers.
+     * @param {boolean} active — Whether comparison mode should be on.
+     * @param {number} baselineRisk — Baseline risk percentage.
+     */
+    const setComparisonMode = (active, baselineRisk) => {
+        const btn   = el('compareScenarioBtn');
+        const panel = el('scenario-comparison');
+
+        if (active) {
+            DRC.App._setCompareScenario(baselineRisk);
+            if (btn) {
+                btn.classList.add('active');
+                btn.innerHTML = '<i data-lucide="flag" class="lucide-icon"></i> Reset Baseline';
+            }
+            if (panel) panel.style.display = 'flex';
+            renderScenarioComparison(baselineRisk, baselineRisk);
+        } else {
+            if (btn) {
+                btn.classList.remove('active');
+                btn.innerHTML = '<i data-lucide="flag" class="lucide-icon"></i> Set Baseline';
+            }
+            if (panel) panel.style.display = 'none';
+        }
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    };
+
     // ─── Public API ─────────────────────────────────────────────────────
 
     return {
@@ -642,6 +747,7 @@ DRC.UIController = (() => {
         renderTreatmentOverview, renderTreatmentRecommendations,
         renderWhatIfBadge, renderIconArray,
         renderCausalityChains, renderScenarioComparison,
-        updateNonModSummary, updateModSummary
+        updateNonModSummary, updateModSummary, updateWaistSegments,
+        getSliderElements, getUnitToggleState, setComparisonMode
     };
 })();

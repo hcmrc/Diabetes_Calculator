@@ -98,22 +98,26 @@ DRC.CONFIG = Object.freeze({
 
     /**
      * Clinical decision thresholds (SI units).
-     * Sources: ADA (2024), ESC (2023), WHO, NCEP ATP III.
+     * Sources: ADA (2024), NCEP ATP III, ACC/AHA (2017).
      *
-     * cholHDL.low: NCEP ATP III male threshold (1.03 mmol/L = 40 mg/dL).
-     *   The female threshold (1.29 mmol/L = 50 mg/dL) is not used here because
-     *   sex is not a variable in the Schmidt et al. (2005) model. The more
-     *   conservative male value is applied universally.
-     * waist.elevated: IDF/WHO threshold for European men (94 cm). Not from
-     *   Schmidt et al. (2005) which uses NCEP values (88 cm women, 102 cm men).
-     *   waist.high (102 cm) matches the NCEP male threshold from the publication.
+     * fastGlu: ADA (2024) — Normal <100 mg/dL (<5.6), Prediabetes 100–124 mg/dL
+     *   (5.6–6.9), Diabetes ≥125 mg/dL (≥6.9 mmol/L).
+     * sbp: ACC/AHA (2017) — Normal <120, Elevated 120–129, Hypertension ≥130 mmHg.
+     * cholHDL: NCEP ATP III — Low <40 mg/dL (<1.03 mmol/L), High (good) >60 mg/dL
+     *   (>1.55 mmol/L). Sex is not a variable in the Schmidt et al. (2005) model,
+     *   so the male threshold (1.03) is applied universally.
+     * cholTri: NCEP ATP III — Normal <150, Borderline 150–199, High 200–499,
+     *   Very High ≥500 mg/dL.
+     * waist: NCEP ATP III — Women >88 cm (>35 in), Men >102 cm (>40 in).
+     *   Sex is not in the model; elevated uses the female threshold (88 cm),
+     *   high uses the male threshold (102 cm).
      */
     THRESHOLDS: {
-        fastGlu: { elevated: 5.6,  high: 7.0  },
-        sbp:     { elevated: 130,  high: 160  },
-        cholHDL: { low: 1.03,      veryLow: 0.8 },
-        cholTri: { elevated: 1.7,  high: 2.3  },
-        waist:   { elevated: 94,   high: 102  }
+        fastGlu: { elevated: 5.6,  high: 6.9  },
+        sbp:     { elevated: 120,  high: 130  },
+        cholHDL: { low: 1.03,      high: 1.55 },
+        cholTri: { elevated: 1.7,  high: 2.3, veryHigh: 5.6 },
+        waist:   { elevated: 88,   high: 102  }
     },
 
     /**
@@ -127,7 +131,7 @@ DRC.CONFIG = Object.freeze({
     TREATMENTS: {
         fastGlu: {
             id: 'glucose-treatment', icon: 'droplet',
-            title: 'Blood Sugar Management',
+            title: 'Fasting Glucose Management',
             therapies: [
                 { name: 'Standard Medication', desc: 'Metformin is often the first step to help control blood sugar levels.' },
                 { name: 'Heart & Kidney Protection', desc: 'If you have heart or kidney concerns, ask your doctor about newer medications that specifically protect these organs (SGLT2 inhibitors or GLP-1) while also supporting weight loss.' }
@@ -143,18 +147,19 @@ DRC.CONFIG = Object.freeze({
         },
         cholHDL: {
             id: 'hdl-treatment', icon: 'droplets',
-            title: 'HDL Improvement',
+            title: 'HDL Cholesterol Improvement',
             therapies: [
                 { name: 'Regular Exercise', desc: 'Aim for 150 minutes per week of activity like brisk walking, or 75 minutes of intense exercise.' },
-                { name: 'Healthy Lifestyle', desc: 'Stopping smoking, limiting alcohol, and eating healthy fats (olive oil, nuts, fish) all help.' }
+                { name: 'Medication', desc: 'CETP inhibitors and Cholesterol-lowering medication (Statins) can also help to raise HDL.' }
             ]
         },
         cholTri: {
             id: 'tri-treatment', icon: 'flask-conical',
             title: 'Blood Fats (Triglycerides) Treatment',
             therapies: [
+                { name: 'Healthy Lifestyle', desc: 'Stopping smoking and eating healthy fats (olive oil, nuts, fish) all help and should be done first.' },
                 { name: 'Prescription Fish Oil', desc: 'If blood fats (triglycerides) remain high, special prescription fish oil (icosapent ethyl) might be considered.' },
-                { name: 'Cholesterol Medication', desc: 'Cholesterol-lowering medication (Statins) is usually recommended to protect your blood vessels.' }
+                { name: 'Medication', desc: 'Fibrate or Cholesterol lowering medication (Statins) can also help to reduce triglycerides.' }
             ]
         },
         waist: {
@@ -179,9 +184,9 @@ DRC.CONFIG = Object.freeze({
      *   waist:   Wong et al. (2025) + van Namen et al. (2019): -5 cm (-2 in)
      */
     SIMULATION_EFFECTS: {
-        fastGlu: { us: -20,  si: -1.11, label: 'Blood Sugar Management' },
+        fastGlu: { us: -20,  si: -1.11, label: 'Fasting Glucose Management' },
         sbp:     { us: -10,  si: -10,   label: 'Blood Pressure Control' },
-        cholHDL: { us: +5,   si: +0.13, label: 'HDL Improvement' },
+        cholHDL: { us: +5,   si: +0.13, label: 'HDL Cholesterol Improvement' },
         cholTri: { us: -30,  si: -0.34, label: 'Blood Fats (Triglycerides) Treatment' },
         waist:   { us: -2,   si: -5.08, label: 'Weight Management' }
     },
@@ -194,11 +199,11 @@ DRC.CONFIG = Object.freeze({
         fastGlu: { us: 95,  si: 5.3 },
         cholHDL: { us: 50,  si: 1.3 },
         cholTri: { us: 150, si: 1.7 },
-        race: false, parentHist: false
+        sex: true, race: false, parentHist: false
     },
 
-    /** Ordered list of all risk-factor field keys. */
-    ALL_FIELDS: ['age', 'race', 'parentHist', 'sbp', 'height', 'waist', 'fastGlu', 'cholHDL', 'cholTri'],
+    /** Ordered list of all field keys (sex is UI-only for waist thresholds, not in the ARIC model). */
+    ALL_FIELDS: ['age', 'sex', 'race', 'parentHist', 'sbp', 'height', 'waist', 'fastGlu', 'cholHDL', 'cholTri'],
 
     /** Subset of fields that have numeric sliders. */
     SLIDER_FIELDS: ['age', 'sbp', 'height', 'waist', 'fastGlu', 'cholHDL', 'cholTri'],
@@ -208,10 +213,23 @@ DRC.CONFIG = Object.freeze({
 
     /** Treatment color palette for timeline chart and legends. */
     TREATMENT_COLORS: {
-        'Blood Sugar Management':              '#e74c3c',
+        'Fasting Glucose Management':           '#e74c3c',
         'Blood Pressure Control':              '#2ecc71',
-        'HDL Improvement':                     '#f39c12',
+        'HDL Cholesterol Improvement':         '#f39c12',
         'Blood Fats (Triglycerides) Treatment': '#9b59b6',
         'Weight Management':                    '#1abc9c'
-    }
+    },
+
+    /** Animation timing constants. */
+    ANIMATION_DURATION: 1500,
+    ANIMATION_STEPS: 30,
+    ANIMATION_FLASH_MS: 1200,
+
+    /** UI timeout constants (milliseconds). */
+    BADGE_TIMEOUT_MS: 2000,
+    TOOLTIP_TIMEOUT_MS: 1200,
+
+    /** Timeline chart limits. */
+    MAX_SNAPSHOTS: 20,
+    MIN_Y_AXIS: 25
 });

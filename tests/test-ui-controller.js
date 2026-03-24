@@ -238,8 +238,8 @@ assert(inputs.fastGlu    === 100, 'readInputs: fastGlu = 100');
 assert(inputs.cholHDL    === 50,  'readInputs: cholHDL = 50');
 assert(inputs.cholTri    === 150, 'readInputs: cholTri = 150');
 
-// All 9 keys present
-assert(Object.keys(inputs).length === 9, 'readInputs: returns exactly 9 keys');
+// All 10 keys present (9 risk factors + sex)
+assert(Object.keys(inputs).length === 10, 'readInputs: returns exactly 10 keys');
 
 // Non-numeric input falls back to 0
 ELEMS['age-value'].value = 'abc';

@@ -210,7 +210,7 @@
                 </div>
             </div>
             <div class="section-summary" id="non-mod-summary">
-                <span id="summary-age">Age: 50</span> · <span id="summary-race">Other</span> · <span id="summary-parent">No family</span> · <span id="summary-height">66 in</span>
+                <span id="summary-age">Age: 50</span> · <span id="summary-sex">Male</span> · <span id="summary-race">Other</span> · <span id="summary-parent">No family</span> · <span id="summary-height">66 in</span>
             </div>
 
             <div id="non-mod-section" class="collapsible-section">
@@ -258,6 +258,18 @@
                     </div>
                 </div>
 
+                <!-- Sex -->
+                <div class="input-group" data-field="sex">
+                    <div class="input-label-row">
+                        <label><i data-lucide="user" class="lucide-icon ig-icon"></i> Sex</label>
+                    </div>
+                    <div class="toggle-group">
+                        <span class="toggle-option">Female</span>
+                        <label class="toggle-switch"><input type="checkbox" id="sex-toggle" checked><span class="toggle-slider"></span></label>
+                        <span class="toggle-option">Male</span>
+                    </div>
+                </div>
+
                 <!-- Height -->
                 <div class="input-group" data-field="height">
                     <div class="input-label-row">
@@ -301,11 +313,11 @@
                     <input type="range" id="fastGlu-slider" min="50" max="300" value="95" step="1" class="slider">
                     <div class="slider-track-bg segmented" id="fastGlu-track">
                         <div class="slider-segment safe" style="flex:50"></div>
-                        <div class="slider-segment alert" style="flex:26"></div>
-                        <div class="slider-segment danger" style="flex:174"></div>
+                        <div class="slider-segment alert" style="flex:25"></div>
+                        <div class="slider-segment danger" style="flex:175"></div>
                     </div>
                 </div>
-                <div class="slider-labels"><span style="flex:50">Normal</span><span style="flex:26">Pre-Diab.</span><span style="flex:174">Diabetes</span></div>
+                <div class="slider-labels"><span style="flex:50">Normal</span><span style="flex:25">Pre-Diab.</span><span style="flex:175">Diabetes</span></div>
                 <div class="factor-value-row">
                     <input type="number" id="fastGlu-value" value="95" min="50" max="300" step="1" class="value-input" aria-label="Fasting glucose">
                     <span class="value-unit-label" id="fastGlu-value-unit">mg/dL</span>
@@ -321,12 +333,11 @@
                 <div class="slider-wrapper">
                     <input type="range" id="waist-slider" min="26" max="60" value="36" step="1" class="slider">
                     <div class="slider-track-bg segmented" id="waist-track">
-                        <div class="slider-segment safe" style="flex:12"></div>
-                        <div class="slider-segment alert" style="flex:3"></div>
+                        <div class="slider-segment safe" style="flex:14"></div>
                         <div class="slider-segment danger" style="flex:20"></div>
                     </div>
                 </div>
-                <div class="slider-labels slider-labels-numeric"><span id="waist-min">26</span><span id="waist-mid">43</span><span id="waist-max">60</span></div>
+                <div class="slider-labels" id="waist-labels"><span style="flex:14;text-align:left">26</span><span style="flex:0;white-space:nowrap">40</span><span style="flex:20;text-align:right">60</span></div>
                 <div class="factor-value-row">
                     <input type="number" id="waist-value" value="36" min="26" max="60" step="1" class="value-input" aria-label="Waist circumference">
                     <span class="value-unit-label" id="waist-value-unit">in</span>
@@ -342,13 +353,12 @@
                 <div class="slider-wrapper">
                     <input type="range" id="sbp-slider" min="80" max="220" value="120" step="1" class="slider">
                     <div class="slider-track-bg segmented" id="sbp-track">
-                        <div class="slider-segment safe" style="flex:50"></div>
+                        <div class="slider-segment safe" style="flex:40"></div>
                         <div class="slider-segment alert" style="flex:10"></div>
-                        <div class="slider-segment warning" style="flex:20"></div>
-                        <div class="slider-segment danger" style="flex:60"></div>
+                        <div class="slider-segment danger" style="flex:90"></div>
                     </div>
                 </div>
-                <div class="slider-labels"><span style="flex:50">Normal</span><span style="flex:10;text-align:right">Elev.</span><span style="flex:20;text-align:left;padding-left:2px">Stg1</span><span style="flex:60">Stage 2</span></div>
+                <div class="slider-labels"><span style="flex:40">Normal</span><span style="flex:10">Elevated</span><span style="flex:90">Hypertension</span></div>
                 <div class="factor-value-row">
                     <input type="number" id="sbp-value" value="120" min="80" max="220" step="1" class="value-input" aria-label="Systolic blood pressure">
                     <span class="value-unit-label">mmHg</span>
@@ -365,11 +375,11 @@
                     <input type="range" id="cholHDL-slider" min="20" max="100" value="50" step="1" class="slider">
                     <div class="slider-track-bg segmented" id="cholHDL-track">
                         <div class="slider-segment danger" style="flex:20"></div>
-                        <div class="slider-segment alert" style="flex:19"></div>
-                        <div class="slider-segment safe" style="flex:61"></div>
+                        <div class="slider-segment alert" style="flex:21"></div>
+                        <div class="slider-segment safe" style="flex:40"></div>
                     </div>
                 </div>
-                <div class="slider-labels"><span style="flex:20">Low</span><span style="flex:19;text-align:left;padding-left:2px">Brdl.</span><span style="flex:61">Normal</span></div>
+                <div class="slider-labels"><span style="flex:20">Low</span><span style="flex:21">Borderline</span><span style="flex:40">Good</span></div>
                 <div class="factor-value-row">
                     <input type="number" id="cholHDL-value" value="50" min="20" max="100" step="1" class="value-input" aria-label="HDL cholesterol">
                     <span class="value-unit-label" id="cholHDL-value-unit">mg/dL</span>
@@ -386,12 +396,11 @@
                     <input type="range" id="cholTri-slider" min="50" max="500" value="150" step="1" class="slider">
                     <div class="slider-track-bg segmented" id="cholTri-track">
                         <div class="slider-segment safe" style="flex:100"></div>
-                        <div class="slider-segment alert" style="flex:53"></div>
-                        <div class="slider-segment warning" style="flex:47"></div>
-                        <div class="slider-segment danger" style="flex:250"></div>
+                        <div class="slider-segment alert" style="flex:50"></div>
+                        <div class="slider-segment danger" style="flex:300"></div>
                     </div>
                 </div>
-                <div class="slider-labels"><span style="flex:100">Normal</span><span style="flex:100">Borderline</span><span style="flex:250">High</span></div>
+                <div class="slider-labels"><span style="flex:100">Normal</span><span style="flex:50">Borderline</span><span style="flex:300">High</span></div>
                 <div class="factor-value-row">
                     <input type="number" id="cholTri-value" value="150" min="50" max="500" step="1" class="value-input" aria-label="Triglycerides">
                     <span class="value-unit-label" id="cholTri-value-unit">mg/dL</span>

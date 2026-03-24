@@ -65,7 +65,7 @@ assert(CONFIG.BETAS.height === -0.0326, 'Beta height = -0.0326 (protective)');
 assert(CONFIG.BETAS.cholHDL === -0.4718, 'Beta cholHDL = -0.4718 (protective)');
 assert(Object.keys(CONFIG.BETAS).length === 10, 'BETAS has exactly 10 entries (9 predictors + sigma)');
 assert(Object.isFrozen(CONFIG), 'CONFIG is frozen (immutable)');
-assert(CONFIG.ALL_FIELDS.length === 9, 'ALL_FIELDS lists 9 risk factors');
+assert(CONFIG.ALL_FIELDS.length === 10, 'ALL_FIELDS lists 10 fields (9 risk factors + sex)');
 assert(CONFIG.SLIDER_FIELDS.length === 7, 'SLIDER_FIELDS lists 7 numeric sliders');
 results.forEach(r => console.log(r));
 results.length = 0;
@@ -210,8 +210,8 @@ const marginalsAtMean = computeMarginalContributions(popMeans);
 const sumMarginalsAtMean = Object.values(marginalsAtMean).reduce((a, b) => a + b, 0);
 assertApprox(sumMarginalsAtMean, 0, 0.0001, 'At population means: sum of marginal contributions = 0');
 
-// All fields should have marginal entries
-CONFIG.ALL_FIELDS.forEach(field => {
+// All model fields (those with BETAS) should have marginal entries
+CONFIG.ALL_FIELDS.filter(f => CONFIG.BETAS[f] != null).forEach(field => {
     assert(field in marginalsAtMean, `Marginals includes field: ${field}`);
 });
 
@@ -253,8 +253,8 @@ assert(summaryElevated.pFull > summaryElevated.pBaseline, 'Elevated values: pFul
 assert(summaryElevated.netDeviation > 0, 'Elevated values: netDeviation > 0');
 assertApprox(summaryElevated.netDeviation, summaryElevated.pFull - summaryElevated.pBaseline, 0.0001, 'netDeviation = pFull - pBaseline');
 
-// Contributions object should have entries for each field
-CONFIG.ALL_FIELDS.forEach(field => {
+// Contributions object should have entries for each model field
+CONFIG.ALL_FIELDS.filter(f => CONFIG.BETAS[f] != null).forEach(field => {
     assert(field in summaryElevated.contributions, `Contributions object has field: ${field}`);
 });
 
@@ -306,7 +306,7 @@ results.length = 0;
 console.log('\n═══ TEST SUITE 5: Elevated Factor Detection ═══');
 
 // Normal values → no elevated factors
-const normalSI = { ...popMeans, fastGlu: 5.0, sbp: 120, cholHDL: 1.5, cholTri: 1.5, waist: 85 };
+const normalSI = { ...popMeans, fastGlu: 5.0, sbp: 115, cholHDL: 1.5, cholTri: 1.5, waist: 85 };
 const normalResult = getElevatedFactors(normalSI);
 assert(normalResult.elevatedFactors.length === 0, 'Normal values → 0 elevated factors');
 assert(normalResult.waistIsHigh === false, 'Normal waist → not high');
