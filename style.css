@@ -3211,6 +3211,13 @@ body {
     .patient-chevron {
         display: none;
     }
+
+    .btn-patient-menu {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        justify-content: center;
+    }
 }
 
 
@@ -3411,6 +3418,20 @@ body {
     font-size: 12px;
     font-weight: 500;
     letter-spacing: 0.01em;
+}
+
+/* Mobile: Timeline Button Icon-only */
+@media (max-width: 768px) {
+    .btn-timeline-toggle {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        justify-content: center;
+    }
+
+    .btn-timeline-toggle .btn-timeline-label {
+        display: none;
+    }
 }
 
 /* Expandable timeline container */
