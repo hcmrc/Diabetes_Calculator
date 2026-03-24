@@ -2,7 +2,7 @@
  * @fileoverview Application controller — state management & event wiring.
  *
  * Orchestrates the interaction between the RiskModel, UIController,
- * RadarChart, and TimelineChart modules. Handles slider events, unit
+ * and TimelineChart modules. Handles slider events, unit
  * toggling, reset, snapshot, and scenario comparison logic.
  *
  * @module App
@@ -14,7 +14,6 @@
 DRC.App = (() => {
     const UI    = () => DRC.UIController;
     const Model = () => DRC.RiskModel;
-    const Radar = () => DRC.RadarChart;
     const Timeline = () => DRC.TimelineChart;
     const CFG   = DRC.CONFIG;
 
@@ -97,7 +96,6 @@ DRC.App = (() => {
         UI().renderTreatmentOverview(treatStatus, logOddsContributions, marginalSummary.contributions);
         UI().renderTreatmentRecommendations(treatStatus, logOddsContributions);
         UI().renderCausalityChains(siVals, treatStatus.elevatedFactors);
-        Radar().render(siVals, treatStatus.elevatedFactors);
 
         if (state.isComparingScenario && state.baselineRisk !== null) {
             UI().renderScenarioComparison(state.baselineRisk, riskPct);
@@ -454,7 +452,6 @@ DRC.App = (() => {
         });
 
         // Initialize sub-modules and run first calculation
-        Radar().init();
         const initMale = document.getElementById('sex-toggle')?.checked ?? true;
         UI().updateWaistSegments(initMale, state.isMetric);
         UI().updateAllSliderFills();
