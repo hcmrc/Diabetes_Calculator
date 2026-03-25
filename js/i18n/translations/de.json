@@ -44,6 +44,14 @@
     "treatments": "Behandlungsempfehlungen",
     "contributions": "Risikofaktor-Beiträge"
   },
+  "summary": {
+    "age": "Alter",
+    "glucose": "Glukose",
+    "waist": "Taille",
+    "bp": "Blutdruck",
+    "hdl": "HDL",
+    "tg": "TG"
+  },
   "treatments": {
     "fastGlu": {
       "title": "Nüchternblutzucker-Management",

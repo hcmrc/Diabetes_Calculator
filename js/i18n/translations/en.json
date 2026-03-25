@@ -44,6 +44,14 @@
     "treatments": "Treatment Recommendations",
     "contributions": "Risk Factor Contributions"
   },
+  "summary": {
+    "age": "Age",
+    "glucose": "Glucose",
+    "waist": "Waist",
+    "bp": "Blood Pressure",
+    "hdl": "HDL",
+    "tg": "TG"
+  },
   "treatments": {
     "fastGlu": {
       "title": "Fasting Glucose Management",

@@ -44,6 +44,14 @@
     "treatments": "Recomendaciones de Tratamiento",
     "contributions": "Contribuciones de Factores de Riesgo"
   },
+  "summary": {
+    "age": "Edad",
+    "glucose": "Glucosa",
+    "waist": "Cintura",
+    "bp": "Presión arterial",
+    "hdl": "HDL",
+    "tg": "TG"
+  },
   "treatments": {
     "fastGlu": {
       "title": "Manejo de la Glucosa en Ayunas",

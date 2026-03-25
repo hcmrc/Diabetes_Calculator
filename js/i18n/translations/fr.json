@@ -44,6 +44,14 @@
     "treatments": "Recommandations de Traitement",
     "contributions": "Contributions des Facteurs de Risque"
   },
+  "summary": {
+    "age": "Âge",
+    "glucose": "Glucose",
+    "waist": "Taille",
+    "bp": "Pression artérielle",
+    "hdl": "HDL",
+    "tg": "TG"
+  },
   "treatments": {
     "fastGlu": {
       "title": "Gestion de la Glycémie à Jeun",
