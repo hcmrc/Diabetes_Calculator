@@ -21,6 +21,9 @@ DRC.UIController = (() => {
     const { el, setText, clampAndRound, formatAxisValue, escapeHtml } = DRC.UIHelpers;
     const CFG = DRC.CONFIG;
 
+    // Translation helper
+    const t = (key, fallback) => DRC.I18n?.t(key, fallback) || fallback || key;
+
     // Module-scope guards: delegated listeners registered at most once
     let _filterHandlerAttached = false;
     let _rowClickHandlerAttached = false;
@@ -240,13 +243,13 @@ DRC.UIController = (() => {
         summaryBanner.innerHTML = `
             <div class="contrib-summary-main">
                 <span class="contrib-summary-your-risk">${pFullPct}%</span>
-                <span class="contrib-summary-label">your risk</span>
+                <span class="contrib-summary-label">${t('chart.yourRisk', 'your risk')}</span>
             </div>
             <div class="contrib-summary-divider"></div>
             <div class="contrib-summary-comparison">
                 <div class="contrib-summary-sentence">
                     <span class="contrib-summary-delta ${isLower ? 'is-lower' : 'is-higher'}">${netDeviationPct}% ${comparisonWord}</span>
-                    than the average of <strong>${pBaselinePct}%</strong>
+                    ${t('chart.thanAverage', 'than the average of')} <strong>${pBaselinePct}%</strong>
                 </div>
             </div>
         `;
@@ -256,7 +259,7 @@ DRC.UIController = (() => {
         const filterToggle = document.createElement('div');
         filterToggle.className = 'contrib-filter-toggle';
         filterToggle.innerHTML = `
-            <span class="contrib-filter-label">Show above average risk factors only</span>
+            <span class="contrib-filter-label">${t('chart.filterLabel', 'Show above average risk factors only')}</span>
             <label class="toggle-switch" style="transform:scale(0.75);">
                 <input type="checkbox" id="risk-filter-toggle" ${filterState ? 'checked' : ''}>
                 <span class="toggle-slider"></span>
@@ -270,9 +273,9 @@ DRC.UIController = (() => {
         headerRow.innerHTML = `
             <div class="contrib-header-left"></div>
             <div class="contrib-header-center">
-                <div class="contrib-header-left-side"><span class="contrib-label-full">Better than average</span><span class="contrib-label-short">Better</span></div>
-                <div class="contrib-header-center-label"><span class="contrib-label-full">Average</span><span class="contrib-label-short">Avg</span></div>
-                <div class="contrib-header-right-side"><span class="contrib-label-full">Worse than average</span><span class="contrib-label-short">Worse</span></div>
+                <div class="contrib-header-left-side"><span class="contrib-label-full">${t('chart.betterThanAvg', 'Better than average')}</span><span class="contrib-label-short">${t('chart.betterShort', 'Better')}</span></div>
+                <div class="contrib-header-center-label"><span class="contrib-label-full">${t('chart.average', 'Average')}</span><span class="contrib-label-short">${t('chart.avgShort', 'Avg')}</span></div>
+                <div class="contrib-header-right-side"><span class="contrib-label-full">${t('chart.worseThanAvg', 'Worse than average')}</span><span class="contrib-label-short">${t('chart.worseShort', 'Worse')}</span></div>
             </div>
             <div class="contrib-header-right"></div>
         `;
@@ -300,7 +303,7 @@ DRC.UIController = (() => {
             const isProtectiveFactor = CFG.BETAS[key] < 0;
             const isBinaryFactor = ['race', 'parentHist'].includes(key);
             const isAboveAverage = isProtectiveFactor ? !isPositive : isPositive;
-            const label = CFG.LABELS[key];
+            const label = t(`factors.${key}`, CFG.LABELS[key]);
 
             const actionVerb = isProtectiveFactor ? 'Increasing' : 'Lowering';
             let infoText;
@@ -334,7 +337,7 @@ DRC.UIController = (() => {
                     </div>
                     <div class="contrib-row-value ${isPositive ? 'value-positive' : 'value-negative'}">
                         <span class="contrib-value-pct">${signedDisplay}</span>
-                        <span class="contrib-value-hint">Click for info</span>
+                        <span class="contrib-value-hint">${t('chart.clickForInfo', 'Click for info')}</span>
                     </div>
                 </div>
                 <div class="contrib-row-detail">
@@ -416,15 +419,15 @@ DRC.UIController = (() => {
             let statusIcon, statusLabel, statusClass;
             if (isIndicated) {
                 statusIcon = 'alert-triangle';
-                statusLabel = 'Indicated';
+                statusLabel = t('status.indicated', 'Indicated');
                 statusClass = 'status-indicated';
             } else if (isElevated) {
                 statusIcon = 'alert-circle';
-                statusLabel = 'Elevated';
+                statusLabel = t('status.elevated', 'Elevated');
                 statusClass = 'status-elevated';
             } else {
                 statusIcon = 'check-circle';
-                statusLabel = 'Normal';
+                statusLabel = t('status.normal', 'Normal');
                 statusClass = 'status-normal';
             }
 
@@ -441,7 +444,7 @@ DRC.UIController = (() => {
                 </div>
                 <div class="tov-main-col">
                     <div class="tov-label-row tov-clickable" data-toggle-factor="${factor}">
-                        <span class="tov-title">${treatment.title}</span>
+                        <span class="tov-title">${t(`treatments.${factor}.title`, treatment.title)}</span>
                         <span class="tov-status ${statusClass}">
                             <i data-lucide="${statusIcon}" class="lucide-icon"></i>
                             ${statusLabel}
@@ -451,13 +454,13 @@ DRC.UIController = (() => {
                     <div class="tov-bar-container">
                         <div class="tov-bar ${isAboveAverage ? 'bar-indicated' : 'bar-normal'}" style="width:${barWidth}%;"></div>
                     </div>
-                    <div class="tov-pct">${riskContribText}% risk contribution compared to average</div>
+                    <div class="tov-pct">${riskContribText}% ${t('treatments.riskContribution', 'risk contribution compared to average')}</div>
                     <div class="tov-details ${isIndicated ? 'expanded' : ''}">
                         <div class="tov-details-inner">
                             ${therapiesHTML}
                             ${isIndicated ? `<button class="btn-simulate-treatment" data-sim-factor="${factor}">
                                 <i data-lucide="play-circle" class="lucide-icon"></i>
-                                Simulate Treatment
+                                ${t('buttons.simulate', 'Simulate Treatment')}
                             </button>` : ''}
                         </div>
                     </div>
@@ -516,7 +519,17 @@ DRC.UIController = (() => {
                             timelineExpandable.classList.add('open');
                             if (timelineToggleBtn) timelineToggleBtn.classList.add('active');
                         }
-                        DRC.TreatmentSimulator.simulate(simFactor);
+                        // Show profile warning modal if needed
+                        if (DRC.ProfileWarning) {
+                            DRC.ProfileWarning.checkBeforeSimulation(simFactor).then(shouldProceed => {
+                                if (shouldProceed === true) {
+                                    DRC.TreatmentSimulator.simulate(simFactor);
+                                }
+                                // Wenn 'pending', wird die Simulation nach Profil-Erstellung fortgesetzt
+                            });
+                        } else {
+                            DRC.TreatmentSimulator.simulate(simFactor);
+                        }
                     }
                 }
             });
@@ -566,7 +579,7 @@ DRC.UIController = (() => {
             container.appendChild(icon);
         }
         if (label) {
-            label.textContent = `${affected} out of 100 people with your profile may develop diabetes within 9 years`;
+            label.textContent = t('iconArray.label', '${affected} out of 100 people with your profile may develop diabetes within 9 years').replace('${affected}', affected);
         }
     };
 
@@ -631,13 +644,13 @@ DRC.UIController = (() => {
             <div class="scenario-inline-row">
                 <div class="scenario-inline-item">
                     <i data-lucide="flag" class="lucide-icon scenario-inline-icon"></i>
-                    <span class="scenario-inline-label">Baseline</span>
+                    <span class="scenario-inline-label">${t('scenario.baseline', 'Baseline')}</span>
                     <span class="scenario-inline-value">${baselineRisk.toFixed(1)}%</span>
                 </div>
                 <i data-lucide="arrow-right" class="lucide-icon scenario-inline-arrow"></i>
                 <div class="scenario-inline-item">
                     <i data-lucide="user" class="lucide-icon scenario-inline-icon current-icon"></i>
-                    <span class="scenario-inline-label">Current</span>
+                    <span class="scenario-inline-label">${t('scenario.current', 'Current')}</span>
                     <span class="scenario-inline-value current-value">${currentRisk.toFixed(1)}%</span>
                 </div>
                 <div class="scenario-inline-delta ${cls}">
@@ -656,13 +669,13 @@ DRC.UIController = (() => {
     /** Update the collapsed summary line for non-modifiable factors. */
     const updateNonModSummary = () => {
         const age    = el('age-value')?.value || '50';
-        const sex    = el('sex-toggle')?.checked ? 'Male' : 'Female';
-        const race   = el('race-toggle')?.checked ? 'Black' : 'Other';
-        const parent = el('parentHist-toggle')?.checked ? 'History of diabetes in family' : 'No history of diabetes in family';
+        const sex    = el('sex-toggle')?.checked ? t('units.male', 'Male') : t('units.female', 'Female');
+        const race   = el('race-toggle')?.checked ? t('units.black', 'Black') : t('units.other', 'Other');
+        const parent = el('parentHist-toggle')?.checked ? t('units.yes', 'Yes') : t('units.no', 'No');
         const hVal   = el('height-value')?.value || '66';
         const hUnit  = el('height-value-unit')?.textContent || 'in';
 
-        setText('summary-age',    'Age: ' + age);
+        setText('summary-age',    t('summary.age', 'Age') + ': ' + age);
         setText('summary-sex',    sex);
         setText('summary-race',   race);
         setText('summary-parent', parent);
@@ -713,11 +726,11 @@ DRC.UIController = (() => {
         const tVal    = el('cholTri-value')?.value || '150';
         const tUnit   = el('cholTri-value-unit')?.textContent || 'mg/dL';
 
-        setText('summary-fastGlu', 'Glucose: ' + gVal + ' ' + gUnit);
-        setText('summary-waist',   'Waist: ' + wVal + ' ' + wUnit);
-        setText('summary-sbp',     'Blood Pressure: ' + bp + ' mmHg');
-        setText('summary-hdl',     'HDL: ' + hdlVal + ' ' + hdlUnit);
-        setText('summary-tri',     'TG: ' + tVal + ' ' + tUnit);
+        setText('summary-fastGlu', t('summary.glucose', 'Glucose') + ': ' + gVal + ' ' + gUnit);
+        setText('summary-waist',   t('summary.waist', 'Waist') + ': ' + wVal + ' ' + wUnit);
+        setText('summary-sbp',     t('summary.bp', 'Blood Pressure') + ': ' + bp + ' mmHg');
+        setText('summary-hdl',     t('summary.hdl', 'HDL') + ': ' + hdlVal + ' ' + hdlUnit);
+        setText('summary-tri',     t('summary.tg', 'TG') + ': ' + tVal + ' ' + tUnit);
     };
 
     // ─── Helpers for TreatmentSimulator ─────────────────────────────────
@@ -752,14 +765,14 @@ DRC.UIController = (() => {
             DRC.App._setCompareScenario(baselineRisk);
             if (btn) {
                 btn.classList.add('active');
-                btn.innerHTML = '<i data-lucide="flag" class="lucide-icon"></i> Reset Baseline';
+                btn.innerHTML = '<i data-lucide="flag" class="lucide-icon"></i> ' + t('buttons.resetBaseline', 'Reset Baseline');
             }
             if (panel) panel.style.display = 'flex';
             renderScenarioComparison(baselineRisk, baselineRisk);
         } else {
             if (btn) {
                 btn.classList.remove('active');
-                btn.innerHTML = '<i data-lucide="flag" class="lucide-icon"></i> Set Baseline';
+                btn.innerHTML = '<i data-lucide="flag" class="lucide-icon"></i> ' + t('buttons.setBaseline', 'Set Baseline');
             }
             if (panel) panel.style.display = 'none';
         }
