@@ -9,7 +9,7 @@
 
 'use strict';
 
-document.addEventListener('DOMContentLoaded', async () => {
-    await DRC.App.init();
+document.addEventListener('DOMContentLoaded', () => {
+    DRC.App.init();
     DRC.PatientManager.init();
 });

@@ -309,9 +309,9 @@ DRC.App = (() => {
 
     // ─── Initialization ─────────────────────────────────────────────────
 
-    const init = async () => {
-        // Initialize i18n first
-        await DRC.I18n.init();
+    const init = () => {
+        // Initialize i18n first (synchronous for file:// compatibility)
+        DRC.I18n.init();
         DRC.I18n.translateDOM();
         DRC.I18nUI.init();
         // Slider event binding

@@ -69,13 +69,13 @@ DRC.I18nUI = (() => {
      * Handle language selection
      * @param {string} lang - Language code
      */
-    const _selectLanguage = async (lang) => {
+    const _selectLanguage = (lang) => {
         if (lang === DRC.I18n.getCurrentLang()) {
             _closeDropdown();
             return;
         }
 
-        const success = await DRC.I18n.setLanguage(lang);
+        const success = DRC.I18n.setLanguage(lang);
         if (success) {
             _updateButtonDisplay();
             _updateDropdownActiveState();
