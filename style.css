@@ -78,6 +78,27 @@
     /* Transitions */
     --ease-out:       cubic-bezier(0.25, 0.46, 0.45, 0.94);
     --ease-spring:    cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* Spacing Scale */
+    --space-1:        4px;
+    --space-2:        8px;
+    --space-3:        12px;
+    --space-4:        16px;
+    --space-5:        20px;
+    --space-6:        24px;
+}
+
+/* Utility: Visually Hidden - keeps element in DOM for camera capture but hides visually */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 
@@ -489,6 +510,14 @@ body {
     color: var(--text-tertiary);
     background: transparent;
     border-bottom: 1px solid var(--border);
+}
+
+/* ============================================
+   OCR MODAL - Hide step indicator when open
+   ============================================ */
+
+body.ocr-modal-open .col-step-label {
+    display: none;
 }
 
 .step-arrow {
@@ -3119,6 +3148,10 @@ body {
     color: var(--safe) !important;
 }
 
+.pd-btn-icon.rename:hover .lucide-icon {
+    color: var(--primary) !important;
+}
+
 /* Add Form */
 .pd-add-form {
     display: flex;
@@ -4579,4 +4612,667 @@ body {
 
 .dark .quick-option-btn:hover {
     background: rgba(0, 113, 227, 0.25);
+}
+
+/* ============================================
+   OCR LABORATORY REPORT FEATURE STYLES
+   ============================================ */
+
+/* OCR Button in Patient Drawer */
+.pd-btn-ocr {
+    background: rgba(0, 113, 227, 0.08);
+    border-color: var(--blue);
+    color: var(--blue);
+}
+
+.pd-btn-ocr:hover {
+    background: rgba(0, 113, 227, 0.12);
+}
+
+/* OCR Modal Overlay */
+.ocr-modal-overlay {
+    z-index: 400;
+}
+
+.ocr-modal-content {
+    max-width: 480px;
+    width: 90%;
+}
+
+/* OCR Dropzone */
+.ocr-dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    padding: var(--space-6);
+    background: var(--bg-tertiary);
+    border: 2px dashed var(--border-primary);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ocr-dropzone:hover,
+.ocr-dropzone.drag-over {
+    border-color: var(--blue);
+    background: rgba(0, 113, 227, 0.04);
+}
+
+.ocr-dropzone:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 2px;
+}
+
+.ocr-dropzone-icon {
+    width: 48px;
+    height: 48px;
+    color: var(--text-tertiary);
+}
+
+.ocr-dropzone-primary {
+    font-size: var(--text-md);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.ocr-dropzone-secondary {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+.ocr-dropzone-hint {
+    font-size: var(--text-xs);
+    color: var(--text-tertiary);
+}
+
+/* Camera Button */
+.ocr-camera-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    width: 100%;
+    padding: 14px 20px;
+    margin-top: var(--space-4);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 15px;
+    font-weight: 500;
+    min-height: 48px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ocr-camera-btn:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--border-strong);
+}
+
+/* Camera Button - Desktop: Hide (not useful on desktop), Mobile: Show */
+@media (min-width: 769px) {
+    .ocr-camera-btn {
+        display: none;
+    }
+}
+
+/* Privacy Notice */
+.ocr-privacy-notice {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+    padding: var(--space-3);
+    background: #f3f4f6;
+    border-radius: var(--radius-md);
+    font-size: var(--text-xs);
+    color: #6b7280;
+}
+
+.ocr-privacy-notice .lucide-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+/* OCR Processing */
+.ocr-processing {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-6);
+    padding: var(--space-6);
+}
+
+/* Progress Ring */
+.ocr-progress-ring {
+    position: relative;
+    width: 120px;
+    height: 120px;
+}
+
+.ocr-progress-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.ocr-progress-track {
+    fill: none;
+    stroke: var(--border-primary);
+    stroke-width: 8;
+}
+
+.ocr-progress-fill {
+    fill: none;
+    stroke: var(--blue);
+    stroke-width: 8;
+    stroke-linecap: round;
+    stroke-dasharray: 283;
+    stroke-dashoffset: 283;
+    transition: stroke-dashoffset 0.3s ease;
+}
+
+.ocr-progress-percentage {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: var(--text-xl);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Status Steps */
+.ocr-status-steps {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    width: 100%;
+}
+
+.ocr-status-step {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+}
+
+.ocr-status-step.active {
+    background: var(--blue-light);
+}
+
+.ocr-status-step.complete {
+    color: var(--safe);
+}
+
+.ocr-status-step .ocr-step-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.ocr-status-step:not(.active) .ocr-step-loading {
+    display: none;
+}
+
+.ocr-status-step.active .ocr-step-icon:not(.ocr-step-loading) {
+    display: none;
+}
+
+.ocr-step-loading {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.ocr-step-label {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+.ocr-status-step.active .ocr-step-label {
+    color: var(--blue);
+    font-weight: 500;
+}
+
+/* Cancel Button */
+.ocr-cancel-btn {
+    margin-top: var(--space-4);
+    padding: var(--space-3) var(--space-5);
+    background: transparent;
+    border: none;
+    color: var(--text-tertiary);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.ocr-cancel-btn:hover {
+    color: var(--text-secondary);
+}
+
+/* OCR Review */
+.ocr-review-title {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.ocr-review-subtitle {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+}
+
+/* Results Grid */
+.ocr-results-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: var(--space-2);
+}
+
+.ocr-result-item {
+    padding: var(--space-3);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+}
+
+.ocr-result-item.high {
+    border-left: 3px solid var(--safe);
+}
+
+.ocr-result-item.medium {
+    border-left: 3px solid var(--alert);
+}
+
+.ocr-result-item.low,
+.ocr-result-item.warning {
+    border-left: 3px solid var(--warning);
+}
+
+.ocr-result-item.none,
+.ocr-result-item.not-found {
+    border-left: 3px solid var(--danger);
+    opacity: 0.8;
+}
+
+.ocr-result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-2);
+}
+
+.ocr-result-field-name {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.ocr-result-confidence {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-size: var(--text-xs);
+}
+
+.ocr-result-confidence.high {
+    color: var(--safe);
+}
+
+.ocr-result-confidence.medium {
+    color: var(--alert);
+}
+
+.ocr-result-confidence.low {
+    color: var(--warning);
+}
+
+.ocr-result-confidence.none {
+    color: var(--danger);
+}
+
+.ocr-result-confidence .lucide-icon {
+    width: 14px;
+    height: 14px;
+}
+
+/* Value Row */
+.ocr-result-value-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.ocr-result-value-box {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex: 1;
+}
+
+.ocr-result-input {
+    width: 80px;
+    padding: var(--space-2);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-base);
+    text-align: right;
+    transition: border-color 0.2s ease;
+}
+
+.ocr-result-input:focus {
+    outline: none;
+    border-color: var(--blue);
+}
+
+.ocr-result-input.high {
+    border-color: var(--safe);
+}
+
+.ocr-result-input.medium {
+    border-color: var(--alert);
+}
+
+.ocr-result-input.low,
+.ocr-result-input.warning {
+    border-color: var(--warning);
+}
+
+/* Select dropdown styling for OCR results */
+.ocr-result-value-box select.ocr-result-input {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 12px;
+    padding-right: 28px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.ocr-result-value-box select.ocr-result-input option {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.dark .ocr-result-value-box select.ocr-result-input {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
+.ocr-result-unit {
+    font-size: var(--text-xs);
+    color: var(--text-tertiary);
+}
+
+.ocr-result-include {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.ocr-result-include input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--blue);
+}
+
+/* Summary */
+.ocr-summary {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border-primary);
+}
+
+.ocr-summary-stats {
+    display: flex;
+    gap: var(--space-4);
+}
+
+.ocr-stat {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+.ocr-stat .lucide-icon {
+    width: 16px;
+    height: 16px;
+}
+
+.ocr-stat strong {
+    color: var(--text-primary);
+}
+
+/* Error State */
+.ocr-error {
+    text-align: center;
+    padding: var(--space-4);
+}
+
+.ocr-error-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto var(--space-4);
+    color: var(--danger);
+}
+
+.ocr-error-icon .lucide-icon {
+    width: 100%;
+    height: 100%;
+}
+
+.ocr-error-title {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.ocr-error-message {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+}
+
+.ocr-error-suggestions {
+    text-align: left;
+    background: var(--bg-tertiary);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-4);
+}
+
+.ocr-error-suggestions h4 {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+}
+
+.ocr-error-suggestions ul {
+    list-style: none;
+}
+
+.ocr-error-suggestions li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    padding: var(--space-1) 0;
+}
+
+.ocr-error-suggestions .lucide-icon {
+    width: 16px;
+    height: 16px;
+    color: var(--text-tertiary);
+}
+
+/* OCR Populated Animation */
+@keyframes ocr-populated {
+    0% { background-color: rgba(0, 113, 227, 0.2); }
+    100% { background-color: transparent; }
+}
+
+.ocr-populated {
+    animation: ocr-populated 2s ease-out;
+}
+
+/* ============================================
+   Profile Warning Modal
+   ============================================ */
+
+.profile-warn-icon {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, var(--orange, #ff6723), #ff8a3d);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    box-shadow: 0 4px 12px rgba(255, 103, 35, 0.3);
+    animation: profile-warn-icon-pulse 2s ease-in-out infinite;
+}
+
+.profile-warn-icon .lucide-icon {
+    width: 32px;
+    height: 32px;
+    color: white;
+}
+
+@keyframes profile-warn-icon-pulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 4px 12px rgba(255, 103, 35, 0.3);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(255, 103, 35, 0.4);
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .profile-warn-icon {
+        animation: none;
+    }
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+    /* Camera Button on Mobile: Match Dropzone Design */
+    .ocr-camera-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-3);
+        width: 100%;
+        padding: var(--space-6);
+        margin-top: var(--space-4);
+        background: var(--bg-tertiary);
+        border: 2px dashed var(--border-primary);
+        border-radius: var(--radius-lg);
+        color: var(--text-primary);
+        font-size: var(--text-md);
+        font-weight: 600;
+        min-height: 120px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .ocr-camera-btn:hover,
+    .ocr-camera-btn:active {
+        background: rgba(0, 113, 227, 0.04);
+        border-color: var(--blue);
+    }
+
+    .ocr-camera-btn .lucide-icon {
+        width: 48px;
+        height: 48px;
+        color: var(--text-tertiary);
+        stroke-width: 1.5;
+    }
+}
+
+@media (max-width: 640px) {
+    .ocr-modal-overlay {
+        align-items: flex-end;
+    }
+
+    .ocr-modal-content {
+        width: 100%;
+        max-height: 90vh;
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        animation: slide-up 0.3s ease;
+    }
+
+    @keyframes slide-up {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+
+    .ocr-results-grid {
+        max-height: 40vh;
+    }
+
+    .ocr-result-value-row {
+        flex-wrap: wrap;
+    }
+
+    .ocr-result-input {
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+}
+
+/* Dark Mode */
+.dark .pd-btn-ocr {
+    background: rgba(0, 113, 227, 0.15);
+}
+
+.dark .pd-btn-ocr:hover {
+    background: rgba(0, 113, 227, 0.25);
+}
+
+.dark .ocr-dropzone {
+    background: var(--bg-secondary);
+}
+
+.dark .ocr-result-item {
+    background: var(--bg-secondary);
+}
+
+.dark .ocr-result-input {
+    background: var(--bg-primary);
+}
+
+.dark .ocr-error-suggestions {
+    background: var(--bg-secondary);
 }

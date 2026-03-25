@@ -516,7 +516,17 @@ DRC.UIController = (() => {
                             timelineExpandable.classList.add('open');
                             if (timelineToggleBtn) timelineToggleBtn.classList.add('active');
                         }
-                        DRC.TreatmentSimulator.simulate(simFactor);
+                        // Show profile warning modal if needed
+                        if (DRC.ProfileWarning) {
+                            DRC.ProfileWarning.checkBeforeSimulation(simFactor).then(shouldProceed => {
+                                if (shouldProceed === true) {
+                                    DRC.TreatmentSimulator.simulate(simFactor);
+                                }
+                                // Wenn 'pending', wird die Simulation nach Profil-Erstellung fortgesetzt
+                            });
+                        } else {
+                            DRC.TreatmentSimulator.simulate(simFactor);
+                        }
                     }
                 }
             });

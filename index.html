@@ -7,11 +7,12 @@
          Mitigated by strict script-src, object-src 'none', and base-uri/form-action restrictions. -->
     <meta http-equiv="Content-Security-Policy"
           content="default-src 'self';
-                   script-src 'self' https://cdn.sheetjs.com;
+                   script-src 'self' 'wasm-unsafe-eval' https://cdn.sheetjs.com https://cdn.jsdelivr.net;
                    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
                    font-src https://fonts.gstatic.com https://fonts.googleapis.com;
-                   connect-src 'none';
-                   img-src 'self' data:;
+                   connect-src 'self' https://cdn.jsdelivr.net;
+                   worker-src 'self' blob:;
+                   img-src 'self' data: blob:;
                    object-src 'none';
                    base-uri 'self';
                    form-action 'self';
@@ -113,9 +114,9 @@
         </div>
     </div>
 
-    <!-- Import / Export -->
+    <!-- Import / Export / OCR -->
     <div class="pd-section pd-io-section">
-        <div class="pd-section-label">Import / Export (Excel / Encrypted)</div>
+        <div class="pd-section-label">Import / Export / OCR</div>
         <div class="pd-io-actions">
             <button id="pdExportBtn" type="button" class="pd-btn-io">
                 <i data-lucide="download" class="lucide-icon"></i> Export .xlsx / .drc
@@ -124,7 +125,16 @@
                 <i data-lucide="upload" class="lucide-icon"></i> Import .xlsx / .drc
             </label>
             <input type="file" id="pdImportFile" accept=".xlsx,.xls,.drc" style="display:none;" aria-label="Import patient profiles from Excel or encrypted .drc file" />
+            <!-- NEU: OCR Laborbericht Button -->
+            <button id="pdOCRBtn" type="button" class="pd-btn-io pd-btn-ocr">
+                <i data-lucide="scan-line" class="lucide-icon"></i> Scan Lab Report
+            </button>
         </div>
+        <!-- Hidden file inputs for OCR -->
+        <!-- Camera input: ONLY images, NO PDF (required for capture to work) -->
+        <input type="file" id="ocrCameraInput" accept="image/*" capture="environment" class="visually-hidden" aria-label="Take photo of laboratory report" />
+        <!-- File input: Images AND PDFs (for file upload) -->
+        <input type="file" id="ocrFileInput" accept="image/*,.pdf" multiple class="visually-hidden" aria-label="Upload laboratory report file(s)" />
     </div>
 </aside>
 
@@ -482,9 +492,165 @@
 <script src="js/app.js"></script>
 <script src="js/crypto-service.js"></script>
 <script src="js/patient-manager.js"></script>
+<script src="js/profile-warning.js"></script>
 <script src="js/treatment-simulator.js"></script>
+<!-- OCR Feature Scripts -->
+<script src="js/lab-report-parser.js"></script>
+<script src="js/ocr-service.js"></script>
+<script src="js/ocr-ui-controller.js"></script>
 <script src="js/dark-mode.js"></script>
 <script src="js/main.js"></script>
+
+<!-- ===================== OCR MODAL ===================== -->
+<div class="modal-overlay ocr-modal-overlay" id="ocrModal" role="dialog" aria-modal="true" aria-labelledby="ocrModalTitle">
+    <div class="modal-content ocr-modal-content">
+        <!-- Header -->
+        <div class="modal-header">
+            <h3 id="ocrModalTitle">
+                <i data-lucide="scan-line" class="lucide-icon"></i> Scan Laboratory Report
+            </h3>
+            <button type="button" class="modal-close-btn" id="ocrModalClose" aria-label="Close">
+                <i data-lucide="x" class="lucide-icon"></i>
+            </button>
+        </div>
+
+        <!-- Step 1: Upload -->
+        <div class="ocr-step" id="ocrStepUpload">
+            <div class="modal-body">
+                <p class="modal-description">
+                    Upload a photo or PDF of your laboratory report.
+                    We will automatically extract your values.
+                </p>
+
+                <!-- Drop Zone -->
+                <div class="ocr-dropzone" id="ocrDropzone" role="button" tabindex="0" aria-label="Drop zone for file upload">
+                    <i data-lucide="upload-cloud" class="ocr-dropzone-icon"></i>
+                    <p class="ocr-dropzone-primary">Drag & drop file here</p>
+                    <p class="ocr-dropzone-secondary">or click to browse</p>
+                    <p class="ocr-dropzone-hint">Supports: JPG, PNG, PDF (max 10MB)</p>
+                </div>
+
+                <!-- Camera Button (Mobile) -->
+                <button type="button" class="ocr-camera-btn" id="ocrCameraBtn">
+                    <i data-lucide="camera" class="lucide-icon"></i> Take Photo
+                </button>
+
+                <!-- Privacy Notice -->
+                <div class="ocr-privacy-notice" role="note">
+                    <i data-lucide="shield-check" class="lucide-icon"></i>
+                    <span>Processing happens locally. No data is sent to servers.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Processing -->
+        <div class="ocr-step" id="ocrStepProcessing" style="display:none;">
+            <div class="modal-body">
+                <div class="ocr-processing">
+                    <div class="ocr-progress-ring" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                        <svg class="ocr-progress-svg" viewBox="0 0 100 100">
+                            <circle class="ocr-progress-track" cx="50" cy="50" r="45"/>
+                            <circle class="ocr-progress-fill" cx="50" cy="50" r="45" id="ocrProgressCircle"/>
+                        </svg>
+                        <span class="ocr-progress-percentage" id="ocrProgressPercentage">0%</span>
+                    </div>
+
+                    <div class="ocr-status-steps">
+                        <div class="ocr-status-step active" id="ocrStepStatusUpload">
+                            <i data-lucide="check-circle" class="ocr-step-icon"></i>
+                            <span class="ocr-step-label">Upload complete</span>
+                        </div>
+                        <div class="ocr-status-step" id="ocrStepStatusAnalyze">
+                            <i data-lucide="check-circle" class="ocr-step-icon"></i>
+                            <i data-lucide="loader-2" class="ocr-step-icon ocr-step-loading"></i>
+                            <span class="ocr-step-label">Analyzing image...</span>
+                        </div>
+                        <div class="ocr-status-step" id="ocrStepStatusExtract">
+                            <i data-lucide="check-circle" class="ocr-step-icon"></i>
+                            <i data-lucide="loader-2" class="ocr-step-icon ocr-step-loading"></i>
+                            <span class="ocr-step-label">Extracting values...</span>
+                        </div>
+                        <div class="ocr-status-step" id="ocrStepStatusValidate">
+                            <i data-lucide="check-circle" class="ocr-step-icon"></i>
+                            <i data-lucide="loader-2" class="ocr-step-icon ocr-step-loading"></i>
+                            <span class="ocr-step-label">Validating...</span>
+                        </div>
+                    </div>
+
+                    <button type="button" class="ocr-cancel-btn" id="ocrCancelBtn">Cancel Processing</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Review -->
+        <div class="ocr-step" id="ocrStepReview" style="display:none;">
+            <div class="modal-body">
+                <h4 class="ocr-review-title">Extracted Values</h4>
+                <p class="ocr-review-subtitle">Please review before importing.</p>
+
+                <div class="ocr-results-grid" id="ocrResultsGrid">
+                    <!-- Dynamically populated by JS -->
+                </div>
+
+                <div class="ocr-summary" id="ocrSummary" style="display:none;">
+                    <div class="ocr-summary-stats">
+                        <span class="ocr-stat">
+                            <i data-lucide="check-circle"></i>
+                            <strong id="ocrStatDetected">0</strong> detected
+                        </span>
+                        <span class="ocr-stat">
+                            <i data-lucide="alert-circle"></i>
+                            <strong id="ocrStatReview">0</strong> need review
+                        </span>
+                        <span class="ocr-stat">
+                            <i data-lucide="x-circle"></i>
+                            <strong id="ocrStatNotFound">0</strong> not found
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="modal-btn modal-btn-secondary" id="ocrBackBtn">Back</button>
+                <button type="button" class="modal-btn modal-btn-primary" id="ocrImportBtn">
+                    <i data-lucide="check" class="lucide-icon"></i> Import Values
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 4: Error -->
+        <div class="ocr-step" id="ocrStepError" style="display:none;">
+            <div class="modal-body">
+                <div class="ocr-error">
+                    <div class="ocr-error-icon">
+                        <i data-lucide="x-circle"></i>
+                    </div>
+                    <h3 class="ocr-error-title">Could Not Process Image</h3>
+                    <p class="ocr-error-message" id="ocrErrorMessage">
+                        The image quality is too low for reliable text recognition.
+                    </p>
+
+                    <div class="ocr-error-suggestions">
+                        <h4>Tips for better results:</h4>
+                        <ul>
+                            <li><i data-lucide="sun"></i> Use good lighting</li>
+                            <li><i data-lucide="scan"></i> Keep the document flat</li>
+                            <li><i data-lucide="camera"></i> Ensure text is in focus</li>
+                            <li><i data-lucide="maximize"></i> Capture the full page</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="modal-btn modal-btn-secondary" id="ocrManualBtn">Enter Manually</button>
+                <button type="button" class="modal-btn modal-btn-primary" id="ocrRetryBtn">
+                    <i data-lucide="refresh-cw" class="lucide-icon"></i> Try Again
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- ===================== ENCRYPTION MODALS ===================== -->
 
@@ -624,6 +790,44 @@
             <button type="button" class="modal-btn modal-btn-primary" id="pwdPromptDecryptBtn">
                 <i data-lucide="unlock" class="lucide-icon"></i>
                 Decrypt
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Profile Warning Modal - shown when simulating treatment without profile -->
+<div class="modal-overlay" id="profileWarningModal" role="dialog" aria-modal="true" aria-labelledby="profileWarnTitle" style="display:none;">
+    <div class="modal-content" style="max-width: 420px;">
+        <div class="modal-header">
+            <h3 id="profileWarnTitle">
+                <i data-lucide="alert-circle" class="lucide-icon"></i>
+                Save Your Data?
+            </h3>
+            <button type="button" class="modal-close-btn" id="profileWarnClose" aria-label="Close">
+                <i data-lucide="x" class="lucide-icon"></i>
+            </button>
+        </div>
+        <div class="modal-body" style="text-align: center; padding: 24px;">
+            <div class="profile-warn-icon">
+                <i data-lucide="alert-triangle" class="lucide-icon"></i>
+            </div>
+            <p style="font-size: 16px; color: var(--text-primary); margin-bottom: 8px; font-weight: 500;">
+                You haven't created a profile yet.
+            </p>
+            <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 24px;">
+                Create a profile to save your data and track your progress over time. Without a profile, your data may be lost when you close the browser.
+            </p>
+        </div>
+        <div class="modal-footer" style="flex-direction: column; gap: 10px;">
+            <button type="button" class="modal-btn modal-btn-primary" id="profileWarnCreateBtn">
+                <i data-lucide="user-plus" class="lucide-icon"></i>
+                Create Profile
+            </button>
+            <button type="button" class="modal-btn modal-btn-secondary" id="profileWarnContinueBtn">
+                Continue Without Saving
+            </button>
+            <button type="button" class="modal-btn modal-btn-secondary" id="profileWarnCancelBtn" style="border-color: transparent; color: var(--text-secondary);">
+                Cancel
             </button>
         </div>
     </div>

@@ -569,6 +569,16 @@ DRC.PatientManager = (() => {
         updateNavLabel();
     };
 
+    const renamePatient = (id, newName) => {
+        if (!newName?.trim()) return false;
+        const patient = patients.find(p => p.id === id);
+        if (!patient) return false;
+        patient.name = newName.trim();
+        _persistAndRender();
+        updateNavLabel();
+        return true;
+    };
+
     const loadPatient = (id) => {
         const patient = patients.find(p => p.id === id);
         if (!patient) return;
@@ -845,9 +855,11 @@ DRC.PatientManager = (() => {
             };
 
             const exportBtn = mkBtn('export', 'Export this profile to Excel', 'export', 'download');
+            const renameBtn = mkBtn('rename', 'Rename profile', 'rename', 'pencil');
             const saveBtn = mkBtn('save', 'Update with current values', 'save', 'save');
             const delBtn  = mkBtn('delete', 'Delete patient', 'delete', 'trash-2');
             actions.appendChild(exportBtn);
+            actions.appendChild(renameBtn);
             actions.appendChild(saveBtn);
             actions.appendChild(delBtn);
 
@@ -857,6 +869,13 @@ DRC.PatientManager = (() => {
 
             card.addEventListener('click', (e) => { if (!e.target.closest('[data-action]')) loadPatient(p.id); });
             exportBtn.addEventListener('click', (e) => { e.stopPropagation(); exportSinglePatient(p.id); });
+            renameBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const newName = prompt(`Rename "${p.name}" to:`, p.name);
+                if (newName && newName.trim() && newName.trim() !== p.name) {
+                    renamePatient(p.id, newName.trim());
+                }
+            });
             saveBtn.addEventListener('click', (e) => { e.stopPropagation(); updatePatient(p.id); });
             delBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -925,5 +944,5 @@ DRC.PatientManager = (() => {
         return patient ? patient.data : null;
     };
 
-    return { init, loadPatient, applyValues, captureCurrentValues, updateNavLabel, getActivePatientData };
+    return { init, loadPatient, applyValues, captureCurrentValues, updateNavLabel, getActivePatientData, addPatient, renamePatient };
 })();
