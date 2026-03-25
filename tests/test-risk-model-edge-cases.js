@@ -292,14 +292,29 @@ console.log('\n═══ TEST SUITE 7: CONFIG.SIMULATION_EFFECTS structural inte
     EXPECTED_FACTORS.forEach(factor => {
         const fx = CONFIG.SIMULATION_EFFECTS[factor];
         assert(fx != null, `SIMULATION_EFFECTS has entry for: ${factor}`);
-        assert(typeof fx.us     === 'number', `${factor}.us is a number`);
-        assert(typeof fx.si     === 'number', `${factor}.si is a number`);
         assert(typeof fx.label  === 'string' && fx.label.length > 0, `${factor}.label is a non-empty string`);
+
+        // Sex-dependent factors (e.g. sbp) use siMale/siFemale instead of si/us
+        const hasSexDependent = fx.siMale !== undefined;
+        if (hasSexDependent) {
+            assert(typeof fx.siMale   === 'number', `${factor}.siMale is a number`);
+            assert(typeof fx.siFemale === 'number', `${factor}.siFemale is a number`);
+            assert(typeof fx.usMale   === 'number', `${factor}.usMale is a number`);
+            assert(typeof fx.usFemale === 'number', `${factor}.usFemale is a number`);
+        } else {
+            assert(typeof fx.us === 'number', `${factor}.us is a number`);
+            assert(typeof fx.si === 'number', `${factor}.si is a number`);
+        }
 
         const sign = expectedSign[factor];
         if (sign === -1) {
-            assert(fx.us < 0, `${factor}.us delta is negative (treatment reduces this risk factor)`);
-            assert(fx.si < 0, `${factor}.si delta is negative (treatment reduces this risk factor)`);
+            if (hasSexDependent) {
+                assert(fx.siMale < 0, `${factor}.siMale delta is negative`);
+                assert(fx.siFemale < 0, `${factor}.siFemale delta is negative`);
+            } else {
+                assert(fx.us < 0, `${factor}.us delta is negative (treatment reduces this risk factor)`);
+                assert(fx.si < 0, `${factor}.si delta is negative (treatment reduces this risk factor)`);
+            }
         } else {
             // HDL: treatment raises the factor value (higher HDL → lower risk)
             assert(fx.us > 0, `${factor}.us delta is positive (treatment raises this protective factor)`);

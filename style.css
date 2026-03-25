@@ -1161,9 +1161,22 @@ body {
     background: rgba(0,0,0,0.02);
 }
 
+.chain-node.risk-node {
+    font-weight: 700;
+    color: var(--text-primary);
+    border-color: rgba(0, 0, 0, 0.25);
+    background: rgba(0, 0, 0, 0.04);
+}
+
 .causality-chain.highlighted .chain-node {
     background: white;
     border-color: rgba(255, 59, 48, 0.3);
+}
+
+.causality-chain.highlighted .chain-node.risk-node {
+    font-weight: 700;
+    background: rgba(255, 59, 48, 0.08);
+    border-color: rgba(255, 59, 48, 0.4);
 }
 
 .chain-arrow {
@@ -3852,6 +3865,13 @@ body {
     background: rgba(255, 255, 255, 0.04);
     border-color: rgba(255, 255, 255, 0.15);
     color: #a1a1aa;
+}
+
+.dark .chain-node.risk-node {
+    font-weight: 700;
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08);
 }
 
 /* Model tabs */

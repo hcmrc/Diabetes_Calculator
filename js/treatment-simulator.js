@@ -25,6 +25,7 @@ DRC.TreatmentSimulator = (() => {
 
     /**
      * Get the unit-appropriate treatment delta for a factor.
+     * Supports sex-dependent effects (e.g. sbp with siMale/siFemale keys).
      * @param {string} factor — Risk factor key.
      * @returns {number} Expected change in current unit system.
      */
@@ -32,6 +33,12 @@ DRC.TreatmentSimulator = (() => {
         const fx = DRC.CONFIG.SIMULATION_EFFECTS[factor];
         if (!fx) return 0;
         const isMetric = DRC.UIController.getUnitToggleState();
+        // Sex-dependent effect (e.g. sbp): check for siMale/siFemale or usMale/usFemale
+        if (fx.siMale !== undefined) {
+            const isMale = DRC.UIController.readInputs().sex === 1;
+            if (isMetric) return isMale ? fx.siMale : fx.siFemale;
+            return isMale ? fx.usMale : fx.usFemale;
+        }
         return isMetric ? fx.si : fx.us;
     };
 

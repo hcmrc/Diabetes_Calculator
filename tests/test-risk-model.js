@@ -405,7 +405,9 @@ const simBaseRisk = computeProbability(simTestSI);
 
 Object.entries(CONFIG.SIMULATION_EFFECTS).forEach(([factor, fx]) => {
     const treated = { ...simTestSI };
-    treated[factor] += fx.si;
+    // Sex-dependent factors use siMale as representative delta for testing
+    const delta = fx.si !== undefined ? fx.si : fx.siMale;
+    treated[factor] += delta;
     const treatedRisk = computeProbability(treated);
     assert(treatedRisk < simBaseRisk,
         `${fx.label} (${factor}): ${(simBaseRisk*100).toFixed(1)}% → ${(treatedRisk*100).toFixed(1)}% (reduced)`);
@@ -414,7 +416,8 @@ Object.entries(CONFIG.SIMULATION_EFFECTS).forEach(([factor, fx]) => {
 // Cumulative treatment: applying all treatments should significantly reduce risk
 const allTreated = { ...simTestSI };
 Object.entries(CONFIG.SIMULATION_EFFECTS).forEach(([factor, fx]) => {
-    allTreated[factor] += fx.si;
+    const delta = fx.si !== undefined ? fx.si : fx.siMale;
+    allTreated[factor] += delta;
 });
 const allTreatedRisk = computeProbability(allTreated) * 100;
 const reduction = (simBaseRisk * 100) - allTreatedRisk;

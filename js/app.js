@@ -95,7 +95,7 @@ DRC.App = (() => {
         UI().renderContributionChart(marginalSummary);
         UI().renderTreatmentOverview(treatStatus, logOddsContributions, marginalSummary.contributions);
         UI().renderTreatmentRecommendations(treatStatus, logOddsContributions);
-        UI().renderCausalityChains(siVals, treatStatus.elevatedFactors);
+        UI().renderCausalityChains(siVals, treatStatus.elevatedFactors, marginalSummary.contributions);
 
         if (state.isComparingScenario && state.baselineRisk !== null) {
             UI().renderScenarioComparison(state.baselineRisk, riskPct);

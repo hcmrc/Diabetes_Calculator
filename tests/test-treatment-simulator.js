@@ -189,17 +189,27 @@ const FX = DRC.CONFIG.SIMULATION_EFFECTS;
 
 // All 5 modifiable factors must have non-zero treatment deltas
 ALL_FACTORS.forEach(factor => {
-    assert(FX[factor].us !== 0, `SIMULATION_EFFECTS.${factor}.us is non-zero`);
-    assert(FX[factor].si !== 0, `SIMULATION_EFFECTS.${factor}.si is non-zero`);
+    const fx = FX[factor];
+    if (fx.siMale !== undefined) {
+        // Sex-dependent factor (e.g. sbp)
+        assert(fx.usMale !== 0, `SIMULATION_EFFECTS.${factor}.usMale is non-zero`);
+        assert(fx.siMale !== 0, `SIMULATION_EFFECTS.${factor}.siMale is non-zero`);
+        assert(fx.usFemale !== 0, `SIMULATION_EFFECTS.${factor}.usFemale is non-zero`);
+        assert(fx.siFemale !== 0, `SIMULATION_EFFECTS.${factor}.siFemale is non-zero`);
+    } else {
+        assert(fx.us !== 0, `SIMULATION_EFFECTS.${factor}.us is non-zero`);
+        assert(fx.si !== 0, `SIMULATION_EFFECTS.${factor}.si is non-zero`);
+    }
 });
 
 // Unit system affects which delta is used (isMetric selects .si vs .us)
 // Verify the CONFIG values match the expected clinical evidence magnitudes
-assert(Math.abs(FX.fastGlu.us) >= 10, 'fastGlu US delta magnitude ≥ 10 mg/dL (DPP evidence)');
-assert(Math.abs(FX.sbp.us)     >= 5,  'sbp US delta magnitude ≥ 5 mmHg (Wang 2025 evidence)');
-assert(Math.abs(FX.waist.us)   >= 1,  'waist US delta magnitude ≥ 1 in (Wong 2025 evidence)');
-assert(Math.abs(FX.cholHDL.us) >= 1,  'cholHDL US delta magnitude ≥ 1 mg/dL (van Namen 2019)');
-assert(Math.abs(FX.cholTri.us) >= 10, 'cholTri US delta magnitude ≥ 10 mg/dL (van Namen 2019)');
+assert(Math.abs(FX.fastGlu.us) >= 10, 'fastGlu US delta magnitude ≥ 10 mg/dL');
+assert(Math.abs(FX.sbp.usMale) >= 5,  'sbp US (male) delta magnitude ≥ 5 mmHg');
+assert(Math.abs(FX.sbp.usFemale) >= 5, 'sbp US (female) delta magnitude ≥ 5 mmHg');
+assert(Math.abs(FX.waist.us)   >= 1,  'waist US delta magnitude ≥ 1 in');
+assert(Math.abs(FX.cholHDL.us) >= 1,  'cholHDL US delta magnitude ≥ 1 mg/dL');
+assert(Math.abs(FX.cholTri.us) >= 10, 'cholTri US delta magnitude ≥ 10 mg/dL');
 
 // ─── TEST SUITE 6: simulate() with enough DOM to pass computeTarget ───────────
 

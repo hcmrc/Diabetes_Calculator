@@ -177,18 +177,18 @@ DRC.CONFIG = Object.freeze({
      * Evidence-based treatment simulation deltas (both unit systems).
      *
      * Sources:
-     *   fastGlu: DPP/DPPOS (Aroda et al., 2017): -20 mg/dL (-1.1 mmol/L)
-     *   sbp:     Wang et al. (2025, Lancet) + Canoy et al. (2022): ~-10 mmHg
-     *   cholHDL: van Namen et al. (2019): +5 mg/dL (+0.13 mmol/L)
-     *   cholTri: van Namen et al. (2019) + statins: -30 mg/dL (-0.34 mmol/L)
-     *   waist:   Wong et al. (2025) + van Namen et al. (2019): -5 cm (-2 in)
+     *   fastGlu: -1.52 mmol/L (US: -27 mg/dL)
+     *   sbp:     Sex-dependent — Female: -30.9 mmHg, Male: -17.7 mmHg
+     *   cholHDL: +31% of default 1.3 mmol/L = +0.40 mmol/L (US: +16 mg/dL)
+     *   cholTri: -30% of default 1.7 mmol/L = -0.51 mmol/L (US: -45 mg/dL)
+     *   waist:   -7.13 kg weight loss ≈ -7.13 cm waist (1 cm/kg, Ross et al.) = -2.81 in
      */
     SIMULATION_EFFECTS: {
-        fastGlu: { us: -20,  si: -1.11, label: 'Fasting Glucose Management' },
-        sbp:     { us: -10,  si: -10,   label: 'Blood Pressure Control' },
-        cholHDL: { us: +5,   si: +0.13, label: 'HDL Cholesterol Improvement' },
-        cholTri: { us: -30,  si: -0.34, label: 'Blood Fats (Triglycerides) Treatment' },
-        waist:   { us: -2,   si: -5.08, label: 'Weight Management' }
+        fastGlu: { us: -27,   si: -1.52,  label: 'Fasting Glucose Management' },
+        sbp:     { usMale: -17.7, usFemale: -30.9, siMale: -17.7, siFemale: -30.9, label: 'Blood Pressure Control' },
+        cholHDL: { us: +16,   si: +0.40,  label: 'HDL Cholesterol Improvement' },
+        cholTri: { us: -45,   si: -0.51,  label: 'Blood Fats (Triglycerides) Treatment' },
+        waist:   { us: -2.81, si: -7.13,  label: 'Weight Management' }
     },
 
     /** Default slider values for the reset function. */

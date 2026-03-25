@@ -573,26 +573,36 @@ DRC.UIController = (() => {
     // ─── Rendering: Causality chains ────────────────────────────────────
 
     const CAUSALITY_CHAINS = [
-        { factors: ['waist'],   nodes: ['Waist', 'Insulin Resistance \u2191', 'Blood Sugar \u2191', 'Diabetes Risk \u2191'] },
-        { factors: ['cholHDL'], nodes: ['HDL Cholesterol \u2193', 'Lipid Metabolism \u2193', 'Vascular Health \u2193', 'Diabetes Risk \u2191'] },
-        { factors: ['fastGlu'], nodes: ['Fasting Glucose \u2191', 'Pancreatic Beta Cell Stress', 'Insulin Secretion \u2193', 'Diabetes Risk \u2191'] },
-        { factors: ['sbp'],     nodes: ['Blood Pressure \u2191', 'Vascular Dysfunction', 'Endothelial Damage', 'Diabetes Risk \u2191'] }
+        { factors: ['waist'],   riskNode: 0, nodes: ['Abdominal Fat \u2191', 'Insulin Resistance', '\u03b2-Cell Dysfunction', 'Diabetes Risk \u2191'] },
+        { factors: ['fastGlu'], riskNode: 2, nodes: ['Insulin Resistance', 'Gluconeogenesis \u2191', 'Fasting Glucose \u2191', 'Beta-Cell Exhaustion', 'Diabetes Risk \u2191'] },
+        { factors: ['cholHDL'], riskNode: 0, nodes: ['HDL Cholesterol \u2193', 'Pancreatic Protection \u2193', 'Beta-Cell Damage', 'Diabetes Risk \u2191'] },
+        { factors: ['sbp'],     riskNode: 0, nodes: ['Blood Pressure \u2191', 'Insulin Resistance \u2191', '\u03b2-Cell Dysfunction', 'Diabetes Risk \u2191'] },
+        { factors: ['cholTri'], riskNode: 3, nodes: ['Insulin Resistance', 'Lipolysis \u2191', 'Free Fatty Acids \u2191', 'Triglycerides \u2191'] }
     ];
 
-    /** Render causal pathway chains, highlighting those with elevated factors. */
-    const renderCausalityChains = (siVals, elevatedFactors) => {
+    /** Render causal pathway chains, highlighting those with elevated factors.
+     *  Sorted by absolute contribution size (largest first) when contributions available. */
+    const renderCausalityChains = (siVals, elevatedFactors, contributions) => {
         const container = el('causality-chain');
         if (!container) return;
         container.innerHTML = '';
 
-        CAUSALITY_CHAINS.forEach(chain => {
+        // Sort chains by absolute contribution (largest first), matching contribution chart order
+        const sorted = [...CAUSALITY_CHAINS].sort((a, b) => {
+            if (!contributions) return 0;
+            const absA = a.factors.reduce((sum, f) => sum + Math.abs(contributions[f] || 0), 0);
+            const absB = b.factors.reduce((sum, f) => sum + Math.abs(contributions[f] || 0), 0);
+            return absB - absA;
+        });
+
+        sorted.forEach(chain => {
             const highlighted = chain.factors.some(f => elevatedFactors.includes(f));
             const chainEl = document.createElement('div');
             chainEl.className = `causality-chain ${highlighted ? 'highlighted' : ''}`;
 
             chain.nodes.forEach((node, idx) => {
                 const nodeEl = document.createElement('div');
-                nodeEl.className = 'chain-node';
+                nodeEl.className = `chain-node${idx === chain.riskNode ? ' risk-node' : ''}`;
                 nodeEl.textContent = node;
                 chainEl.appendChild(nodeEl);
                 if (idx < chain.nodes.length - 1) {
