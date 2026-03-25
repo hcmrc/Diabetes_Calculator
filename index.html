@@ -7,11 +7,12 @@
          Mitigated by strict script-src, object-src 'none', and base-uri/form-action restrictions. -->
     <meta http-equiv="Content-Security-Policy"
           content="default-src 'self';
-                   script-src 'self' https://cdn.sheetjs.com;
+                   script-src 'self' 'wasm-unsafe-eval' https://cdn.sheetjs.com https://cdn.jsdelivr.net;
                    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
                    font-src https://fonts.gstatic.com https://fonts.googleapis.com;
-                   connect-src 'none';
-                   img-src 'self' data:;
+                   connect-src 'self' https://cdn.jsdelivr.net;
+                   worker-src 'self' blob:;
+                   img-src 'self' data: blob:;
                    object-src 'none';
                    base-uri 'self';
                    form-action 'self';
@@ -45,7 +46,7 @@
     <div class="nav-inner">
         <div class="nav-brand">
             <i data-lucide="activity" class="lucide-icon"></i>
-            <span>Diabetes Risk Calculator</span>
+            <span data-i18n="nav.brand">Diabetes Risk Calculator</span>
         </div>
         <div class="nav-actions">
             <div class="unit-toggle-nav">
@@ -66,13 +67,19 @@
             <!-- Timeline Toggle Button -->
             <button id="timelineToggleBtn" type="button" class="btn-timeline-toggle" aria-label="Toggle Risk Timeline">
                 <i data-lucide="line-chart" class="lucide-icon"></i>
-                <span class="btn-timeline-label">Risk Timeline</span>
+                <span class="btn-timeline-label" data-i18n="nav.riskTimeline">Risk Timeline</span>
             </button>
             <!-- Patient Management Button -->
             <button id="patientMenuBtn" type="button" class="btn-patient-menu" aria-label="Manage profiles">
                 <i data-lucide="user" class="lucide-icon"></i>
-                <span class="patient-name-label" id="patientNameLabel">Select Profile</span>
+                <span class="patient-name-label" id="patientNameLabel" data-i18n="nav.selectProfile">Select Profile</span>
                 <i data-lucide="chevron-down" class="lucide-icon patient-chevron"></i>
+            </button>
+            <!-- Language Button -->
+            <button id="langBtn" type="button" class="btn-language" aria-label="Select language" aria-expanded="false">
+                <span class="lang-flag" aria-hidden="true">🇺🇸</span>
+                <span class="lang-code">EN</span>
+                <i data-lucide="chevron-down" class="lucide-icon"></i>
             </button>
         </div>
     </div>
@@ -113,9 +120,9 @@
         </div>
     </div>
 
-    <!-- Import / Export -->
+    <!-- Import / Export / OCR -->
     <div class="pd-section pd-io-section">
-        <div class="pd-section-label">Import / Export (Excel / Encrypted)</div>
+        <div class="pd-section-label">Import / Export / OCR</div>
         <div class="pd-io-actions">
             <button id="pdExportBtn" type="button" class="pd-btn-io">
                 <i data-lucide="download" class="lucide-icon"></i> Export .xlsx / .drc
@@ -124,14 +131,23 @@
                 <i data-lucide="upload" class="lucide-icon"></i> Import .xlsx / .drc
             </label>
             <input type="file" id="pdImportFile" accept=".xlsx,.xls,.drc" style="display:none;" aria-label="Import patient profiles from Excel or encrypted .drc file" />
+            <!-- NEU: OCR Laborbericht Button -->
+            <button id="pdOCRBtn" type="button" class="pd-btn-io pd-btn-ocr">
+                <i data-lucide="scan-line" class="lucide-icon"></i> Scan Lab Report
+            </button>
         </div>
+        <!-- Hidden file inputs for OCR -->
+        <!-- Camera input: ONLY images, NO PDF (required for capture to work) -->
+        <input type="file" id="ocrCameraInput" accept="image/*" capture="environment" class="visually-hidden" aria-label="Take photo of laboratory report" />
+        <!-- File input: Images AND PDFs (for file upload) -->
+        <input type="file" id="ocrFileInput" accept="image/*,.pdf" multiple class="visually-hidden" aria-label="Upload laboratory report file(s)" />
     </div>
 </aside>
 
 <!-- ===================== HERO: RISK SCORE ===================== -->
 <section class="hero-section" id="risk-score-card">
     <div class="hero-inner">
-        <p class="hero-label">9-Year Diabetes Risk</p>
+        <p class="hero-label" data-i18n="hero.title">9-Year Diabetes Risk</p>
         <div class="hero-value" aria-live="polite">
             <span id="risk-percentage" class="risk-number">0.0</span><span class="risk-unit">%</span>
         </div>
@@ -142,13 +158,13 @@
         </div>
         <button id="expandHeroBtn" type="button" class="btn-expand-hero" aria-expanded="false">
             <i data-lucide="info" class="lucide-icon"></i>
-            <span id="expandHeroLabel">What does that mean?</span>
+            <span id="expandHeroLabel" data-i18n="hero.expandLabel">What does that mean?</span>
             <i data-lucide="chevron-down" class="lucide-icon expand-hero-chevron"></i>
         </button>
         <div id="hero-expandable" class="hero-expandable">
             <div id="icon-array" class="icon-array-container"></div>
             <p class="icon-array-label" id="icon-array-label"></p>
-            <p class="hero-subtitle">Based on the ARIC Study logistic regression model (Schmidt et al. 2005)</p>
+            <p class="hero-subtitle" data-i18n="hero.subtitle">Based on the ARIC Study logistic regression model (Schmidt et al. 2005)</p>
         </div>
     </div>
 </section>
@@ -191,7 +207,7 @@
         </div>
         <div class="panel-header-bar">
             <i data-lucide="sliders-horizontal" class="lucide-icon"></i>
-            <h2>Patient Data</h2>
+            <h2 data-i18n="sections.demographic">Patient Data</h2>
             <button class="panel-collapse-btn" data-panel="panel-input" aria-label="Collapse section" aria-expanded="true">
                 <i data-lucide="chevron-up" class="lucide-icon"></i>
             </button>
@@ -204,7 +220,7 @@
                 <button class="section-collapse-btn" data-target="non-mod-section" aria-expanded="true">
                     <i data-lucide="chevron-down" class="lucide-icon"></i>
                 </button>
-                <div class="input-section-label">
+                <div class="input-section-label" data-i18n="sections.demographic">
                     <i data-lucide="lock" class="lucide-icon"></i>
                     Demographic Data
                 </div>
@@ -219,7 +235,7 @@
                     <div class="input-label-row">
                         <label for="age-slider">
                             <i data-lucide="calendar" class="lucide-icon ig-icon"></i>
-                            Age
+                            <span data-i18n="factors.age">Age</span>
                         </label>
                     </div>
                     <div class="slider-wrapper">
@@ -237,7 +253,7 @@
                 <!-- Race -->
                 <div class="input-group" data-field="race">
                     <div class="input-label-row">
-                        <label><i data-lucide="users" class="lucide-icon ig-icon"></i> Ethnicity</label>
+                        <label><i data-lucide="users" class="lucide-icon ig-icon"></i> <span data-i18n="factors.race">Ethnicity</span></label>
                     </div>
                     <div class="toggle-group">
                         <span class="toggle-option">Other</span>
@@ -249,7 +265,7 @@
                 <!-- Parental History -->
                 <div class="input-group" data-field="parentHist">
                     <div class="input-label-row">
-                        <label><i data-lucide="users-round" class="lucide-icon ig-icon"></i> Parental Diabetes</label>
+                        <label><i data-lucide="users-round" class="lucide-icon ig-icon"></i> <span data-i18n="factors.parentHist">Parental Diabetes</span></label>
                     </div>
                     <div class="toggle-group">
                         <span class="toggle-option">No</span>
@@ -261,7 +277,7 @@
                 <!-- Sex -->
                 <div class="input-group" data-field="sex">
                     <div class="input-label-row">
-                        <label><i data-lucide="user" class="lucide-icon ig-icon"></i> Sex</label>
+                        <label><i data-lucide="user" class="lucide-icon ig-icon"></i> <span data-i18n="factors.sex">Sex</span></label>
                     </div>
                     <div class="toggle-group">
                         <span class="toggle-option">Female</span>
@@ -273,7 +289,7 @@
                 <!-- Height -->
                 <div class="input-group" data-field="height">
                     <div class="input-label-row">
-                        <label for="height-slider"><i data-lucide="move-vertical" class="lucide-icon ig-icon"></i> Height <span class="unit-label" id="height-unit">(in)</span></label>
+                        <label for="height-slider"><i data-lucide="move-vertical" class="lucide-icon ig-icon"></i> <span data-i18n="factors.height">Height</span> <span class="unit-label" id="height-unit">(in)</span></label>
                     </div>
                     <div class="slider-wrapper">
                         <input type="range" id="height-slider" min="48" max="84" value="66" step="1" class="slider">
@@ -307,7 +323,7 @@
             <!-- Fasting Glucose -->
             <div class="input-group" data-field="fastGlu">
                 <div class="input-label-row">
-                    <label for="fastGlu-slider"><i data-lucide="droplet" class="lucide-icon ig-icon"></i> Fasting Glucose <span class="unit-label" id="fastGlu-unit">(mg/dL)</span></label>
+                    <label for="fastGlu-slider"><i data-lucide="droplet" class="lucide-icon ig-icon"></i> <span data-i18n="factors.fastGlu">Fasting Glucose</span> <span class="unit-label" id="fastGlu-unit">(mg/dL)</span></label>
                 </div>
                 <div class="slider-wrapper">
                     <input type="range" id="fastGlu-slider" min="50" max="300" value="95" step="1" class="slider">
@@ -328,7 +344,7 @@
             <!-- Waist -->
             <div class="input-group" data-field="waist">
                 <div class="input-label-row">
-                    <label for="waist-slider"><i data-lucide="ruler" class="lucide-icon ig-icon"></i> Waist <span class="unit-label" id="waist-unit">(in)</span></label>
+                    <label for="waist-slider"><i data-lucide="ruler" class="lucide-icon ig-icon"></i> <span data-i18n="factors.waist">Waist</span> <span class="unit-label" id="waist-unit">(in)</span></label>
                 </div>
                 <div class="slider-wrapper">
                     <input type="range" id="waist-slider" min="26" max="60" value="36" step="1" class="slider">
@@ -348,7 +364,7 @@
             <!-- SBP -->
             <div class="input-group" data-field="sbp">
                 <div class="input-label-row">
-                    <label for="sbp-slider"><i data-lucide="heart-pulse" class="lucide-icon ig-icon"></i> Blood Pressure <span class="unit-label">(mmHg)</span></label>
+                    <label for="sbp-slider"><i data-lucide="heart-pulse" class="lucide-icon ig-icon"></i> <span data-i18n="factors.sbp">Blood Pressure</span> <span class="unit-label">(mmHg)</span></label>
                 </div>
                 <div class="slider-wrapper">
                     <input type="range" id="sbp-slider" min="80" max="220" value="120" step="1" class="slider">
@@ -369,7 +385,7 @@
             <!-- HDL -->
             <div class="input-group" data-field="cholHDL">
                 <div class="input-label-row">
-                    <label for="cholHDL-slider"><i data-lucide="droplets" class="lucide-icon ig-icon"></i> HDL Cholesterol <span class="unit-label" id="cholHDL-unit">(mg/dL)</span></label>
+                    <label for="cholHDL-slider"><i data-lucide="droplets" class="lucide-icon ig-icon"></i> <span data-i18n="factors.cholHDL">HDL Cholesterol</span> <span class="unit-label" id="cholHDL-unit">(mg/dL)</span></label>
                 </div>
                 <div class="slider-wrapper">
                     <input type="range" id="cholHDL-slider" min="20" max="100" value="50" step="1" class="slider">
@@ -390,7 +406,7 @@
             <!-- Triglycerides -->
             <div class="input-group" data-field="cholTri">
                 <div class="input-label-row">
-                    <label for="cholTri-slider"><i data-lucide="flask-conical" class="lucide-icon ig-icon"></i> Blood Fats (Triglycerides) <span class="unit-label" id="cholTri-unit">(mg/dL)</span></label>
+                    <label for="cholTri-slider"><i data-lucide="flask-conical" class="lucide-icon ig-icon"></i> <span data-i18n="factors.cholTri">Blood Fats (Triglycerides)</span> <span class="unit-label" id="cholTri-unit">(mg/dL)</span></label>
                 </div>
                 <div class="slider-wrapper">
                     <input type="range" id="cholTri-slider" min="50" max="500" value="150" step="1" class="slider">
@@ -474,6 +490,8 @@
 
 <!-- Application Scripts (modular architecture) -->
 <script src="js/config.js"></script>
+<script src="js/i18n/i18n-service.js"></script>
+<script src="js/i18n/i18n-ui.js"></script>
 <script src="js/conversion-service.js"></script>
 <script src="js/risk-model.js"></script>
 <script src="js/ui-helpers.js"></script>
@@ -482,9 +500,165 @@
 <script src="js/app.js"></script>
 <script src="js/crypto-service.js"></script>
 <script src="js/patient-manager.js"></script>
+<script src="js/profile-warning.js"></script>
 <script src="js/treatment-simulator.js"></script>
+<!-- OCR Feature Scripts -->
+<script src="js/lab-report-parser.js"></script>
+<script src="js/ocr-service.js"></script>
+<script src="js/ocr-ui-controller.js"></script>
 <script src="js/dark-mode.js"></script>
 <script src="js/main.js"></script>
+
+<!-- ===================== OCR MODAL ===================== -->
+<div class="modal-overlay ocr-modal-overlay" id="ocrModal" role="dialog" aria-modal="true" aria-labelledby="ocrModalTitle">
+    <div class="modal-content ocr-modal-content">
+        <!-- Header -->
+        <div class="modal-header">
+            <h3 id="ocrModalTitle">
+                <i data-lucide="scan-line" class="lucide-icon"></i> Scan Laboratory Report
+            </h3>
+            <button type="button" class="modal-close-btn" id="ocrModalClose" aria-label="Close">
+                <i data-lucide="x" class="lucide-icon"></i>
+            </button>
+        </div>
+
+        <!-- Step 1: Upload -->
+        <div class="ocr-step" id="ocrStepUpload">
+            <div class="modal-body">
+                <p class="modal-description">
+                    Upload a photo or PDF of your laboratory report.
+                    We will automatically extract your values.
+                </p>
+
+                <!-- Drop Zone -->
+                <div class="ocr-dropzone" id="ocrDropzone" role="button" tabindex="0" aria-label="Drop zone for file upload">
+                    <i data-lucide="upload-cloud" class="ocr-dropzone-icon"></i>
+                    <p class="ocr-dropzone-primary">Drag & drop file here</p>
+                    <p class="ocr-dropzone-secondary">or click to browse</p>
+                    <p class="ocr-dropzone-hint">Supports: JPG, PNG, PDF (max 10MB)</p>
+                </div>
+
+                <!-- Camera Button (Mobile) -->
+                <button type="button" class="ocr-camera-btn" id="ocrCameraBtn">
+                    <i data-lucide="camera" class="lucide-icon"></i> Take Photo
+                </button>
+
+                <!-- Privacy Notice -->
+                <div class="ocr-privacy-notice" role="note">
+                    <i data-lucide="shield-check" class="lucide-icon"></i>
+                    <span>Processing happens locally. No data is sent to servers.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Processing -->
+        <div class="ocr-step" id="ocrStepProcessing" style="display:none;">
+            <div class="modal-body">
+                <div class="ocr-processing">
+                    <div class="ocr-progress-ring" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                        <svg class="ocr-progress-svg" viewBox="0 0 100 100">
+                            <circle class="ocr-progress-track" cx="50" cy="50" r="45"/>
+                            <circle class="ocr-progress-fill" cx="50" cy="50" r="45" id="ocrProgressCircle"/>
+                        </svg>
+                        <span class="ocr-progress-percentage" id="ocrProgressPercentage">0%</span>
+                    </div>
+
+                    <div class="ocr-status-steps">
+                        <div class="ocr-status-step active" id="ocrStepStatusUpload">
+                            <i data-lucide="check-circle" class="ocr-step-icon"></i>
+                            <span class="ocr-step-label">Upload complete</span>
+                        </div>
+                        <div class="ocr-status-step" id="ocrStepStatusAnalyze">
+                            <i data-lucide="check-circle" class="ocr-step-icon"></i>
+                            <i data-lucide="loader-2" class="ocr-step-icon ocr-step-loading"></i>
+                            <span class="ocr-step-label">Analyzing image...</span>
+                        </div>
+                        <div class="ocr-status-step" id="ocrStepStatusExtract">
+                            <i data-lucide="check-circle" class="ocr-step-icon"></i>
+                            <i data-lucide="loader-2" class="ocr-step-icon ocr-step-loading"></i>
+                            <span class="ocr-step-label">Extracting values...</span>
+                        </div>
+                        <div class="ocr-status-step" id="ocrStepStatusValidate">
+                            <i data-lucide="check-circle" class="ocr-step-icon"></i>
+                            <i data-lucide="loader-2" class="ocr-step-icon ocr-step-loading"></i>
+                            <span class="ocr-step-label">Validating...</span>
+                        </div>
+                    </div>
+
+                    <button type="button" class="ocr-cancel-btn" id="ocrCancelBtn">Cancel Processing</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Review -->
+        <div class="ocr-step" id="ocrStepReview" style="display:none;">
+            <div class="modal-body">
+                <h4 class="ocr-review-title">Extracted Values</h4>
+                <p class="ocr-review-subtitle">Please review before importing.</p>
+
+                <div class="ocr-results-grid" id="ocrResultsGrid">
+                    <!-- Dynamically populated by JS -->
+                </div>
+
+                <div class="ocr-summary" id="ocrSummary" style="display:none;">
+                    <div class="ocr-summary-stats">
+                        <span class="ocr-stat">
+                            <i data-lucide="check-circle"></i>
+                            <strong id="ocrStatDetected">0</strong> detected
+                        </span>
+                        <span class="ocr-stat">
+                            <i data-lucide="alert-circle"></i>
+                            <strong id="ocrStatReview">0</strong> need review
+                        </span>
+                        <span class="ocr-stat">
+                            <i data-lucide="x-circle"></i>
+                            <strong id="ocrStatNotFound">0</strong> not found
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="modal-btn modal-btn-secondary" id="ocrBackBtn">Back</button>
+                <button type="button" class="modal-btn modal-btn-primary" id="ocrImportBtn">
+                    <i data-lucide="check" class="lucide-icon"></i> Import Values
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 4: Error -->
+        <div class="ocr-step" id="ocrStepError" style="display:none;">
+            <div class="modal-body">
+                <div class="ocr-error">
+                    <div class="ocr-error-icon">
+                        <i data-lucide="x-circle"></i>
+                    </div>
+                    <h3 class="ocr-error-title">Could Not Process Image</h3>
+                    <p class="ocr-error-message" id="ocrErrorMessage">
+                        The image quality is too low for reliable text recognition.
+                    </p>
+
+                    <div class="ocr-error-suggestions">
+                        <h4>Tips for better results:</h4>
+                        <ul>
+                            <li><i data-lucide="sun"></i> Use good lighting</li>
+                            <li><i data-lucide="scan"></i> Keep the document flat</li>
+                            <li><i data-lucide="camera"></i> Ensure text is in focus</li>
+                            <li><i data-lucide="maximize"></i> Capture the full page</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="modal-btn modal-btn-secondary" id="ocrManualBtn">Enter Manually</button>
+                <button type="button" class="modal-btn modal-btn-primary" id="ocrRetryBtn">
+                    <i data-lucide="refresh-cw" class="lucide-icon"></i> Try Again
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- ===================== ENCRYPTION MODALS ===================== -->
 
@@ -624,6 +798,44 @@
             <button type="button" class="modal-btn modal-btn-primary" id="pwdPromptDecryptBtn">
                 <i data-lucide="unlock" class="lucide-icon"></i>
                 Decrypt
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Profile Warning Modal - shown when simulating treatment without profile -->
+<div class="modal-overlay" id="profileWarningModal" role="dialog" aria-modal="true" aria-labelledby="profileWarnTitle" style="display:none;">
+    <div class="modal-content" style="max-width: 420px;">
+        <div class="modal-header">
+            <h3 id="profileWarnTitle">
+                <i data-lucide="alert-circle" class="lucide-icon"></i>
+                Save Your Data?
+            </h3>
+            <button type="button" class="modal-close-btn" id="profileWarnClose" aria-label="Close">
+                <i data-lucide="x" class="lucide-icon"></i>
+            </button>
+        </div>
+        <div class="modal-body" style="text-align: center; padding: 24px;">
+            <div class="profile-warn-icon">
+                <i data-lucide="alert-triangle" class="lucide-icon"></i>
+            </div>
+            <p style="font-size: 16px; color: var(--text-primary); margin-bottom: 8px; font-weight: 500;">
+                You haven't created a profile yet.
+            </p>
+            <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 24px;">
+                Create a profile to save your data and track your progress over time. Without a profile, your data may be lost when you close the browser.
+            </p>
+        </div>
+        <div class="modal-footer" style="flex-direction: column; gap: 10px;">
+            <button type="button" class="modal-btn modal-btn-primary" id="profileWarnCreateBtn">
+                <i data-lucide="user-plus" class="lucide-icon"></i>
+                Create Profile
+            </button>
+            <button type="button" class="modal-btn modal-btn-secondary" id="profileWarnContinueBtn">
+                Continue Without Saving
+            </button>
+            <button type="button" class="modal-btn modal-btn-secondary" id="profileWarnCancelBtn" style="border-color: transparent; color: var(--text-secondary);">
+                Cancel
             </button>
         </div>
     </div>

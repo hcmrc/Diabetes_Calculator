@@ -309,7 +309,11 @@ DRC.App = (() => {
 
     // ─── Initialization ─────────────────────────────────────────────────
 
-    const init = () => {
+    const init = async () => {
+        // Initialize i18n first
+        await DRC.I18n.init();
+        DRC.I18n.translateDOM();
+        DRC.I18nUI.init();
         // Slider event binding
         CFG.SLIDER_FIELDS.forEach(field => {
             const slider = document.getElementById(`${field}-slider`);
@@ -456,6 +460,11 @@ DRC.App = (() => {
         UI().updateWaistSegments(initMale, state.isMetric);
         UI().updateAllSliderFills();
         calculate();
+
+        // Subscribe to language changes to re-render dynamic content
+        DRC.I18n.onLanguageChange(() => {
+            _calculate();
+        });
     };
 
     /** Activate scenario-comparison mode (called by TreatmentSimulator). */
