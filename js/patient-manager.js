@@ -12,7 +12,7 @@
 'use strict';
 
 // Translation helper
-const t = (key, fallback) => DRC.I18n?.t(key, fallback) || fallback || key;
+const t = DRC.Utils.createTranslator();
 
 DRC.PatientManager = (() => {
     const STORAGE_KEY = 'drc_v1_patients';

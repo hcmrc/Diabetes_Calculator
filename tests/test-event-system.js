@@ -19,6 +19,7 @@ console.error = (...args) => {
 require('../js/config.js');
 require('../js/risk-model.js');
 require('../js/ui-helpers.js');
+require('../js/utils.js');
 require('../js/ui-controller.js');
 require('../js/app.js');
 

@@ -108,7 +108,7 @@ DRC.TimelineChart = (() => {
             clearContainer(container);
             const emptyMsg = document.createElement('p');
             emptyMsg.className = 'timeline-empty';
-            const t = (k, fb) => DRC.I18n?.t(k, fb) || fb;
+            const t = DRC.Utils.createTranslator();
             emptyMsg.textContent = t('timeline.empty', 'Set a baseline and add snapshots to track your risk over scenarios.');
             container.appendChild(emptyMsg);
             renderLegend();

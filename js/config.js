@@ -27,6 +27,30 @@
 window.DRC = window.DRC || {};
 
 /**
+ * ARIC study beta coefficients from Schmidt et al. (2005).
+ * Full clinical model: Clinical + Glucose + Lipids.
+ * @const {Object}
+ */
+const ARIC_BETAS = {
+    age:        0.0173,
+    race:       0.4433,
+    parentHist: 0.4981,
+    sbp:        0.0111,
+    waist:      0.0273,     // per cm
+    height:    -0.0326,     // per cm
+    fastGlu:    1.5849,     // per mmol/L
+    cholHDL:   -0.4718,     // per mmol/L
+    cholTri:    0.242       // per mmol/L
+};
+
+/**
+ * ARIC study intercept from Schmidt et al. (2005).
+ * Full clinical model intercept.
+ * @const {number}
+ */
+const ARIC_INTERCEPT = -9.9808;
+
+/**
  * Immutable application configuration.
  * @const {Object}
  * @memberof DRC
@@ -37,18 +61,7 @@ DRC.CONFIG = Object.freeze({
      * Logistic-regression beta coefficients from Schmidt et al. (2005).
      * All continuous predictors use SI units internally.
      */
-    BETAS: {
-        age:        0.0173,
-        race:       0.4433,
-        parentHist: 0.4981,
-        sbp:        0.0111,
-        waist:      0.0273,     // per cm
-        height:    -0.0326,     // per cm
-        fastGlu:    1.5849,     // per mmol/L
-        cholHDL:   -0.4718,     // per mmol/L
-        cholTri:    0.242,      // per mmol/L
-        sigma:     -9.9808      // intercept
-    },
+    BETAS: { ...ARIC_BETAS, sigma: ARIC_INTERCEPT },
 
     /**
      * Population means from the ARIC Study baseline cohort (all SI).
@@ -279,8 +292,8 @@ DRC.CONFIG = Object.freeze({
             description: 'Vollständiges Modell mit allen Laborwerten',
             accuracy: 'beste',
             accuracyLabel: 'Beste',
-            intercept: -9.9808,
-            betas: { age: 0.0173, race: 0.4433, parentHist: 0.4981, sbp: 0.0111, waist: 0.0273, height: -0.0326, fastGlu: 1.5849, cholHDL: -0.4718, cholTri: 0.242 },
+            intercept: ARIC_INTERCEPT,
+            betas: ARIC_BETAS,
             fields: ['age', 'sex', 'race', 'parentHist', 'sbp', 'height', 'waist', 'fastGlu', 'cholHDL', 'cholTri'],
             sliderFields: ['age', 'sbp', 'height', 'waist', 'fastGlu', 'cholHDL', 'cholTri'],
             treatmentFields: ['fastGlu', 'sbp', 'cholHDL', 'cholTri', 'waist'],

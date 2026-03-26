@@ -240,7 +240,7 @@ DRC.SettingsPanel = (() => {
         const CFG = DRC.CONFIG;
         if (!CFG || !CFG.MODELS) return;
 
-        const t = (k, fb) => DRC.I18n?.t(k, fb) || fb;
+        const t = DRC.Utils.createTranslator();
 
         // Get current model from app state
         const currentModelId = (DRC.App && DRC.App._getState) ? DRC.App._getState().activeModel : CFG.DEFAULT_MODEL;
@@ -326,7 +326,7 @@ DRC.SettingsPanel = (() => {
         const CFG = DRC.CONFIG;
         if (!CFG || !CFG.MODELS) return;
 
-        const t = (k, fb) => DRC.I18n?.t(k, fb) || fb;
+        const t = DRC.Utils.createTranslator();
 
         // Get current model
         const currentModelId = (DRC.App && DRC.App._getState) ? DRC.App._getState().activeModel : CFG.DEFAULT_MODEL;

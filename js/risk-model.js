@@ -13,7 +13,7 @@
 'use strict';
 
 DRC.RiskModel = (() => {
-    const { BETAS: B, MEANS: M, CONVERSIONS: C, RANGES, THRESHOLDS: T } = DRC.CONFIG;
+    const { MEANS: M, CONVERSIONS: C, RANGES, THRESHOLDS: T } = DRC.CONFIG;
 
     /**
      * Return the active model object, falling back to the default model.

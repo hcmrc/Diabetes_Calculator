@@ -1704,6 +1704,7 @@ body.ocr-modal-open .col-step-label {
     transition: box-shadow 0.18s ease, background 0.18s ease;
 }
 
+[data-field]:hover,
 [data-field].factor-highlight {
     background: rgba(0, 102, 204, 0.15);
     box-shadow: 0 0 0 1px rgba(0, 102, 204, 0.45);

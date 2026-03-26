@@ -34,6 +34,9 @@ global.DRC    = {
     },
     UIHelpers: {
         refreshIcons: () => {}
+    },
+    Utils: {
+        createTranslator: () => (key, fallback) => fallback || key
     }
 };
 

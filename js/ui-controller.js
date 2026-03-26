@@ -22,12 +22,68 @@ DRC.UIController = (() => {
     const CFG = DRC.CONFIG;
 
     // Translation helper
-    const t = (key, fallback) => DRC.I18n?.t(key, fallback) || fallback || key;
+    const t = DRC.Utils.createTranslator();
 
     // Module-scope guards: delegated listeners registered at most once
     let _filterHandlerAttached = false;
     let _rowClickHandlerAttached = false;
     let _treatmentDelegationAttached = false;
+
+    // ─── XSS-safe DOM element creation helper ─────────────────────────────
+
+    /**
+     * Safely create a DOM element with attributes, classes, and children.
+     * Prevents XSS by using textContent instead of innerHTML for all content.
+     *
+     * @param {string} tag - HTML tag name
+     * @param {Object} options - Configuration object
+     * @param {string|string[]} [options.className] - CSS class(es)
+     * @param {Object} [options.attrs] - Attributes to set (key-value pairs)
+     * @param {string} [options.text] - Text content (safely set via textContent)
+     * @param {HTMLElement[]} [options.children] - Child elements to append
+     * @param {Object} [options.style] - Inline styles (key-value pairs)
+     * @returns {HTMLElement} The created element
+     */
+    const createSafeElement = (tag, options = {}) => {
+        const element = document.createElement(tag);
+
+        // Set classes
+        if (options.className) {
+            if (Array.isArray(options.className)) {
+                element.className = options.className.join(' ');
+            } else {
+                element.className = options.className;
+            }
+        }
+
+        // Set attributes
+        if (options.attrs) {
+            Object.entries(options.attrs).forEach(([key, value]) => {
+                element.setAttribute(key, value);
+            });
+        }
+
+        // Set text content (XSS-safe)
+        if (options.text !== undefined && options.text !== null) {
+            element.textContent = options.text;
+        }
+
+        // Set inline styles
+        if (options.style) {
+            Object.entries(options.style).forEach(([key, value]) => {
+                element.style[key] = value;
+            });
+        }
+
+        // Append children
+        if (options.children) {
+            options.children.forEach(child => {
+                if (child) element.appendChild(child);
+            });
+        }
+
+        return element;
+    };
 
     // ─── Risk-level color mapping ───────────────────────────────────────
     // High-risk threshold (26%) aligns with Schmidt et al. (2005) published cutoff:
@@ -186,35 +242,11 @@ DRC.UIController = (() => {
     // ─── Rendering: Contribution chart ──────────────────────────────────
 
     /**
-     * Render the diverging bar (tornado) chart of factor contributions.
-     *
-     * Renders marginal probability contributions (Robnik-Šikonja & Kononenko, 2008)
-     * computed via RiskModel.computeMarginalContributions (Linear SHAP decomposition
-     * in log-odds space per Lundberg & Lee, 2017, transformed to probability space).
-     * Bar width scaled relative to the largest absolute contribution in the visible set.
+     * Setup delegated event handlers for the contribution chart.
+     * Guards ensure handlers are attached at most once.
+     * @param {HTMLElement} container
      */
-    const renderContributionChart = (summaryData) => {
-        const container = el('contribution-chart');
-        if (!container) return;
-        container.innerHTML = '';
-
-        const contributions = summaryData.contributions;
-        const pFull = summaryData.pFull;
-        const pBaseline = summaryData.pBaseline;
-        const netDeviation = summaryData.netDeviation;
-
-        // Filter contributions to only include factors in the active model
-        const activeModel = DRC.App?.getActiveModel?.();
-        const modelBetaKeys = activeModel ? Object.keys(activeModel.betas) : null;
-        if (modelBetaKeys) {
-            Object.keys(contributions).forEach(key => {
-                if (!modelBetaKeys.includes(key)) delete contributions[key];
-            });
-        }
-
-        // Default: show all factors (false = no filter active)
-        const filterState = container.getAttribute('data-filter-risk') === 'true';
-
+    const setupContributionEvents = (container) => {
         if (!_filterHandlerAttached) {
             container.addEventListener('change', (e) => {
                 if (e.target.id === 'risk-filter-toggle') {
@@ -235,140 +267,699 @@ DRC.UIController = (() => {
             });
             _rowClickHandlerAttached = true;
         }
+    };
 
-        // Summary card — prominent comparison at top
+    /**
+     * Filter contributions to only include factors in the active model.
+     * Mutates the contributions object in place.
+     * @param {Object} contributions
+     * @param {Object} model
+     * @returns {Object} filtered contributions
+     */
+    const filterByModel = (contributions, model) => {
+        const modelBetaKeys = model ? Object.keys(model.betas) : null;
+        if (modelBetaKeys) {
+            Object.keys(contributions).forEach(key => {
+                if (!modelBetaKeys.includes(key)) delete contributions[key];
+            });
+        }
+        return contributions;
+    };
+
+    /**
+     * Render the summary banner showing risk comparison.
+     * @param {HTMLElement} container
+     * @param {Object} data - { pFull, pBaseline, netDeviation }
+     */
+    const renderSummaryBanner = (container, { pFull, pBaseline, netDeviation }) => {
         const pFullPct = (pFull * 100).toFixed(1);
         const pBaselinePct = (pBaseline * 100).toFixed(1);
         const netDeviationPct = Math.abs(netDeviation * 100).toFixed(1);
         const isLower = netDeviation < 0;
         const comparisonWord = isLower ? t('chart.lower', 'lower') : t('chart.higher', 'higher');
-
         const { level: riskLevel } = getRiskLevel(pFull * 100);
 
-        const summaryBanner = document.createElement('div');
-        summaryBanner.className = 'contrib-summary-card';
-        summaryBanner.setAttribute('data-direction', isLower ? 'lower' : 'higher');
-        summaryBanner.setAttribute('data-risk-level', riskLevel);
-        summaryBanner.innerHTML = `
-            <div class="contrib-summary-main">
-                <span class="contrib-summary-your-risk">${pFullPct}%</span>
-                <span class="contrib-summary-label">${t('chart.yourRisk', 'your risk')}</span>
-            </div>
-            <div class="contrib-summary-divider"></div>
-            <div class="contrib-summary-comparison">
-                <div class="contrib-summary-sentence">
-                    <span class="contrib-summary-delta ${isLower ? 'is-lower' : 'is-higher'}">${netDeviationPct}% ${comparisonWord}</span>
-                    ${t('chart.thanAverage', 'than the average of')} <strong>${pBaselinePct}%</strong>
-                </div>
-            </div>
-        `;
+        const summaryBanner = createSafeElement('div', {
+            className: 'contrib-summary-card',
+            attrs: {
+                'data-direction': isLower ? 'lower' : 'higher',
+                'data-risk-level': riskLevel
+            }
+        });
+
+        // Build summary main section
+        const summaryMain = createSafeElement('div', { className: 'contrib-summary-main' });
+        const riskSpan = createSafeElement('span', {
+            className: 'contrib-summary-your-risk',
+            text: pFullPct + '%'
+        });
+        const labelSpan = createSafeElement('span', {
+            className: 'contrib-summary-label',
+            text: t('chart.yourRisk', 'your risk')
+        });
+        summaryMain.appendChild(riskSpan);
+        summaryMain.appendChild(labelSpan);
+
+        // Build divider
+        const divider = createSafeElement('div', { className: 'contrib-summary-divider' });
+
+        // Build comparison section
+        const comparisonDiv = createSafeElement('div', { className: 'contrib-summary-comparison' });
+        const sentenceDiv = createSafeElement('div', { className: 'contrib-summary-sentence' });
+
+        const deltaSpan = createSafeElement('span', {
+            className: ['contrib-summary-delta', isLower ? 'is-lower' : 'is-higher'],
+            text: netDeviationPct + '% ' + comparisonWord
+        });
+
+        const thanAvgText = document.createTextNode(t('chart.thanAverage', 'than the average of') + ' ');
+        const baselineStrong = createSafeElement('strong', { text: pBaselinePct + '%' });
+
+        sentenceDiv.appendChild(deltaSpan);
+        sentenceDiv.appendChild(thanAvgText);
+        sentenceDiv.appendChild(baselineStrong);
+        comparisonDiv.appendChild(sentenceDiv);
+
+        // Assemble banner
+        summaryBanner.appendChild(summaryMain);
+        summaryBanner.appendChild(divider);
+        summaryBanner.appendChild(comparisonDiv);
         container.appendChild(summaryBanner);
+    };
 
-        // Filter toggle — above column headers
-        const filterToggle = document.createElement('div');
-        filterToggle.className = 'contrib-filter-toggle';
-        filterToggle.innerHTML = `
-            <span class="contrib-filter-label">${t('chart.filterLabel', 'Show above average risk factors only')}</span>
-            <label class="toggle-switch" style="transform:scale(0.75);">
-                <input type="checkbox" id="risk-filter-toggle" ${filterState ? 'checked' : ''}>
-                <span class="toggle-slider"></span>
-            </label>
-        `;
+    /**
+     * Render the filter toggle checkbox.
+     * @param {HTMLElement} container
+     * @param {boolean} isActive
+     */
+    const renderFilterToggle = (container, isActive) => {
+        const filterToggle = createSafeElement('div', { className: 'contrib-filter-toggle' });
+
+        const filterLabel = createSafeElement('span', {
+            className: 'contrib-filter-label',
+            text: t('chart.filterLabel', 'Show above average risk factors only')
+        });
+
+        const toggleLabel = createSafeElement('label', {
+            className: 'toggle-switch',
+            style: { transform: 'scale(0.75)' }
+        });
+        const checkbox = createSafeElement('input', {
+            attrs: {
+                type: 'checkbox',
+                id: 'risk-filter-toggle',
+                ...(isActive ? { checked: 'checked' } : {})
+            }
+        });
+        const toggleSlider = createSafeElement('span', { className: 'toggle-slider' });
+
+        toggleLabel.appendChild(checkbox);
+        toggleLabel.appendChild(toggleSlider);
+        filterToggle.appendChild(filterLabel);
+        filterToggle.appendChild(toggleLabel);
         container.appendChild(filterToggle);
+    };
 
-        // Header row with column labels
-        const headerRow = document.createElement('div');
-        headerRow.className = 'contrib-header';
-        headerRow.innerHTML = `
-            <div class="contrib-header-left"></div>
-            <div class="contrib-header-center">
-                <div class="contrib-header-left-side"><span class="contrib-label-full">${t('chart.betterThanAvg', 'Better than average')}</span><span class="contrib-label-short">${t('chart.betterShort', 'Better')}</span></div>
-                <div class="contrib-header-center-label"><span class="contrib-label-full">${t('chart.average', 'Average')}</span><span class="contrib-label-short">${t('chart.avgShort', 'Avg')}</span></div>
-                <div class="contrib-header-right-side"><span class="contrib-label-full">${t('chart.worseThanAvg', 'Worse than average')}</span><span class="contrib-label-short">${t('chart.worseShort', 'Worse')}</span></div>
-            </div>
-            <div class="contrib-header-right"></div>
-        `;
+    /**
+     * Render the column header row for the contribution chart.
+     * @param {HTMLElement} container
+     */
+    const renderContributionHeader = (container) => {
+        const headerRow = createSafeElement('div', { className: 'contrib-header' });
+        const headerLeft = createSafeElement('div', { className: 'contrib-header-left' });
+        const headerCenter = createSafeElement('div', { className: 'contrib-header-center' });
+
+        const leftSide = createSafeElement('div', { className: 'contrib-header-left-side' });
+        const betterFull = createSafeElement('span', {
+            className: 'contrib-label-full',
+            text: t('chart.betterThanAvg', 'Better than average')
+        });
+        const betterShort = createSafeElement('span', {
+            className: 'contrib-label-short',
+            text: t('chart.betterShort', 'Better')
+        });
+        leftSide.appendChild(betterFull);
+        leftSide.appendChild(betterShort);
+
+        const centerLabel = createSafeElement('div', { className: 'contrib-header-center-label' });
+        const avgFull = createSafeElement('span', {
+            className: 'contrib-label-full',
+            text: t('chart.average', 'Average')
+        });
+        const avgShort = createSafeElement('span', {
+            className: 'contrib-label-short',
+            text: t('chart.avgShort', 'Avg')
+        });
+        centerLabel.appendChild(avgFull);
+        centerLabel.appendChild(avgShort);
+
+        const rightSide = createSafeElement('div', { className: 'contrib-header-right-side' });
+        const worseFull = createSafeElement('span', {
+            className: 'contrib-label-full',
+            text: t('chart.worseThanAvg', 'Worse than average')
+        });
+        const worseShort = createSafeElement('span', {
+            className: 'contrib-label-short',
+            text: t('chart.worseShort', 'Worse')
+        });
+        rightSide.appendChild(worseFull);
+        rightSide.appendChild(worseShort);
+
+        headerCenter.appendChild(leftSide);
+        headerCenter.appendChild(centerLabel);
+        headerCenter.appendChild(rightSide);
+
+        const headerRight = createSafeElement('div', { className: 'contrib-header-right' });
+
+        headerRow.appendChild(headerLeft);
+        headerRow.appendChild(headerCenter);
+        headerRow.appendChild(headerRight);
         container.appendChild(headerRow);
+    };
 
+    /**
+     * Build info text for a contribution row based on factor type.
+     * @param {Object} params - { key, isPositive, isAboveAverage, pctDisplay }
+     * @returns {string} info text
+     */
+    const buildContributionInfoText = ({ key, isPositive, isAboveAverage, pctDisplay }) => {
+        const isProtectiveFactor = CFG.BETAS[key] < 0;
+        const isBinaryFactor = ['race', 'parentHist'].includes(key);
+        const label = t(`factors.${key}`, CFG.LABELS[key]);
+        const actionVerb = isProtectiveFactor
+            ? t('chart.verb.increasing', 'Increasing')
+            : t('chart.verb.lowering', 'Lowering');
+
+        if (isBinaryFactor) {
+            const tmpl = isPositive
+                ? t('chart.info.binaryIncrease', 'Your {factor} increases your overall diabetes risk by {pct}. Check the treatment section on the right.')
+                : t('chart.info.binaryDecrease', 'Your {factor} decreases your overall diabetes risk by {pct} compared to an average person.');
+            return tmpl.replace('{factor}', label.toLowerCase()).replace('{pct}', pctDisplay);
+        }
+
+        const infoKey = isPositive
+            ? (isAboveAverage ? 'aboveIncrease' : 'belowIncrease')
+            : (isAboveAverage ? 'aboveDecrease' : 'belowDecrease');
+
+        const fallbacks = {
+            aboveIncrease: 'Your {factor} is above average and increases your overall diabetes risk by {pct} compared to an average value. {verb} it would help to decrease your overall risk. Check the treatment section on the right.',
+            belowIncrease: 'Your {factor} is below average and increases your overall diabetes risk by {pct} compared to an average value. {verb} it would help to decrease your overall risk. Check the treatment section on the right.',
+            aboveDecrease: 'Your {factor} is above average and decreases your overall diabetes risk by {pct} compared to an average value.',
+            belowDecrease: 'Your {factor} is below average and decreases your overall diabetes risk by {pct} compared to an average value.'
+        };
+
+        return t(`chart.info.${infoKey}`, fallbacks[infoKey])
+            .replace('{factor}', label.toLowerCase())
+            .replace('{pct}', pctDisplay)
+            .replace('{verb}', actionVerb);
+    };
+
+    /**
+     * Build a single contribution row element.
+     * @param {Object} params - { key, deltaI, maxAbs }
+     * @returns {HTMLElement} row element
+     */
+    const buildContributionRow = ({ key, deltaI, maxAbs }) => {
+        const barWidth = (Math.abs(deltaI) / maxAbs) * 100;
+        const isPositive = deltaI >= 0;
+        const absDeltaPct = Math.abs(deltaI) * 100;
+        const pctDisplay = absDeltaPct < 0.1 ? '<0.1%' : (absDeltaPct.toFixed(1) + '%');
+        const signedDisplay = isPositive ? '+' + pctDisplay : '−' + pctDisplay;
+
+        const isProtectiveFactor = CFG.BETAS[key] < 0;
+        const isAboveAverage = isProtectiveFactor ? !isPositive : isPositive;
+        const label = t(`factors.${key}`, CFG.LABELS[key]);
+
+        const infoText = buildContributionInfoText({ key, isPositive, isAboveAverage, pctDisplay });
+
+        const row = createSafeElement('div', {
+            className: 'contrib-row',
+            attrs: { 'data-field': key }
+        });
+
+        // Build inner row
+        const rowInner = createSafeElement('div', { className: 'contrib-row-inner' });
+
+        // Label cell
+        const labelCell = createSafeElement('div', { className: 'contrib-row-label-cell' });
+        const labelSpan = createSafeElement('span', { className: 'contrib-row-label', text: label });
+        labelCell.appendChild(labelSpan);
+
+        // Bar container
+        const barContainer = createSafeElement('div', { className: 'contrib-bar' });
+        const barLeft = createSafeElement('div', { className: 'contrib-bar-half contrib-bar-left' });
+        if (!isPositive) {
+            const barFill = createSafeElement('div', {
+                className: 'contrib-bar-fill bar-negative',
+                style: { width: barWidth + '%' }
+            });
+            barLeft.appendChild(barFill);
+        }
+
+        const barCenter = createSafeElement('div', { className: 'contrib-bar-center' });
+
+        const barRight = createSafeElement('div', { className: 'contrib-bar-half contrib-bar-right' });
+        if (isPositive) {
+            const barFill = createSafeElement('div', {
+                className: 'contrib-bar-fill bar-positive',
+                style: { width: barWidth + '%' }
+            });
+            barRight.appendChild(barFill);
+        }
+
+        barContainer.appendChild(barLeft);
+        barContainer.appendChild(barCenter);
+        barContainer.appendChild(barRight);
+
+        // Value cell
+        const valueCell = createSafeElement('div', {
+            className: ['contrib-row-value', isPositive ? 'value-positive' : 'value-negative']
+        });
+        const valuePct = createSafeElement('span', { className: 'contrib-value-pct', text: signedDisplay });
+        const valueHint = createSafeElement('span', { className: 'contrib-value-hint', text: t('chart.clickForInfo', 'Click for info') });
+        valueCell.appendChild(valuePct);
+        valueCell.appendChild(valueHint);
+
+        // Assemble row inner
+        rowInner.appendChild(labelCell);
+        rowInner.appendChild(barContainer);
+        rowInner.appendChild(valueCell);
+
+        // Detail section
+        const detailDiv = createSafeElement('div', { className: 'contrib-row-detail' });
+        const detailText = createSafeElement('p', { className: 'contrib-detail-text', text: infoText });
+        detailDiv.appendChild(detailText);
+
+        // Assemble full row
+        row.appendChild(rowInner);
+        row.appendChild(detailDiv);
+
+        return row;
+    };
+
+    /**
+     * Render all contribution rows.
+     * @param {HTMLElement} container
+     * @param {Object} contributions
+     * @param {boolean} filterState
+     */
+    const renderContributionRows = (container, contributions, filterState) => {
         const items = Object.entries(contributions)
-            .map(([key, deltaI]) => ({
-                key, deltaI,
-                abs: Math.abs(deltaI)
-            }))
+            .map(([key, deltaI]) => ({ key, deltaI, abs: Math.abs(deltaI) }))
             .sort((a, b) => b.abs - a.abs);
 
         const filteredItems = filterState ? items.filter(i => i.deltaI > 0) : items;
         const maxAbs = filteredItems.reduce((max, i) => i.abs > max ? i.abs : max, 0.001);
 
         filteredItems.forEach(({ key, deltaI }) => {
-            const barWidth = (Math.abs(deltaI) / maxAbs) * 100;
-            const isPositive = deltaI >= 0;
-            const absDeltaPct = Math.abs(deltaI) * 100;
-            const pctDisplay = absDeltaPct < 0.1 ? '<0.1%' : (absDeltaPct.toFixed(1) + '%');
-            const signedDisplay = isPositive ? '+' + pctDisplay : '−' + pctDisplay;
-
-            // Protective factors have negative beta coefficients (height, cholHDL)
-            // Binary factors (race, parentHist) don't have "above/below average" values
-            const isProtectiveFactor = CFG.BETAS[key] < 0;
-            const isBinaryFactor = ['race', 'parentHist'].includes(key);
-            const isAboveAverage = isProtectiveFactor ? !isPositive : isPositive;
-            const label = t(`factors.${key}`, CFG.LABELS[key]);
-
-            const actionVerb = isProtectiveFactor ? t('chart.verb.increasing', 'Increasing') : t('chart.verb.lowering', 'Lowering');
-            let infoText;
-            if (isBinaryFactor) {
-                const tmpl = isPositive
-                    ? t('chart.info.binaryIncrease', 'Your {factor} increases your overall diabetes risk by {pct}. <strong>Check the treatment section on the right.</strong>')
-                    : t('chart.info.binaryDecrease', 'Your {factor} decreases your overall diabetes risk by {pct} compared to an average person.');
-                infoText = tmpl.replace('{factor}', label.toLowerCase()).replace('{pct}', pctDisplay);
-            } else {
-                const infoKey = isPositive
-                    ? (isAboveAverage ? 'aboveIncrease' : 'belowIncrease')
-                    : (isAboveAverage ? 'aboveDecrease' : 'belowDecrease');
-                const fallbacks = {
-                    aboveIncrease: 'Your {factor} is above average and increases your overall diabetes risk by {pct} compared to an average value. <strong>{verb} it would help to decrease your overall risk. Check the treatment section on the right.</strong>',
-                    belowIncrease: 'Your {factor} is below average and increases your overall diabetes risk by {pct} compared to an average value. <strong>{verb} it would help to decrease your overall risk. Check the treatment section on the right.</strong>',
-                    aboveDecrease: 'Your {factor} is above average and decreases your overall diabetes risk by {pct} compared to an average value.',
-                    belowDecrease: 'Your {factor} is below average and decreases your overall diabetes risk by {pct} compared to an average value.'
-                };
-                infoText = t(`chart.info.${infoKey}`, fallbacks[infoKey])
-                    .replace('{factor}', label.toLowerCase())
-                    .replace('{pct}', pctDisplay)
-                    .replace('{verb}', actionVerb);
-            }
-
-            const row = document.createElement('div');
-            row.className = 'contrib-row';
-            row.setAttribute('data-field', key);
-
-            row.innerHTML = `
-                <div class="contrib-row-inner">
-                    <div class="contrib-row-label-cell">
-                        <span class="contrib-row-label">${label}</span>
-                    </div>
-                    <div class="contrib-bar">
-                        <div class="contrib-bar-half contrib-bar-left">
-                            ${!isPositive ? `<div class="contrib-bar-fill bar-negative" style="width:${barWidth}%"></div>` : ''}
-                        </div>
-                        <div class="contrib-bar-center"></div>
-                        <div class="contrib-bar-half contrib-bar-right">
-                            ${isPositive ? `<div class="contrib-bar-fill bar-positive" style="width:${barWidth}%"></div>` : ''}
-                        </div>
-                    </div>
-                    <div class="contrib-row-value ${isPositive ? 'value-positive' : 'value-negative'}">
-                        <span class="contrib-value-pct">${signedDisplay}</span>
-                        <span class="contrib-value-hint">${t('chart.clickForInfo', 'Click for info')}</span>
-                    </div>
-                </div>
-                <div class="contrib-row-detail">
-                    <p class="contrib-detail-text">${infoText}</p>
-                </div>
-            `;
+            const row = buildContributionRow({ key, deltaI, maxAbs });
             container.appendChild(row);
         });
     };
 
+    /**
+     * Render the diverging bar (tornado) chart of factor contributions.
+     *
+     * Renders marginal probability contributions (Robnik-Šikonja & Kononenko, 2008)
+     * computed via RiskModel.computeMarginalContributions (Linear SHAP decomposition
+     * in log-odds space per Lundberg & Lee, 2017, transformed to probability space).
+     * Bar width scaled relative to the largest absolute contribution in the visible set.
+     */
+    const renderContributionChart = (summaryData) => {
+        const container = el('contribution-chart');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const { contributions, pFull, pBaseline, netDeviation } = summaryData;
+        const activeModel = DRC.App?.getActiveModel?.();
+
+        filterByModel(contributions, activeModel);
+        setupContributionEvents(container);
+
+        const filterState = container.getAttribute('data-filter-risk') === 'true';
+
+        renderSummaryBanner(container, { pFull, pBaseline, netDeviation });
+        renderFilterToggle(container, filterState);
+        renderContributionHeader(container);
+        renderContributionRows(container, contributions, filterState);
+    };
+
     // ─── Rendering: Treatment overview ──────────────────────────────────
+
+    // ===== Shared Helpers (used by both contribution and treatment charts) =====
+
+    /**
+     * Filter items to only include factors in the active model.
+     * @param {Array} items - Array of items with 'factor' property
+     * @param {Object} model - Active model with treatmentFields array
+     * @returns {Array} Filtered items
+     */
+    const filterContributionsByModel = (items, model) => {
+        const treatmentFields = model?.treatmentFields;
+        return treatmentFields ? items.filter(i => treatmentFields.includes(i.factor)) : items;
+    };
+
+    /**
+     * Calculate maximum value from array using accessor function.
+     * @param {Array} items - Array of items
+     * @param {Function} accessor - Function to extract value (e.g., i => i.pct)
+     * @param {number} minValue - Minimum return value (default: 1)
+     * @returns {number} Maximum value
+     */
+    const calculateMaxValue = (items, accessor, minValue = 1) =>
+        items.reduce((max, i) => Math.max(max, accessor(i)), minValue);
+
+    /**
+     * Calculate bar width as percentage relative to max.
+     * @param {number} value - Current value
+     * @param {number} max - Maximum value
+     * @returns {number} Width percentage (0-100)
+     */
+    const calculateBarWidth = (value, max) => max > 0 ? (value / max) * 100 : 0;
+
+    /**
+     * Format risk percentage with sign and threshold display.
+     * @param {number} value - Risk value (0-1)
+     * @returns {string} Formatted string like '+1.5' or '−0.8' or '<0.1'
+     */
+    const formatRiskPercent = (value) => {
+        const v = Math.abs(value) * 100;
+        const sign = value >= 0 ? '+' : '−';
+        const disp = v < 0.1 ? '<0.1' : v.toFixed(1);
+        return `${sign}${disp}`;
+    };
+
+    // ===== Treatment-specific calculation functions =====
+
+    /**
+     * Build therapy HTML string for a treatment factor.
+     * @param {string} factor - Factor key
+     * @param {Object} treatment - Treatment config
+     * @param {boolean} waistIsHigh - Whether waist is clinically elevated
+     * @returns {string} HTML string for therapies
+     */
+    const buildTherapiesHTML = (factor, treatment, waistIsHigh) => {
+        let therapies = [...treatment.therapies];
+        if (factor === 'waist' && waistIsHigh && treatment.surgicalOption) {
+            therapies.push(treatment.surgicalOption);
+        }
+        return therapies.map((tItem, idx) => {
+            const therapyName = t(`treatments.${factor}.therapy${idx+1}_name`, tItem.name);
+            const therapyDesc = t(`treatments.${factor}.therapy${idx+1}_desc`, tItem.desc);
+            return `<div class="therapy-mini"><div><strong>${escapeHtml(therapyName)}:</strong> ${escapeHtml(therapyDesc)}</div></div>`;
+        }).join('');
+    };
+
+    /**
+     * Calculate treatment items from contributions and marginals.
+     * @param {Object} contributions - Log-odds contributions by factor
+     * @param {Object} marginalContributions - Marginal contributions
+     * @param {Object} treatStatus - Object with elevatedFactors array
+     * @returns {Array} Sorted treatment items
+     */
+    const calculateTreatmentItems = (contributions, marginalContributions, treatStatus) => {
+        const totalAbs = Object.values(contributions).reduce((sum, v) => sum + Math.abs(v), 0);
+
+        return Object.keys(CFG.TREATMENTS).map(factor => {
+            const marginalDelta = marginalContributions[factor] || 0;
+            const isAboveAverage = marginalDelta >= 0;
+            const isClinicallyElevated = treatStatus.elevatedFactors.includes(factor);
+            const isIndicated = isClinicallyElevated && isAboveAverage;
+            const isElevated = isAboveAverage && !isClinicallyElevated;
+
+            return {
+                factor,
+                treatment: CFG.TREATMENTS[factor],
+                absContrib: Math.abs(contributions[factor] || 0),
+                pct: totalAbs > 0 ? (Math.abs(contributions[factor] || 0) / totalAbs) * 100 : 0,
+                marginalDelta,
+                isIndicated,
+                isElevated,
+                isAboveAverage
+            };
+        }).sort((a, b) => b.absContrib - a.absContrib);
+    };
+
+    /**
+     * Determine treatment status info (icon, label, class) based on state.
+     * @param {boolean} isIndicated - Whether treatment is clinically indicated
+     * @param {boolean} isElevated - Whether factor is above average
+     * @returns {Object} { statusIcon, statusLabel, statusClass }
+     */
+    const determineTreatmentStatus = (isIndicated, isElevated) => {
+        if (isIndicated) {
+            return {
+                statusIcon: 'alert-triangle',
+                statusLabel: t('status.indicated', 'Indicated'),
+                statusClass: 'status-indicated'
+            };
+        }
+        if (isElevated) {
+            return {
+                statusIcon: 'alert-circle',
+                statusLabel: t('status.elevated', 'Elevated'),
+                statusClass: 'status-elevated'
+            };
+        }
+        return {
+            statusIcon: 'check-circle',
+            statusLabel: t('status.normal', 'Normal'),
+            statusClass: 'status-normal'
+        };
+    };
+
+    // ===== Treatment DOM rendering functions =====
+
+    /**
+     * Parse therapy HTML and append to details container.
+     * @param {HTMLElement} detailsInner - Container for therapy items
+     * @param {string} therapiesHTML - HTML string of therapies
+     */
+    const appendTherapiesToDetails = (detailsInner, therapiesHTML) => {
+        const parser = new DOMParser();
+        const parsedDoc = parser.parseFromString(therapiesHTML, 'text/html');
+        const therapyElements = parsedDoc.body.children;
+        while (therapyElements.length > 0) {
+            detailsInner.appendChild(therapyElements[0]);
+        }
+    };
+
+    /**
+     * Create simulate button for indicated treatments.
+     * @param {string} factor - Factor key
+     * @returns {HTMLElement} Simulate button element
+     */
+    const createSimulateButton = (factor) => {
+        const simButton = createSafeElement('button', {
+            className: 'btn-simulate-treatment',
+            attrs: { 'data-sim-factor': factor }
+        });
+        const playIcon = createSafeElement('i', {
+            className: 'lucide-icon',
+            attrs: { 'data-lucide': 'play-circle' }
+        });
+        simButton.appendChild(playIcon);
+        simButton.appendChild(document.createTextNode(' ' + t('buttons.simulate', 'Simulate Treatment')));
+        return simButton;
+    };
+
+    /**
+     * Render a single treatment row.
+     * @param {Object} item - Treatment item data
+     * @param {number} maxPct - Maximum percentage for bar scaling
+     * @param {boolean} waistIsHigh - Whether waist is clinically elevated
+     * @returns {HTMLElement} Treatment row element
+     */
+    const renderTreatmentRow = (item, maxPct, waistIsHigh) => {
+        const { factor, treatment, pct, marginalDelta, isIndicated, isElevated, isAboveAverage } = item;
+        const barWidth = calculateBarWidth(pct, maxPct);
+        const riskContribText = formatRiskPercent(marginalDelta);
+        const therapiesHTML = buildTherapiesHTML(factor, treatment, waistIsHigh);
+        const { statusIcon, statusLabel, statusClass } = determineTreatmentStatus(isIndicated, isElevated);
+
+        // Create row container
+        const row = createSafeElement('div', {
+            className: ['treatment-overview-row', isIndicated ? 'indicated' : (isElevated ? 'elevated' : 'normal')],
+            attrs: { 'data-field': factor },
+            style: {
+                borderLeftColor: isAboveAverage ? '#ff3b30' : '#34c759',
+                background: isAboveAverage ? 'rgba(255, 59, 48, 0.03)' : 'rgba(52, 199, 89, 0.03)'
+            }
+        });
+        row.id = treatment.id;
+
+        // Icon column
+        const iconCol = createSafeElement('div', { className: 'tov-icon-col' });
+        const iconEl = createSafeElement('i', {
+            className: ['lucide-icon', 'tov-factor-icon'],
+            attrs: { 'data-lucide': treatment.icon }
+        });
+        iconCol.appendChild(iconEl);
+
+        // Main column
+        const mainCol = createSafeElement('div', { className: 'tov-main-col' });
+
+        // Label row
+        const labelRow = createSafeElement('div', {
+            className: 'tov-label-row tov-clickable',
+            attrs: { 'data-toggle-factor': factor }
+        });
+        const titleSpan = createSafeElement('span', {
+            className: 'tov-title',
+            text: t(`treatments.${factor}.title`, treatment.title)
+        });
+        const statusSpan = createSafeElement('span', {
+            className: ['tov-status', statusClass]
+        });
+        const statusIconEl = createSafeElement('i', {
+            className: 'lucide-icon',
+            attrs: { 'data-lucide': statusIcon }
+        });
+        statusSpan.appendChild(statusIconEl);
+        statusSpan.appendChild(document.createTextNode(' ' + statusLabel));
+
+        const chevronIcon = createSafeElement('i', {
+            className: ['lucide-icon', 'tov-chevron', isIndicated ? '' : 'collapsed'],
+            attrs: { 'data-lucide': 'chevron-down' }
+        });
+
+        labelRow.appendChild(titleSpan);
+        labelRow.appendChild(statusSpan);
+        labelRow.appendChild(chevronIcon);
+
+        // Bar container
+        const barContainer = createSafeElement('div', { className: 'tov-bar-container' });
+        const bar = createSafeElement('div', {
+            className: ['tov-bar', isAboveAverage ? 'bar-indicated' : 'bar-normal'],
+            style: { width: barWidth + '%' }
+        });
+        barContainer.appendChild(bar);
+
+        // Percentage text
+        const pctDiv = createSafeElement('div', {
+            className: 'tov-pct',
+            text: riskContribText + '% ' + t('treatments.riskContribution', 'risk contribution compared to average')
+        });
+
+        // Details section
+        const detailsDiv = createSafeElement('div', {
+            className: ['tov-details', isIndicated ? 'expanded' : '']
+        });
+        const detailsInner = createSafeElement('div', { className: 'tov-details-inner' });
+
+        appendTherapiesToDetails(detailsInner, therapiesHTML);
+
+        if (isIndicated) {
+            detailsInner.appendChild(createSimulateButton(factor));
+        }
+
+        detailsDiv.appendChild(detailsInner);
+
+        // Assemble main column
+        mainCol.appendChild(labelRow);
+        mainCol.appendChild(barContainer);
+        mainCol.appendChild(pctDiv);
+        mainCol.appendChild(detailsDiv);
+
+        // Assemble row
+        row.appendChild(iconCol);
+        row.appendChild(mainCol);
+
+        // Apply marginal-delta colour to icon col + icon
+        const mColor = isAboveAverage ? '#ff3b30' : '#34c759';
+        const mBg = isAboveAverage ? 'rgba(255, 59, 48, 0.20)' : 'rgba(52, 199, 89, 0.20)';
+        iconCol.style.background = mBg;
+        iconEl.style.setProperty('color', mColor, 'important');
+
+        return row;
+    };
+
+    /**
+     * Setup event delegation for treatment container.
+     * Handles expand/collapse and simulate treatment clicks.
+     */
+    const setupTreatmentEvents = () => {
+        if (_treatmentDelegationAttached) return;
+
+        const container = el('treatment-overview');
+        if (!container) return;
+
+        container.addEventListener('click', (e) => {
+            // Expand/collapse handler
+            const clickable = e.target.closest('.tov-clickable');
+            if (clickable) {
+                const row = clickable.closest('.treatment-overview-row');
+                if (row) {
+                    row.querySelector('.tov-details')?.classList.toggle('expanded');
+                    row.querySelector('.tov-chevron')?.classList.toggle('collapsed');
+                }
+                return;
+            }
+
+            // Simulate treatment handler
+            const simBtn = e.target.closest('.btn-simulate-treatment');
+            if (simBtn) {
+                e.stopPropagation();
+                const simFactor = simBtn.getAttribute('data-sim-factor');
+                if (simFactor && DRC.TreatmentSimulator) {
+                    expandTreatmentPanel();
+                    expandTimelineSection();
+                    handleSimulation(simFactor);
+                }
+            }
+        });
+
+        _treatmentDelegationAttached = true;
+    };
+
+    /**
+     * Expand treatment panel if collapsed.
+     */
+    const expandTreatmentPanel = () => {
+        const panel = el('panel-treatment');
+        if (!panel) return;
+
+        const body = panel.querySelector('.panel-body');
+        const subtitle = panel.querySelector('.panel-subtitle');
+        const collapseBtn = panel.querySelector('.panel-collapse-btn');
+
+        if (body?.classList.contains('panel-hidden')) {
+            body.classList.remove('panel-hidden');
+            if (subtitle) subtitle.classList.remove('panel-hidden');
+            if (collapseBtn) {
+                collapseBtn.classList.remove('collapsed');
+                collapseBtn.setAttribute('aria-expanded', 'true');
+            }
+        }
+    };
+
+    /**
+     * Expand timeline section if collapsed.
+     */
+    const expandTimelineSection = () => {
+        const timelineExpandable = el('timeline-expandable');
+        const timelineToggleBtn = el('timelineToggleBtn');
+        if (timelineExpandable && !timelineExpandable.classList.contains('open')) {
+            timelineExpandable.classList.add('open');
+            if (timelineToggleBtn) timelineToggleBtn.classList.add('active');
+        }
+    };
+
+    /**
+     * Handle simulation with profile warning check.
+     * @param {string} factor - Factor to simulate
+     */
+    const handleSimulation = (factor) => {
+        if (DRC.ProfileWarning) {
+            DRC.ProfileWarning.checkBeforeSimulation(factor).then(shouldProceed => {
+                if (shouldProceed === true) {
+                    DRC.TreatmentSimulator.simulate(factor);
+                }
+            });
+        } else {
+            DRC.TreatmentSimulator.simulate(factor);
+        }
+    };
 
     /**
      * Unified treatment overview with expandable detail rows.
@@ -389,179 +980,27 @@ DRC.UIController = (() => {
         const contribContainer = el('contribution-chart');
         const filterRiskOnly = contribContainer?.getAttribute('data-filter-risk') !== 'false';
 
-        const totalAbs = Object.values(contributions)
-            .reduce((sum, v) => sum + Math.abs(v), 0);
+        // Calculate treatment items
+        const treatStatus = { elevatedFactors, waistIsHigh };
+        const items = calculateTreatmentItems(contributions, marginalContributions, treatStatus);
 
-        const items = Object.keys(CFG.TREATMENTS).map(factor => {
-            const marginalDelta = marginalContributions[factor] || 0;
-            const isAboveAverage = marginalDelta >= 0;
-            const isClinicallyElevated = elevatedFactors.includes(factor);
-            // Indicated = clinically elevated AND above average
-            const isIndicated = isClinicallyElevated && isAboveAverage;
-            // Elevated = above average but NOT clinically elevated
-            const isElevated = isAboveAverage && !isClinicallyElevated;
-            return {
-                factor,
-                treatment: CFG.TREATMENTS[factor],
-                absContrib: Math.abs(contributions[factor] || 0),
-                pct: totalAbs > 0 ? (Math.abs(contributions[factor] || 0) / totalAbs) * 100 : 0,
-                marginalDelta,
-                isIndicated,
-                isElevated,
-                isAboveAverage
-            };
-        }).sort((a, b) => b.absContrib - a.absContrib);
+        // Filter by active model
+        const activeModel = DRC.App?.getActiveModel?.();
+        const modelFilteredItems = filterContributionsByModel(items, activeModel);
 
-        // Filter to only show treatments for factors in the active model
-        const activeModelForTreatment = DRC.App?.getActiveModel?.();
-        const treatmentFields = activeModelForTreatment?.treatmentFields;
-        const modelFilteredItems = treatmentFields ? items.filter(i => treatmentFields.includes(i.factor)) : items;
-
-        // When risk-filter active: show only treatments for above-average factors
+        // Apply risk filter
         const displayItems = filterRiskOnly ? modelFilteredItems.filter(i => i.isAboveAverage) : modelFilteredItems;
 
-        const maxPct = displayItems.reduce((max, i) => i.pct > max ? i.pct : max, 1);
+        // Calculate max percentage for bar scaling
+        const maxPct = calculateMaxValue(displayItems, i => i.pct, 1);
 
-        displayItems.forEach(({ factor, treatment, pct, marginalDelta, isIndicated, isElevated, isAboveAverage }) => {
-            const barWidth = (pct / maxPct) * 100;
-
-            // Compute risk contribution text
-            const v = Math.abs(marginalDelta) * 100;
-            const sign = marginalDelta >= 0 ? '+' : '−';
-            const disp = v < 0.1 ? '<0.1' : v.toFixed(1);
-            const riskContribText = `${sign}${disp}`;
-
-            // Build therapy HTML
-            let therapies = [...treatment.therapies];
-            if (factor === 'waist' && waistIsHigh && treatment.surgicalOption) {
-                therapies.push(treatment.surgicalOption);
-            }
-            const therapiesHTML = therapies.map((tItem, idx) => {
-                const therapyName = t(`treatments.${factor}.therapy${idx+1}_name`, tItem.name);
-                const therapyDesc = t(`treatments.${factor}.therapy${idx+1}_desc`, tItem.desc);
-                return `<div class="therapy-mini"><div><strong>${escapeHtml(therapyName)}:</strong> ${escapeHtml(therapyDesc)}</div></div>`;
-            }).join('');
-
-            // Three-tier status: Indicated (red) > Elevated (orange) > Normal (green)
-            let statusIcon, statusLabel, statusClass;
-            if (isIndicated) {
-                statusIcon = 'alert-triangle';
-                statusLabel = t('status.indicated', 'Indicated');
-                statusClass = 'status-indicated';
-            } else if (isElevated) {
-                statusIcon = 'alert-circle';
-                statusLabel = t('status.elevated', 'Elevated');
-                statusClass = 'status-elevated';
-            } else {
-                statusIcon = 'check-circle';
-                statusLabel = t('status.normal', 'Normal');
-                statusClass = 'status-normal';
-            }
-
-            const row = document.createElement('div');
-            row.className = `treatment-overview-row ${isIndicated ? 'indicated' : (isElevated ? 'elevated' : 'normal')}`;
-            row.style.borderLeftColor = isAboveAverage ? '#ff3b30' : '#34c759';
-            row.style.background = isAboveAverage ? 'rgba(255, 59, 48, 0.03)' : 'rgba(52, 199, 89, 0.03)';
-            row.setAttribute('data-field', factor);
-            row.id = treatment.id;
-
-            row.innerHTML = `
-                <div class="tov-icon-col">
-                    <i data-lucide="${treatment.icon}" class="lucide-icon tov-factor-icon"></i>
-                </div>
-                <div class="tov-main-col">
-                    <div class="tov-label-row tov-clickable" data-toggle-factor="${factor}">
-                        <span class="tov-title">${t(`treatments.${factor}.title`, treatment.title)}</span>
-                        <span class="tov-status ${statusClass}">
-                            <i data-lucide="${statusIcon}" class="lucide-icon"></i>
-                            ${statusLabel}
-                        </span>
-                        <i data-lucide="chevron-down" class="lucide-icon tov-chevron ${isIndicated ? '' : 'collapsed'}"></i>
-                    </div>
-                    <div class="tov-bar-container">
-                        <div class="tov-bar ${isAboveAverage ? 'bar-indicated' : 'bar-normal'}" style="width:${barWidth}%;"></div>
-                    </div>
-                    <div class="tov-pct">${riskContribText}% ${t('treatments.riskContribution', 'risk contribution compared to average')}</div>
-                    <div class="tov-details ${isIndicated ? 'expanded' : ''}">
-                        <div class="tov-details-inner">
-                            ${therapiesHTML}
-                            ${isIndicated ? `<button class="btn-simulate-treatment" data-sim-factor="${factor}">
-                                <i data-lucide="play-circle" class="lucide-icon"></i>
-                                ${t('buttons.simulate', 'Simulate Treatment')}
-                            </button>` : ''}
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            // Apply marginal-delta colour to icon col + icon (overrides CSS !important)
-            const iconCol = row.querySelector('.tov-icon-col');
-            const iconEl  = row.querySelector('.tov-factor-icon');
-            const mColor  = isAboveAverage ? '#ff3b30' : '#34c759';
-            const mBg     = isAboveAverage ? 'rgba(255, 59, 48, 0.20)' : 'rgba(52, 199, 89, 0.20)';
-            if (iconCol) iconCol.style.background = mBg;
-            if (iconEl)  iconEl.style.setProperty('color', mColor, 'important');
-
-            container.appendChild(row);
+        // Render rows
+        displayItems.forEach(item => {
+            container.appendChild(renderTreatmentRow(item, maxPct, waistIsHigh));
         });
 
-        // Event delegation: attach once on the container, handles all dynamic rows
-        if (!_treatmentDelegationAttached) {
-            container.addEventListener('click', (e) => {
-                // Expand/collapse handler
-                const clickable = e.target.closest('.tov-clickable');
-                if (clickable) {
-                    const row = clickable.closest('.treatment-overview-row');
-                    if (row) {
-                        row.querySelector('.tov-details')?.classList.toggle('expanded');
-                        row.querySelector('.tov-chevron')?.classList.toggle('collapsed');
-                    }
-                    return;
-                }
-                // Simulate treatment handler
-                const simBtn = e.target.closest('.btn-simulate-treatment');
-                if (simBtn) {
-                    e.stopPropagation();
-                    const simFactor = simBtn.getAttribute('data-sim-factor');
-                    if (simFactor && DRC.TreatmentSimulator) {
-                        // Expand treatment panel if collapsed
-                        const panel = el('panel-treatment');
-                        if (panel) {
-                            const body = panel.querySelector('.panel-body');
-                            const subtitle = panel.querySelector('.panel-subtitle');
-                            const collapseBtn = panel.querySelector('.panel-collapse-btn');
-                            if (body?.classList.contains('panel-hidden')) {
-                                body.classList.remove('panel-hidden');
-                                if (subtitle) subtitle.classList.remove('panel-hidden');
-                                if (collapseBtn) {
-                                    collapseBtn.classList.remove('collapsed');
-                                    collapseBtn.setAttribute('aria-expanded', 'true');
-                                }
-                            }
-                        }
-                        // Expand timeline section if collapsed
-                        const timelineExpandable = el('timeline-expandable');
-                        const timelineToggleBtn = el('timelineToggleBtn');
-                        if (timelineExpandable && !timelineExpandable.classList.contains('open')) {
-                            timelineExpandable.classList.add('open');
-                            if (timelineToggleBtn) timelineToggleBtn.classList.add('active');
-                        }
-                        // Show profile warning modal if needed
-                        if (DRC.ProfileWarning) {
-                            DRC.ProfileWarning.checkBeforeSimulation(simFactor).then(shouldProceed => {
-                                if (shouldProceed === true) {
-                                    DRC.TreatmentSimulator.simulate(simFactor);
-                                }
-                                // Wenn 'pending', wird die Simulation nach Profil-Erstellung fortgesetzt
-                            });
-                        } else {
-                            DRC.TreatmentSimulator.simulate(simFactor);
-                        }
-                    }
-                }
-            });
-            _treatmentDelegationAttached = true;
-        }
+        // Setup event delegation
+        setupTreatmentEvents();
 
         // Re-initialize Lucide icons for dynamically added content
         if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -674,25 +1113,75 @@ DRC.UIController = (() => {
         const cls   = delta < 0 ? 'improved' : delta > 0 ? 'worsened' : 'unchanged';
         const icon  = delta < 0 ? 'trending_down' : delta > 0 ? 'trending_up' : 'minus';
 
-        panel.innerHTML = `
-            <div class="scenario-inline-row">
-                <div class="scenario-inline-item">
-                    <i data-lucide="flag" class="lucide-icon scenario-inline-icon"></i>
-                    <span class="scenario-inline-label">${t('scenario.baseline', 'Baseline')}</span>
-                    <span class="scenario-inline-value">${baselineRisk.toFixed(1)}%</span>
-                </div>
-                <i data-lucide="arrow-right" class="lucide-icon scenario-inline-arrow"></i>
-                <div class="scenario-inline-item">
-                    <i data-lucide="user" class="lucide-icon scenario-inline-icon current-icon"></i>
-                    <span class="scenario-inline-label">${t('scenario.current', 'Current')}</span>
-                    <span class="scenario-inline-value current-value">${currentRisk.toFixed(1)}%</span>
-                </div>
-                <div class="scenario-inline-delta ${cls}">
-                    <i data-lucide="${icon.replace(/_/g, '-')}" class="lucide-icon"></i>
-                    <span>${delta >= 0 ? '+' : ''}${delta.toFixed(2)}%</span>
-                </div>
-            </div>
-        `;
+        // Clear panel before building new content
+        panel.textContent = '';
+
+        // Build scenario comparison safely
+        const row = createSafeElement('div', { className: 'scenario-inline-row' });
+
+        // Baseline item
+        const baselineItem = createSafeElement('div', { className: 'scenario-inline-item' });
+        const flagIcon = createSafeElement('i', {
+            className: ['lucide-icon', 'scenario-inline-icon'],
+            attrs: { 'data-lucide': 'flag' }
+        });
+        const baselineLabel = createSafeElement('span', {
+            className: 'scenario-inline-label',
+            text: t('scenario.baseline', 'Baseline')
+        });
+        const baselineValue = createSafeElement('span', {
+            className: 'scenario-inline-value',
+            text: baselineRisk.toFixed(1) + '%'
+        });
+        baselineItem.appendChild(flagIcon);
+        baselineItem.appendChild(baselineLabel);
+        baselineItem.appendChild(baselineValue);
+
+        // Arrow
+        const arrowIcon = createSafeElement('i', {
+            className: ['lucide-icon', 'scenario-inline-arrow'],
+            attrs: { 'data-lucide': 'arrow-right' }
+        });
+
+        // Current item
+        const currentItem = createSafeElement('div', { className: 'scenario-inline-item' });
+        const userIcon = createSafeElement('i', {
+            className: ['lucide-icon', 'scenario-inline-icon', 'current-icon'],
+            attrs: { 'data-lucide': 'user' }
+        });
+        const currentLabel = createSafeElement('span', {
+            className: 'scenario-inline-label',
+            text: t('scenario.current', 'Current')
+        });
+        const currentValue = createSafeElement('span', {
+            className: ['scenario-inline-value', 'current-value'],
+            text: currentRisk.toFixed(1) + '%'
+        });
+        currentItem.appendChild(userIcon);
+        currentItem.appendChild(currentLabel);
+        currentItem.appendChild(currentValue);
+
+        // Delta section
+        const deltaDiv = createSafeElement('div', {
+            className: ['scenario-inline-delta', cls]
+        });
+        const deltaIcon = createSafeElement('i', {
+            className: 'lucide-icon',
+            attrs: { 'data-lucide': icon.replace(/_/g, '-') }
+        });
+        const deltaText = createSafeElement('span', {
+            text: (delta >= 0 ? '+' : '') + delta.toFixed(2) + '%'
+        });
+        deltaDiv.appendChild(deltaIcon);
+        deltaDiv.appendChild(deltaText);
+
+        // Assemble
+        row.appendChild(baselineItem);
+        row.appendChild(arrowIcon);
+        row.appendChild(currentItem);
+        row.appendChild(deltaDiv);
+
+        panel.appendChild(row);
 
         // Initialize Lucide icons for the new content
         if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -738,14 +1227,40 @@ DRC.UIController = (() => {
         const safeFlex   = Math.max(1, threshold - min);
         const dangerFlex = Math.max(1, max - threshold);
 
-        track.innerHTML =
-            '<div class="slider-segment safe" style="flex:' + safeFlex + '"></div>' +
-            '<div class="slider-segment danger" style="flex:' + dangerFlex + '"></div>';
+        // Clear existing content
+        track.textContent = '';
+        labels.textContent = '';
 
-        labels.innerHTML =
-            '<span style="flex:' + safeFlex + ';text-align:left">' + min + '</span>' +
-            '<span style="flex:0;white-space:nowrap">' + threshold + '</span>' +
-            '<span style="flex:' + dangerFlex + ';text-align:right">' + max + '</span>';
+        // Build safe segment
+        const safeSegment = createSafeElement('div', {
+            className: 'slider-segment safe',
+            style: { flex: String(safeFlex) }
+        });
+        track.appendChild(safeSegment);
+
+        // Build danger segment
+        const dangerSegment = createSafeElement('div', {
+            className: 'slider-segment danger',
+            style: { flex: String(dangerFlex) }
+        });
+        track.appendChild(dangerSegment);
+
+        // Build labels
+        const minLabel = createSafeElement('span', {
+            style: { flex: String(safeFlex), textAlign: 'left' },
+            text: String(min)
+        });
+        const thresholdLabel = createSafeElement('span', {
+            style: { flex: '0', whiteSpace: 'nowrap' },
+            text: String(threshold)
+        });
+        const maxLabel = createSafeElement('span', {
+            style: { flex: String(dangerFlex), textAlign: 'right' },
+            text: String(max)
+        });
+        labels.appendChild(minLabel);
+        labels.appendChild(thresholdLabel);
+        labels.appendChild(maxLabel);
     };
 
     /** Update the collapsed summary line for modifiable factors. */
@@ -799,14 +1314,28 @@ DRC.UIController = (() => {
             DRC.App._setCompareScenario(baselineRisk);
             if (btn) {
                 btn.classList.add('active');
-                btn.innerHTML = '<i data-lucide="flag" class="lucide-icon"></i> ' + t('buttons.resetBaseline', 'Reset Baseline');
+                // Clear and build safely
+                btn.textContent = '';
+                const flagIcon = createSafeElement('i', {
+                    className: 'lucide-icon',
+                    attrs: { 'data-lucide': 'flag' }
+                });
+                btn.appendChild(flagIcon);
+                btn.appendChild(document.createTextNode(' ' + t('buttons.resetBaseline', 'Reset Baseline')));
             }
             if (panel) panel.style.display = 'flex';
             renderScenarioComparison(baselineRisk, baselineRisk);
         } else {
             if (btn) {
                 btn.classList.remove('active');
-                btn.innerHTML = '<i data-lucide="flag" class="lucide-icon"></i> ' + t('buttons.setBaseline', 'Set Baseline');
+                // Clear and build safely
+                btn.textContent = '';
+                const flagIcon = createSafeElement('i', {
+                    className: 'lucide-icon',
+                    attrs: { 'data-lucide': 'flag' }
+                });
+                btn.appendChild(flagIcon);
+                btn.appendChild(document.createTextNode(' ' + t('buttons.setBaseline', 'Set Baseline')));
             }
             if (panel) panel.style.display = 'none';
         }

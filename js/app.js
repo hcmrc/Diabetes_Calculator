@@ -318,7 +318,13 @@ DRC.App = (() => {
             state.baselineRisk = risk;
             if (btn) {
                 btn.classList.add('active');
-                btn.innerHTML = '<i data-lucide="flag" class="lucide-icon"></i> Reset Baseline';
+                btn.textContent = '';
+                const icon = document.createElement('i');
+                icon.setAttribute('data-lucide', 'flag');
+                icon.className = 'lucide-icon';
+                btn.appendChild(icon);
+                btn.appendChild(document.createTextNode(' Reset Baseline'));
+                DRC.UIHelpers.refreshIcons();
             }
             if (panel) panel.style.display = 'flex';
             UI().renderScenarioComparison(state.baselineRisk, risk);
@@ -328,7 +334,13 @@ DRC.App = (() => {
             Timeline().clearBaseline();
             if (btn) {
                 btn.classList.remove('active');
-                btn.innerHTML = '<i data-lucide="flag" class="lucide-icon"></i> ' + DRC.I18n?.t('buttons.setBaseline', 'Set Baseline');
+                btn.textContent = '';
+                const icon = document.createElement('i');
+                icon.setAttribute('data-lucide', 'flag');
+                icon.className = 'lucide-icon';
+                btn.appendChild(icon);
+                btn.appendChild(document.createTextNode(' ' + DRC.I18n?.t('buttons.setBaseline', 'Set Baseline')));
+                DRC.UIHelpers.refreshIcons();
             }
             if (panel) panel.style.display = 'none';
             if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -406,35 +418,46 @@ DRC.App = (() => {
             });
         }
 
-        // Cross-panel factor highlight on hover (with caching for performance)
+        // Cross-panel factor highlight on hover (CSS-based with JS synchronization)
         // Initial population
         populateFieldCache();
 
-        document.addEventListener('mouseover', (e) => {
-            const fieldEl = e.target.closest('[data-field]');
-            const field = fieldEl?.getAttribute('data-field') || null;
-            if (field === _highlightedField) return;
+        // Event delegation on main panels for cross-panel highlighting
+        // Uses mouseenter/mouseleave (fire once per element, NOT on every mouse move)
+        const panels = ['panel-input', 'panel-model', 'panel-treatment'];
+        panels.forEach(panelId => {
+            const panel = document.getElementById(panelId);
+            if (!panel) return;
 
-            // Remove highlight from previously highlighted elements using cache
-            if (_highlightedField) {
-                const prevElements = fieldElementCache.get(_highlightedField);
-                if (prevElements) {
-                    prevElements.forEach(n => n.classList.remove('factor-highlight'));
+            panel.addEventListener('mouseenter', (e) => {
+                const fieldEl = e.target.closest('[data-field]');
+                if (!fieldEl) return;
+                const field = fieldEl.getAttribute('data-field');
+                if (field === _highlightedField) return;
+
+                _highlightedField = field;
+
+                // Add highlight class to all matching elements (cross-panel sync)
+                const elements = fieldElementCache.get(field);
+                if (elements) {
+                    elements.forEach(n => n.classList.add('factor-highlight'));
                 }
-            }
+            }, true); // Use capture for reliable detection
 
-            _highlightedField = field;
+            panel.addEventListener('mouseleave', (e) => {
+                const fieldEl = e.target.closest('[data-field]');
+                if (!fieldEl) return;
+                const field = fieldEl.getAttribute('data-field');
+                if (field !== _highlightedField) return;
 
-            // Add highlight to new field using cache
-            if (field) {
-                let elements = fieldElementCache.get(field);
-                // If not in cache, query and cache (for dynamically added elements)
-                if (!elements) {
-                    elements = Array.from(document.querySelectorAll(`[data-field="${field}"]`));
-                    fieldElementCache.set(field, elements);
+                // Remove highlight from all elements
+                const elements = fieldElementCache.get(field);
+                if (elements) {
+                    elements.forEach(n => n.classList.remove('factor-highlight'));
                 }
-                elements.forEach(n => n.classList.add('factor-highlight'));
-            }
+
+                _highlightedField = null;
+            }, true); // Use capture for reliable detection
         });
 
         // Tab navigation — scoped per panel so Model and Treatment tabs
@@ -486,7 +509,7 @@ DRC.App = (() => {
         // ─── Model Change Handler ─────────────────────────────────────────
         // Update UI when model changes (from Settings Panel)
         on('model:changed', ({ modelId, model }) => {
-            const t = (k, fb) => DRC.I18n?.t(k, fb) || fb;
+            const t = DRC.Utils.createTranslator();
 
             // Update hero model info
             const infoName = document.getElementById('model-info-name');
@@ -506,7 +529,7 @@ DRC.App = (() => {
         // Set initial hero info from default model
         const initialModel = getActiveModel();
         if (initialModel) {
-            const t = (k, fb) => DRC.I18n?.t(k, fb) || fb;
+            const t = DRC.Utils.createTranslator();
             const infoName = document.getElementById('model-info-name');
             const infoAccuracy = document.getElementById('model-info-accuracy');
             if (infoName) infoName.textContent = t('models.' + state.activeModel + '.name', initialModel.name);
@@ -528,13 +551,18 @@ DRC.App = (() => {
             if (btn) {
                 const baseLabel = DRC.I18n?.t('buttons.setBaseline', 'Set Baseline');
                 const resetLabel = DRC.I18n?.t('buttons.resetBaseline', 'Reset Baseline');
-                btn.innerHTML = `<i data-lucide="flag" class="lucide-icon"></i> ${state.isComparingScenario ? resetLabel : baseLabel}`;
+                btn.textContent = '';
+                const icon = document.createElement('i');
+                icon.setAttribute('data-lucide', 'flag');
+                icon.className = 'lucide-icon';
+                btn.appendChild(icon);
+                btn.appendChild(document.createTextNode(' ' + (state.isComparingScenario ? resetLabel : baseLabel)));
                 DRC.UIHelpers?.refreshIcons();
             }
             // Update model switcher label and hero info with translated strings
             const currentModel = getActiveModel();
             if (currentModel) {
-                const t = (k, fb) => DRC.I18n?.t(k, fb) || fb;
+                const t = DRC.Utils.createTranslator();
                 // Update hero model info (Settings Panel updates its own label)
                 const infoName = document.getElementById('model-info-name');
                 const infoAccuracy = document.getElementById('model-info-accuracy');
