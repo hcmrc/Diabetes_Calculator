@@ -29,7 +29,9 @@ DRC.App = (() => {
          * Used as the "source of truth" during unit switches to prevent
          * cumulative rounding drift from repeated conversions.
          */
-        preciseSI: null
+        preciseSI: null,
+        /** Active model identifier, references a key in CONFIG.MODELS. */
+        activeModel: CFG.DEFAULT_MODEL
     };
 
     let _highlightedField = null;
@@ -58,6 +60,29 @@ DRC.App = (() => {
         }
     };
 
+    // ─── Model selection ─────────────────────────────────────────────────
+
+    /**
+     * Return the currently active model object from CONFIG.MODELS.
+     * @returns {Object} Model definition with intercept, betas, and field lists.
+     */
+    const getActiveModel = () => CFG.MODELS[state.activeModel];
+
+    /**
+     * Switch the active model and trigger a recalculation.
+     * @param {string} modelId — Key from CONFIG.MODELS (e.g. 'clinical').
+     */
+    const switchModel = (modelId) => {
+        if (!CFG.MODELS[modelId]) {
+            console.error(`switchModel: unknown modelId "${modelId}"`);
+            return;
+        }
+        state.activeModel = modelId;
+        trigger('model:changed', { modelId, model: CFG.MODELS[modelId] });
+        window.dispatchEvent(new CustomEvent('model:changed', { detail: { modelId } }));
+        calculate();
+    };
+
     // ─── Core calculation pipeline ──────────────────────────────────────
 
     /**
@@ -65,17 +90,18 @@ DRC.App = (() => {
      * @returns {number} Current risk percentage.
      */
     const calculate = () => {
+        const activeModel   = getActiveModel();
         const rawInputs     = UI().readInputs();
         const siVals        = Model().toSI(rawInputs, state.isMetric);
         state.preciseSI     = { ...siVals };   // Preserve full-precision SI values
-        const riskPct       = Model().computeProbability(siVals) * 100;
-        const logOddsContributions = Model().computeContributions(siVals);
-        const marginalSummary = Model().computeMarginalSummary(siVals);
+        const riskPct       = Model().computeProbability(siVals, activeModel) * 100;
+        const logOddsContributions = Model().computeContributions(siVals, activeModel);
+        const marginalSummary = Model().computeMarginalSummary(siVals, activeModel);
         const isMale        = rawInputs.sex === 1;
         const treatStatus   = Model().getElevatedFactors(siVals, isMale);
 
         // Render all views with the calculated data
-        _renderAllViews(riskPct, logOddsContributions, marginalSummary, treatStatus, siVals);
+        _renderAllViews(riskPct, logOddsContributions, marginalSummary, treatStatus, siVals, activeModel);
         return riskPct;
     };
 
@@ -86,8 +112,9 @@ DRC.App = (() => {
      * @param {Object} marginalSummary - Marginal probability summary (for chart + treatments)
      * @param {Object} treatStatus - Treatment status with elevated factors
      * @param {Object} siVals - SI-unit values
+     * @param {Object} [model] - Active model definition from CONFIG.MODELS
      */
-    const _renderAllViews = (riskPct, logOddsContributions, marginalSummary, treatStatus, siVals) => {
+    const _renderAllViews = (riskPct, logOddsContributions, marginalSummary, treatStatus, siVals, model) => {
         UI().renderRisk(riskPct);
         UI().updateNonModSummary();
         UI().updateModSummary();
@@ -200,13 +227,14 @@ DRC.App = (() => {
         UI().updateAllSliderFills();
 
         // Render with precise SI values (no rounding in the model path)
+        const activeModel   = getActiveModel();
         const preciseSI     = state.preciseSI || Model().toSI(UI().readInputs(), state.isMetric);
-        const riskPct       = Model().computeProbability(preciseSI) * 100;
-        const logOddsContributions = Model().computeContributions(preciseSI);
-        const marginalSummary = Model().computeMarginalSummary(preciseSI);
+        const riskPct       = Model().computeProbability(preciseSI, activeModel) * 100;
+        const logOddsContributions = Model().computeContributions(preciseSI, activeModel);
+        const marginalSummary = Model().computeMarginalSummary(preciseSI, activeModel);
         const treatStatus   = Model().getElevatedFactors(preciseSI, sexIsMale);
 
-        _renderAllViews(riskPct, logOddsContributions, marginalSummary, treatStatus, preciseSI);
+        _renderAllViews(riskPct, logOddsContributions, marginalSummary, treatStatus, preciseSI, activeModel);
     };
 
     // ─── Reset ──────────────────────────────────────────────────────────
@@ -300,7 +328,7 @@ DRC.App = (() => {
             Timeline().clearBaseline();
             if (btn) {
                 btn.classList.remove('active');
-                btn.innerHTML = '<i data-lucide="flag" class="lucide-icon"></i> Set Baseline';
+                btn.innerHTML = '<i data-lucide="flag" class="lucide-icon"></i> ' + DRC.I18n?.t('buttons.setBaseline', 'Set Baseline');
             }
             if (panel) panel.style.display = 'none';
             if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -310,6 +338,10 @@ DRC.App = (() => {
     // ─── Initialization ─────────────────────────────────────────────────
 
     const init = () => {
+        // Initialize i18n first (synchronous for file:// compatibility)
+        DRC.I18n.init();
+        DRC.I18n.translateDOM();
+        DRC.I18nUI.init();
         // Slider event binding
         CFG.SLIDER_FIELDS.forEach(field => {
             const slider = document.getElementById(`${field}-slider`);
@@ -451,11 +483,67 @@ DRC.App = (() => {
             });
         });
 
+        // ─── Model Change Handler ─────────────────────────────────────────
+        // Update UI when model changes (from Settings Panel)
+        on('model:changed', ({ modelId, model }) => {
+            const t = (k, fb) => DRC.I18n?.t(k, fb) || fb;
+
+            // Update hero model info
+            const infoName = document.getElementById('model-info-name');
+            const infoAccuracy = document.getElementById('model-info-accuracy');
+            if (infoName) infoName.textContent = t('models.' + modelId + '.name', model.name);
+            if (infoAccuracy) infoAccuracy.textContent = t('models.accuracy.' + model.accuracy, model.accuracyLabel) + ' ' + t('models.accuracyLabel', 'Vorhersagegüte');
+
+            // Toggle input field visibility
+            const allFields = CFG.ALL_FIELDS;
+            allFields.forEach(field => {
+                const groups = document.querySelectorAll('.input-group[data-field="' + field + '"]');
+                const isVisible = model.fields.includes(field);
+                groups.forEach(g => g.classList.toggle('field-hidden', !isVisible));
+            });
+        });
+
+        // Set initial hero info from default model
+        const initialModel = getActiveModel();
+        if (initialModel) {
+            const t = (k, fb) => DRC.I18n?.t(k, fb) || fb;
+            const infoName = document.getElementById('model-info-name');
+            const infoAccuracy = document.getElementById('model-info-accuracy');
+            if (infoName) infoName.textContent = t('models.' + state.activeModel + '.name', initialModel.name);
+            if (infoAccuracy) infoAccuracy.textContent = t('models.accuracy.' + initialModel.accuracy, initialModel.accuracyLabel) + ' ' + t('models.accuracyLabel', 'Vorhersagegüte');
+        }
+
         // Initialize sub-modules and run first calculation
         const initMale = document.getElementById('sex-toggle')?.checked ?? true;
         UI().updateWaistSegments(initMale, state.isMetric);
         UI().updateAllSliderFills();
         calculate();
+
+        // Subscribe to language changes to re-render dynamic content
+        DRC.I18n.onLanguageChange(() => {
+            DRC.I18n.translateDOM();
+            calculate();
+            // Update baseline button text based on current state
+            const btn = document.getElementById('timelineBaselineBtn');
+            if (btn) {
+                const baseLabel = DRC.I18n?.t('buttons.setBaseline', 'Set Baseline');
+                const resetLabel = DRC.I18n?.t('buttons.resetBaseline', 'Reset Baseline');
+                btn.innerHTML = `<i data-lucide="flag" class="lucide-icon"></i> ${state.isComparingScenario ? resetLabel : baseLabel}`;
+                DRC.UIHelpers?.refreshIcons();
+            }
+            // Update model switcher label and hero info with translated strings
+            const currentModel = getActiveModel();
+            if (currentModel) {
+                const t = (k, fb) => DRC.I18n?.t(k, fb) || fb;
+                // Update hero model info (Settings Panel updates its own label)
+                const infoName = document.getElementById('model-info-name');
+                const infoAccuracy = document.getElementById('model-info-accuracy');
+                if (infoName) infoName.textContent = t('models.' + state.activeModel + '.name', currentModel.name);
+                if (infoAccuracy) infoAccuracy.textContent = t('models.accuracy.' + currentModel.accuracy, currentModel.accuracyLabel) + ' ' + t('models.accuracyLabel', 'Vorhersagegüte');
+            }
+            // Trigger global language changed event for other modules
+            window.dispatchEvent(new CustomEvent('drc:language-changed-complete'));
+        });
     };
 
     /** Activate scenario-comparison mode (called by TreatmentSimulator). */
@@ -526,5 +614,5 @@ DRC.App = (() => {
     // Register core events
     on('risk:recalculate', calculate);
 
-    return { init, _calculate: calculate, _getState: () => ({ ...state }), _setCompareScenario: setCompareScenario, on, off, trigger };
+    return { init, _calculate: calculate, _getState: () => ({ ...state }), _setCompareScenario: setCompareScenario, on, off, trigger, switchModel, getActiveModel };
 })();

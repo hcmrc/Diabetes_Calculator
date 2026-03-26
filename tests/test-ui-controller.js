@@ -330,12 +330,12 @@ UIC.updateNonModSummary();
 
 assert(ELEMS['summary-age'].textContent    === 'Age: 58',     'summary-age = "Age: 58"');
 assert(ELEMS['summary-race'].textContent   === 'Black',       'summary-race = "Black" (toggle checked)');
-assert(ELEMS['summary-parent'].textContent === 'No history of diabetes in family', 'summary-parent = "No history of diabetes in family" (toggle unchecked)');
+assert(ELEMS['summary-parent'].textContent === 'No', 'summary-parent = "No" (toggle unchecked)');
 
 // Test checked case
 ELEMS['parentHist-toggle'].checked = true;
 UIC.updateNonModSummary();
-assert(ELEMS['summary-parent'].textContent === 'History of diabetes in family', 'summary-parent = "History of diabetes in family" (toggle checked)');
+assert(ELEMS['summary-parent'].textContent === 'Yes', 'summary-parent = "Yes" (toggle checked)');
 ELEMS['parentHist-toggle'].checked = false;  // restore for next test
 assert(ELEMS['summary-height'].textContent === '175 cm',      'summary-height = "175 cm"');
 

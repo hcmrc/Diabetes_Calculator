@@ -342,7 +342,7 @@
 
         // Definiere alle moeglichen Felder (patientName ist separat)
         const allFields = ['glucose', 'sbp', 'waist', 'hdl', 'triglycerides', 'age', 'sex'];
-        const isMetric = DRC.App && DRC.App._getState ? DRC.App._getState().isMetric : false;
+        const isMetric = DRC.App?.isMetric?.() ?? false;
 
         let detected = 0;
         let needsReview = 0;
@@ -546,6 +546,9 @@
 
         // Modal schliessen
         hideModal();
+
+        // Notify other modules that import is complete
+        window.dispatchEvent(new CustomEvent('drc:import:completed'));
     }
 
     /**
@@ -584,9 +587,9 @@
             }
         });
 
-        // Risiko neu berechnen
-        if (DRC.App && DRC.App.trigger) {
-            DRC.App.trigger('risk:recalculate');
+        // Risiko neu berechnen (multimodel-adapted)
+        if (DRC.App?.calculate) {
+            DRC.App.calculate();
         }
     }
 
@@ -764,7 +767,7 @@
             if (elements.pdOCRBtn) {
                 elements.pdOCRBtn.style.display = 'none';
             }
-            console.log('OCR not supported on this device');
+            // OCR not supported on this device
         }
     }
 
@@ -773,7 +776,8 @@
         init: init,
         showModal: showModal,
         hideModal: hideModal,
-        processFile: processFile
+        processFile: processFile,
+        processFiles: processFiles
     };
 
     // Auto-initialisieren wenn DOM bereit

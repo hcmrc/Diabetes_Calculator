@@ -1,0 +1,143 @@
+{
+  "_meta": {
+    "language": "English",
+    "code": "en"
+  },
+  "nav": {
+    "brand": "Diabetes Risk Calculator",
+    "reset": "Reset",
+    "riskTimeline": "Risk Timeline",
+    "selectProfile": "Select Profile",
+    "language": "Select Language"
+  },
+  "hero": {
+    "title": "9-Year Diabetes Risk",
+    "expandLabel": "What does that mean?",
+    "subtitle": "Based on the ARIC Study logistic regression model (Schmidt et al. 2005)"
+  },
+  "factors": {
+    "age": "Age",
+    "sex": "Sex",
+    "race": "Ethnicity",
+    "parentHist": "Parental Diabetes",
+    "sbp": "Blood Pressure",
+    "waist": "Waist",
+    "height": "Height",
+    "fastGlu": "Fasting Glucose",
+    "cholHDL": "HDL Cholesterol",
+    "cholTri": "Blood Fats (Triglycerides)"
+  },
+  "units": {
+    "years": "years",
+    "male": "Male",
+    "female": "Female",
+    "other": "Other",
+    "black": "Black",
+    "yes": "Yes",
+    "no": "No",
+    "us": "US",
+    "si": "SI"
+  },
+  "sections": {
+    "demographic": "Demographic Data",
+    "clinical": "Clinical Data",
+    "treatments": "Treatment Recommendations",
+    "contributions": "Risk Factor Contributions"
+  },
+  "summary": {
+    "age": "Age",
+    "glucose": "Glucose",
+    "waist": "Waist",
+    "bp": "Blood Pressure",
+    "hdl": "HDL",
+    "tg": "TG"
+  },
+  "treatments": {
+    "fastGlu": {
+      "title": "Fasting Glucose Management",
+      "therapy1_name": "Standard Medication",
+      "therapy1_desc": "Metformin is often the first step to help control blood sugar levels.",
+      "therapy2_name": "Heart & Kidney Protection",
+      "therapy2_desc": "If you have heart or kidney concerns, ask your doctor about newer medications that specifically protect these organs (SGLT2 inhibitors or GLP-1) while also supporting weight loss."
+    },
+    "sbp": {
+      "title": "Blood Pressure Control",
+      "therapy1_name": "Combination Medications",
+      "therapy1_desc": "It is recommend to start with a combination of different blood pressure medications (e.g. RAS inhibitors and CCBs).",
+      "therapy2_name": "Heart-Healthy Diet",
+      "therapy2_desc": "Restriction of alcohol and sodium consumption, increased consumption of vegetables, use of low-fat dairy products can lower blood pressure naturally."
+    },
+    "cholHDL": {
+      "title": "HDL Cholesterol Improvement",
+      "therapy1_name": "Regular Exercise",
+      "therapy1_desc": "Aim for 150 minutes per week of activity like brisk walking, or 75 minutes of intense exercise.",
+      "therapy2_name": "Medication",
+      "therapy2_desc": "CETP inhibitors and Cholesterol-lowering medication (Statins) can also help to raise HDL."
+    },
+    "cholTri": {
+      "title": "Blood Fats (Triglycerides) Treatment",
+      "therapy1_name": "Healthy Lifestyle",
+      "therapy1_desc": "Stopping smoking and eating healthy fats (olive oil, nuts, fish) all help and should be done first.",
+      "therapy2_name": "Prescription Fish Oil",
+      "therapy2_desc": "If blood fats (triglycerides) remain high, special prescription fish oil (icosapent ethyl) might be considered.",
+      "therapy3_name": "Medication",
+      "therapy3_desc": "Fibrate or Cholesterol lowering medication (Statins) can also help to reduce triglycerides."
+    },
+    "waist": {
+      "title": "Weight Management",
+      "therapy1_name": "Diet & Exercise",
+      "therapy1_desc": "Reducing daily calories and exercising more leads to steady weight loss.",
+      "therapy2_name": "Medications",
+      "therapy2_desc": "Glucose-lowering drugs with additional weight-reducing effects (e.g. GLP-1RA) can also help.",
+      "surgical": "Surgical Options",
+      "surgical_desc": "For significant obesity with health problems, weight-loss surgery may be discussed."
+    }
+  },
+  "buttons": {
+    "simulate": "Simulate Treatment",
+    "simulateActive": "Simulating...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "createProfile": "Create Profile",
+    "add": "Add",
+    "export": "Export .xlsx / .drc",
+    "import": "Import .xlsx / .drc",
+    "scan": "Scan Lab Report"
+  },
+  "patientManager": {
+    "title": "My Profiles",
+    "activeProfile": "Active Profile",
+    "noProfile": "No profile selected",
+    "savedProfiles": "Saved Profiles",
+    "addNew": "Add New Profile",
+    "placeholder": "Profile name...",
+    "empty": "No profiles saved yet.",
+    "importExport": "Import / Export / OCR"
+  },
+  "timeline": {
+    "title": "Risk Timeline",
+    "hint": "Simulate treatments to track risk changes over time",
+    "setBaseline": "Set Baseline",
+    "snapshot": "Snapshot",
+    "empty": "Set a baseline and add snapshots to track your risk over scenarios."
+  },
+  "modals": {
+    "profileWarning": {
+      "title": "Save Your Data?",
+      "message": "You haven't created a profile yet. If you continue, your current data won't be saved.",
+      "create": "Create Profile",
+      "continue": "Continue Without Saving"
+    },
+    "ocr": {
+      "title": "Scan Lab Report",
+      "instructions": "Take a photo or upload your lab report",
+      "camera": "Camera",
+      "upload": "Upload File",
+      "review": "Review Results",
+      "confidence_high": "High confidence",
+      "confidence_medium": "Medium confidence",
+      "confidence_low": "Low confidence"
+    }
+  }
+}

@@ -21,6 +21,9 @@ DRC.UIController = (() => {
     const { el, setText, clampAndRound, formatAxisValue, escapeHtml } = DRC.UIHelpers;
     const CFG = DRC.CONFIG;
 
+    // Translation helper
+    const t = (key, fallback) => DRC.I18n?.t(key, fallback) || fallback || key;
+
     // Module-scope guards: delegated listeners registered at most once
     let _filterHandlerAttached = false;
     let _rowClickHandlerAttached = false;
@@ -30,10 +33,10 @@ DRC.UIController = (() => {
     // High-risk threshold (26%) aligns with Schmidt et al. (2005) published cutoff:
     // Pr(DM) ≥ 0.26 → sensitivity 52%, specificity 86% (see CONFIG.HIGH_RISK_CUTOFF)
     const RISK_COLORS = [
-        { min: 50, color: '#ff3b30', level: 'danger' },
-        { min: 26, color: '#ff6723', level: 'warning' },
-        { min: 10, color: '#ff9f0a', level: 'alert' },
-        { min: 0,  color: '#34c759', level: 'safe' }
+        { min: 50, color: '#c43d35', level: 'danger' },
+        { min: 26, color: '#d4653a', level: 'warning' },
+        { min: 10, color: '#d4942c', level: 'alert' },
+        { min: 0,  color: '#30a14e', level: 'safe' }
     ];
 
     /**
@@ -200,6 +203,15 @@ DRC.UIController = (() => {
         const pBaseline = summaryData.pBaseline;
         const netDeviation = summaryData.netDeviation;
 
+        // Filter contributions to only include factors in the active model
+        const activeModel = DRC.App?.getActiveModel?.();
+        const modelBetaKeys = activeModel ? Object.keys(activeModel.betas) : null;
+        if (modelBetaKeys) {
+            Object.keys(contributions).forEach(key => {
+                if (!modelBetaKeys.includes(key)) delete contributions[key];
+            });
+        }
+
         // Default: show all factors (false = no filter active)
         const filterState = container.getAttribute('data-filter-risk') === 'true';
 
@@ -229,7 +241,7 @@ DRC.UIController = (() => {
         const pBaselinePct = (pBaseline * 100).toFixed(1);
         const netDeviationPct = Math.abs(netDeviation * 100).toFixed(1);
         const isLower = netDeviation < 0;
-        const comparisonWord = isLower ? 'lower' : 'higher';
+        const comparisonWord = isLower ? t('chart.lower', 'lower') : t('chart.higher', 'higher');
 
         const { level: riskLevel } = getRiskLevel(pFull * 100);
 
@@ -240,13 +252,13 @@ DRC.UIController = (() => {
         summaryBanner.innerHTML = `
             <div class="contrib-summary-main">
                 <span class="contrib-summary-your-risk">${pFullPct}%</span>
-                <span class="contrib-summary-label">your risk</span>
+                <span class="contrib-summary-label">${t('chart.yourRisk', 'your risk')}</span>
             </div>
             <div class="contrib-summary-divider"></div>
             <div class="contrib-summary-comparison">
                 <div class="contrib-summary-sentence">
                     <span class="contrib-summary-delta ${isLower ? 'is-lower' : 'is-higher'}">${netDeviationPct}% ${comparisonWord}</span>
-                    than the average of <strong>${pBaselinePct}%</strong>
+                    ${t('chart.thanAverage', 'than the average of')} <strong>${pBaselinePct}%</strong>
                 </div>
             </div>
         `;
@@ -256,7 +268,7 @@ DRC.UIController = (() => {
         const filterToggle = document.createElement('div');
         filterToggle.className = 'contrib-filter-toggle';
         filterToggle.innerHTML = `
-            <span class="contrib-filter-label">Show above average risk factors only</span>
+            <span class="contrib-filter-label">${t('chart.filterLabel', 'Show above average risk factors only')}</span>
             <label class="toggle-switch" style="transform:scale(0.75);">
                 <input type="checkbox" id="risk-filter-toggle" ${filterState ? 'checked' : ''}>
                 <span class="toggle-slider"></span>
@@ -270,9 +282,9 @@ DRC.UIController = (() => {
         headerRow.innerHTML = `
             <div class="contrib-header-left"></div>
             <div class="contrib-header-center">
-                <div class="contrib-header-left-side"><span class="contrib-label-full">Better than average</span><span class="contrib-label-short">Better</span></div>
-                <div class="contrib-header-center-label"><span class="contrib-label-full">Average</span><span class="contrib-label-short">Avg</span></div>
-                <div class="contrib-header-right-side"><span class="contrib-label-full">Worse than average</span><span class="contrib-label-short">Worse</span></div>
+                <div class="contrib-header-left-side"><span class="contrib-label-full">${t('chart.betterThanAvg', 'Better than average')}</span><span class="contrib-label-short">${t('chart.betterShort', 'Better')}</span></div>
+                <div class="contrib-header-center-label"><span class="contrib-label-full">${t('chart.average', 'Average')}</span><span class="contrib-label-short">${t('chart.avgShort', 'Avg')}</span></div>
+                <div class="contrib-header-right-side"><span class="contrib-label-full">${t('chart.worseThanAvg', 'Worse than average')}</span><span class="contrib-label-short">${t('chart.worseShort', 'Worse')}</span></div>
             </div>
             <div class="contrib-header-right"></div>
         `;
@@ -300,18 +312,29 @@ DRC.UIController = (() => {
             const isProtectiveFactor = CFG.BETAS[key] < 0;
             const isBinaryFactor = ['race', 'parentHist'].includes(key);
             const isAboveAverage = isProtectiveFactor ? !isPositive : isPositive;
-            const label = CFG.LABELS[key];
+            const label = t(`factors.${key}`, CFG.LABELS[key]);
 
-            const actionVerb = isProtectiveFactor ? 'Increasing' : 'Lowering';
+            const actionVerb = isProtectiveFactor ? t('chart.verb.increasing', 'Increasing') : t('chart.verb.lowering', 'Lowering');
             let infoText;
             if (isBinaryFactor) {
-                infoText = isPositive
-                    ? `Your ${label.toLowerCase()} increases your overall diabetes risk by ${pctDisplay}. <strong>Check the treatment section on the right.</strong>`
-                    : `Your ${label.toLowerCase()} decreases your overall diabetes risk by ${pctDisplay} compared to an average person.`;
+                const tmpl = isPositive
+                    ? t('chart.info.binaryIncrease', 'Your {factor} increases your overall diabetes risk by {pct}. <strong>Check the treatment section on the right.</strong>')
+                    : t('chart.info.binaryDecrease', 'Your {factor} decreases your overall diabetes risk by {pct} compared to an average person.');
+                infoText = tmpl.replace('{factor}', label.toLowerCase()).replace('{pct}', pctDisplay);
             } else {
-                infoText = isPositive
-                    ? `Your ${label.toLowerCase()} is ${isAboveAverage ? 'above' : 'below'} average and increases your overall diabetes risk by ${pctDisplay} compared to an average value. <strong>${actionVerb} it would help to decrease your overall risk. Check the treatment section on the right.</strong>`
-                    : `Your ${label.toLowerCase()} is ${isAboveAverage ? 'above' : 'below'} average and decreases your overall diabetes risk by ${pctDisplay} compared to an average value.`;
+                const infoKey = isPositive
+                    ? (isAboveAverage ? 'aboveIncrease' : 'belowIncrease')
+                    : (isAboveAverage ? 'aboveDecrease' : 'belowDecrease');
+                const fallbacks = {
+                    aboveIncrease: 'Your {factor} is above average and increases your overall diabetes risk by {pct} compared to an average value. <strong>{verb} it would help to decrease your overall risk. Check the treatment section on the right.</strong>',
+                    belowIncrease: 'Your {factor} is below average and increases your overall diabetes risk by {pct} compared to an average value. <strong>{verb} it would help to decrease your overall risk. Check the treatment section on the right.</strong>',
+                    aboveDecrease: 'Your {factor} is above average and decreases your overall diabetes risk by {pct} compared to an average value.',
+                    belowDecrease: 'Your {factor} is below average and decreases your overall diabetes risk by {pct} compared to an average value.'
+                };
+                infoText = t(`chart.info.${infoKey}`, fallbacks[infoKey])
+                    .replace('{factor}', label.toLowerCase())
+                    .replace('{pct}', pctDisplay)
+                    .replace('{verb}', actionVerb);
             }
 
             const row = document.createElement('div');
@@ -334,7 +357,7 @@ DRC.UIController = (() => {
                     </div>
                     <div class="contrib-row-value ${isPositive ? 'value-positive' : 'value-negative'}">
                         <span class="contrib-value-pct">${signedDisplay}</span>
-                        <span class="contrib-value-hint">Click for info</span>
+                        <span class="contrib-value-hint">${t('chart.clickForInfo', 'Click for info')}</span>
                     </div>
                 </div>
                 <div class="contrib-row-detail">
@@ -389,8 +412,13 @@ DRC.UIController = (() => {
             };
         }).sort((a, b) => b.absContrib - a.absContrib);
 
+        // Filter to only show treatments for factors in the active model
+        const activeModelForTreatment = DRC.App?.getActiveModel?.();
+        const treatmentFields = activeModelForTreatment?.treatmentFields;
+        const modelFilteredItems = treatmentFields ? items.filter(i => treatmentFields.includes(i.factor)) : items;
+
         // When risk-filter active: show only treatments for above-average factors
-        const displayItems = filterRiskOnly ? items.filter(i => i.isAboveAverage) : items;
+        const displayItems = filterRiskOnly ? modelFilteredItems.filter(i => i.isAboveAverage) : modelFilteredItems;
 
         const maxPct = displayItems.reduce((max, i) => i.pct > max ? i.pct : max, 1);
 
@@ -408,23 +436,25 @@ DRC.UIController = (() => {
             if (factor === 'waist' && waistIsHigh && treatment.surgicalOption) {
                 therapies.push(treatment.surgicalOption);
             }
-            const therapiesHTML = therapies.map(t =>
-                `<div class="therapy-mini"><div><strong>${escapeHtml(t.name)}:</strong> ${escapeHtml(t.desc)}</div></div>`
-            ).join('');
+            const therapiesHTML = therapies.map((tItem, idx) => {
+                const therapyName = t(`treatments.${factor}.therapy${idx+1}_name`, tItem.name);
+                const therapyDesc = t(`treatments.${factor}.therapy${idx+1}_desc`, tItem.desc);
+                return `<div class="therapy-mini"><div><strong>${escapeHtml(therapyName)}:</strong> ${escapeHtml(therapyDesc)}</div></div>`;
+            }).join('');
 
             // Three-tier status: Indicated (red) > Elevated (orange) > Normal (green)
             let statusIcon, statusLabel, statusClass;
             if (isIndicated) {
                 statusIcon = 'alert-triangle';
-                statusLabel = 'Indicated';
+                statusLabel = t('status.indicated', 'Indicated');
                 statusClass = 'status-indicated';
             } else if (isElevated) {
                 statusIcon = 'alert-circle';
-                statusLabel = 'Elevated';
+                statusLabel = t('status.elevated', 'Elevated');
                 statusClass = 'status-elevated';
             } else {
                 statusIcon = 'check-circle';
-                statusLabel = 'Normal';
+                statusLabel = t('status.normal', 'Normal');
                 statusClass = 'status-normal';
             }
 
@@ -441,7 +471,7 @@ DRC.UIController = (() => {
                 </div>
                 <div class="tov-main-col">
                     <div class="tov-label-row tov-clickable" data-toggle-factor="${factor}">
-                        <span class="tov-title">${treatment.title}</span>
+                        <span class="tov-title">${t(`treatments.${factor}.title`, treatment.title)}</span>
                         <span class="tov-status ${statusClass}">
                             <i data-lucide="${statusIcon}" class="lucide-icon"></i>
                             ${statusLabel}
@@ -451,13 +481,13 @@ DRC.UIController = (() => {
                     <div class="tov-bar-container">
                         <div class="tov-bar ${isAboveAverage ? 'bar-indicated' : 'bar-normal'}" style="width:${barWidth}%;"></div>
                     </div>
-                    <div class="tov-pct">${riskContribText}% risk contribution compared to average</div>
+                    <div class="tov-pct">${riskContribText}% ${t('treatments.riskContribution', 'risk contribution compared to average')}</div>
                     <div class="tov-details ${isIndicated ? 'expanded' : ''}">
                         <div class="tov-details-inner">
                             ${therapiesHTML}
                             ${isIndicated ? `<button class="btn-simulate-treatment" data-sim-factor="${factor}">
                                 <i data-lucide="play-circle" class="lucide-icon"></i>
-                                Simulate Treatment
+                                ${t('buttons.simulate', 'Simulate Treatment')}
                             </button>` : ''}
                         </div>
                     </div>
@@ -576,18 +606,18 @@ DRC.UIController = (() => {
             container.appendChild(icon);
         }
         if (label) {
-            label.textContent = `${affected} out of 100 people with your profile may develop diabetes within 9 years`;
+            label.textContent = t('iconArray.label', '${affected} out of 100 people with your profile may develop diabetes within 9 years').replace('${affected}', affected);
         }
     };
 
     // ─── Rendering: Causality chains ────────────────────────────────────
 
     const CAUSALITY_CHAINS = [
-        { factors: ['waist'],   riskNode: 0, nodes: ['Abdominal Fat \u2191', 'Insulin Resistance', '\u03b2-Cell Dysfunction', 'Diabetes Risk \u2191'] },
-        { factors: ['fastGlu'], riskNode: 2, nodes: ['Insulin Resistance', 'Gluconeogenesis \u2191', 'Fasting Glucose \u2191', 'Beta-Cell Exhaustion', 'Diabetes Risk \u2191'] },
-        { factors: ['cholHDL'], riskNode: 0, nodes: ['HDL Cholesterol \u2193', 'Pancreatic Protection \u2193', 'Beta-Cell Damage', 'Diabetes Risk \u2191'] },
-        { factors: ['sbp'],     riskNode: 0, nodes: ['Blood Pressure \u2191', 'Insulin Resistance \u2191', '\u03b2-Cell Dysfunction', 'Diabetes Risk \u2191'] },
-        { factors: ['cholTri'], riskNode: 3, nodes: ['Insulin Resistance', 'Lipolysis \u2191', 'Free Fatty Acids \u2191', 'Triglycerides \u2191'] }
+        { factors: ['waist'],   riskNode: 0, nodes: ['causality.abdominalFat', 'causality.insulinResistance', 'causality.betaCellDysfunction', 'causality.diabetesRisk'] },
+        { factors: ['fastGlu'], riskNode: 2, nodes: ['causality.insulinResistance', 'causality.gluconeogenesis', 'causality.fastingGlucose', 'causality.betaCellExhaustion', 'causality.diabetesRisk'] },
+        { factors: ['cholHDL'], riskNode: 0, nodes: ['causality.hdlCholesterol', 'causality.pancreaticProtection', 'causality.betaCellDamage', 'causality.diabetesRisk'] },
+        { factors: ['sbp'],     riskNode: 0, nodes: ['causality.bloodPressure', 'causality.insulinResistanceInc', 'causality.betaCellDysfunction', 'causality.diabetesRisk'] },
+        { factors: ['cholTri'], riskNode: 3, nodes: ['causality.insulinResistance', 'causality.lipolysis', 'causality.freeFattyAcids', 'causality.triglycerides'] }
     ];
 
     /** Render causal pathway chains, highlighting those with elevated factors.
@@ -605,15 +635,22 @@ DRC.UIController = (() => {
             return absB - absA;
         });
 
-        sorted.forEach(chain => {
+        // Filter chains to only include those with factors in the active model
+        const activeModelForChains = DRC.App?.getActiveModel?.();
+        const chainModelFields = activeModelForChains ? Object.keys(activeModelForChains.betas) : null;
+        const visibleChains = chainModelFields
+            ? sorted.filter(chain => chain.factors.some(f => chainModelFields.includes(f)))
+            : sorted;
+
+        visibleChains.forEach(chain => {
             const highlighted = chain.factors.some(f => elevatedFactors.includes(f));
             const chainEl = document.createElement('div');
             chainEl.className = `causality-chain ${highlighted ? 'highlighted' : ''}`;
 
-            chain.nodes.forEach((node, idx) => {
+            chain.nodes.forEach((nodeKey, idx) => {
                 const nodeEl = document.createElement('div');
                 nodeEl.className = `chain-node${idx === chain.riskNode ? ' risk-node' : ''}`;
-                nodeEl.textContent = node;
+                nodeEl.textContent = t(nodeKey, nodeKey);
                 chainEl.appendChild(nodeEl);
                 if (idx < chain.nodes.length - 1) {
                     const arrow = document.createElement('div');
@@ -641,13 +678,13 @@ DRC.UIController = (() => {
             <div class="scenario-inline-row">
                 <div class="scenario-inline-item">
                     <i data-lucide="flag" class="lucide-icon scenario-inline-icon"></i>
-                    <span class="scenario-inline-label">Baseline</span>
+                    <span class="scenario-inline-label">${t('scenario.baseline', 'Baseline')}</span>
                     <span class="scenario-inline-value">${baselineRisk.toFixed(1)}%</span>
                 </div>
                 <i data-lucide="arrow-right" class="lucide-icon scenario-inline-arrow"></i>
                 <div class="scenario-inline-item">
                     <i data-lucide="user" class="lucide-icon scenario-inline-icon current-icon"></i>
-                    <span class="scenario-inline-label">Current</span>
+                    <span class="scenario-inline-label">${t('scenario.current', 'Current')}</span>
                     <span class="scenario-inline-value current-value">${currentRisk.toFixed(1)}%</span>
                 </div>
                 <div class="scenario-inline-delta ${cls}">
@@ -666,13 +703,13 @@ DRC.UIController = (() => {
     /** Update the collapsed summary line for non-modifiable factors. */
     const updateNonModSummary = () => {
         const age    = el('age-value')?.value || '50';
-        const sex    = el('sex-toggle')?.checked ? 'Male' : 'Female';
-        const race   = el('race-toggle')?.checked ? 'Black' : 'Other';
-        const parent = el('parentHist-toggle')?.checked ? 'History of diabetes in family' : 'No history of diabetes in family';
+        const sex    = el('sex-toggle')?.checked ? t('units.male', 'Male') : t('units.female', 'Female');
+        const race   = el('race-toggle')?.checked ? t('units.black', 'Black') : t('units.other', 'Other');
+        const parent = el('parentHist-toggle')?.checked ? t('units.yes', 'Yes') : t('units.no', 'No');
         const hVal   = el('height-value')?.value || '66';
         const hUnit  = el('height-value-unit')?.textContent || 'in';
 
-        setText('summary-age',    'Age: ' + age);
+        setText('summary-age',    t('summary.age', 'Age') + ': ' + age);
         setText('summary-sex',    sex);
         setText('summary-race',   race);
         setText('summary-parent', parent);
@@ -723,11 +760,11 @@ DRC.UIController = (() => {
         const tVal    = el('cholTri-value')?.value || '150';
         const tUnit   = el('cholTri-value-unit')?.textContent || 'mg/dL';
 
-        setText('summary-fastGlu', 'Glucose: ' + gVal + ' ' + gUnit);
-        setText('summary-waist',   'Waist: ' + wVal + ' ' + wUnit);
-        setText('summary-sbp',     'Blood Pressure: ' + bp + ' mmHg');
-        setText('summary-hdl',     'HDL: ' + hdlVal + ' ' + hdlUnit);
-        setText('summary-tri',     'TG: ' + tVal + ' ' + tUnit);
+        setText('summary-fastGlu', t('summary.glucose', 'Glucose') + ': ' + gVal + ' ' + gUnit);
+        setText('summary-waist',   t('summary.waist', 'Waist') + ': ' + wVal + ' ' + wUnit);
+        setText('summary-sbp',     t('summary.bp', 'Blood Pressure') + ': ' + bp + ' mmHg');
+        setText('summary-hdl',     t('summary.hdl', 'HDL') + ': ' + hdlVal + ' ' + hdlUnit);
+        setText('summary-tri',     t('summary.tg', 'TG') + ': ' + tVal + ' ' + tUnit);
     };
 
     // ─── Helpers for TreatmentSimulator ─────────────────────────────────
@@ -762,14 +799,14 @@ DRC.UIController = (() => {
             DRC.App._setCompareScenario(baselineRisk);
             if (btn) {
                 btn.classList.add('active');
-                btn.innerHTML = '<i data-lucide="flag" class="lucide-icon"></i> Reset Baseline';
+                btn.innerHTML = '<i data-lucide="flag" class="lucide-icon"></i> ' + t('buttons.resetBaseline', 'Reset Baseline');
             }
             if (panel) panel.style.display = 'flex';
             renderScenarioComparison(baselineRisk, baselineRisk);
         } else {
             if (btn) {
                 btn.classList.remove('active');
-                btn.innerHTML = '<i data-lucide="flag" class="lucide-icon"></i> Set Baseline';
+                btn.innerHTML = '<i data-lucide="flag" class="lucide-icon"></i> ' + t('buttons.setBaseline', 'Set Baseline');
             }
             if (panel) panel.style.display = 'none';
         }

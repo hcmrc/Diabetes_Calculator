@@ -177,6 +177,18 @@ DRC.TreatmentSimulator = (() => {
         }
     };
 
+    // Listen for language changes to update already-simulated button text
+    window.addEventListener('drc:language-changed-complete', () => {
+        document.querySelectorAll('.btn-simulate-treatment').forEach(b => {
+            const simFactor = b.getAttribute('data-sim-factor');
+            if (_simulated.has(simFactor)) {
+                const alreadyText = DRC.I18n?.t('buttons.alreadySimulated', 'Already Simulated') || 'Already Simulated';
+                b.innerHTML = `<i data-lucide="check-circle" class="lucide-icon"></i> ${alreadyText}`;
+            }
+        });
+        DRC.UIHelpers?.refreshIcons();
+    });
+
     return {
         simulate,
         resetSimulated: () => { cancel(); _simulated.clear(); },

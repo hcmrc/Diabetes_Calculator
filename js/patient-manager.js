@@ -11,6 +11,9 @@
 
 'use strict';
 
+// Translation helper
+const t = (key, fallback) => DRC.I18n?.t(key, fallback) || fallback || key;
+
 DRC.PatientManager = (() => {
     const STORAGE_KEY = 'drc_v1_patients';
     /** @deprecated Legacy key for backward-compatible migration */
@@ -129,6 +132,8 @@ DRC.PatientManager = (() => {
         vals._riskPct  = parseFloat(document.getElementById('risk-percentage')?.textContent) || 0;
         // Store active unit system so values can be correctly interpreted on load
         vals._isMetric = DRC.App?._getState?.()?.isMetric ?? false;
+        // Store active model so it can be restored on load
+        vals._activeModel = DRC.App?._getState?.()?.activeModel || 'clinicalGlucoseLipids';
         return vals;
     };
 
@@ -354,7 +359,7 @@ DRC.PatientManager = (() => {
 
                 const labelSpan = document.createElement('span');
                 labelSpan.className = 'quick-options-label';
-                labelSpan.textContent = 'Quick select:';
+                labelSpan.textContent = t('patientManager.quickSelect', 'Quick select:');
                 quickOptions.appendChild(labelSpan);
 
                 // Last password button
@@ -463,7 +468,7 @@ DRC.PatientManager = (() => {
                 const errorEl = document.getElementById('pwdPromptError');
                 const errorText = document.getElementById('pwdPromptErrorText');
                 if (errorEl) errorEl.style.display = 'block';
-                if (errorText) errorText.textContent = 'Password must be at least 8 characters long';
+                if (errorText) errorText.textContent = t('patientManager.passwordMinLength', 'Password must be at least 8 characters long');
                 return;
             }
             _hidePasswordPromptModal();
@@ -519,7 +524,7 @@ DRC.PatientManager = (() => {
                 icon.className = 'lucide-icon';
                 titleEl.appendChild(icon);
                 // Add text
-                titleEl.appendChild(document.createTextNode(' Verschlusselte Datei'));
+                titleEl.appendChild(document.createTextNode(' ' + t('patientManager.encryptedFile', 'Encrypted File')));
             }
 
             if (passwordInput) passwordInput.value = '';
@@ -584,6 +589,10 @@ DRC.PatientManager = (() => {
         if (!patient) return;
         activePatientId = id;
         applyValues(patient.data);
+        // Restore active model if saved with profile
+        if (patient.data._activeModel && DRC.App?.switchModel) {
+            DRC.App.switchModel(patient.data._activeModel);
+        }
         _persistAndRender();
         updateNavLabel();
         if (DRC.App?.trigger) {
@@ -626,7 +635,7 @@ DRC.PatientManager = (() => {
     };
 
     const exportToExcel = async () => {
-        if (patients.length === 0) { alert('No patients to export.'); return; }
+        if (patients.length === 0) { alert(t('patientManager.noPatientsExport', 'No patients to export.')); return; }
 
         // Show encryption modal
         const result = await showEncryptionModal();
@@ -644,7 +653,7 @@ DRC.PatientManager = (() => {
         if (result.useEncryption && result.password) {
             // Encrypt the data
             if (!DRC.CryptoService) {
-                alert('Encryption service not available.');
+                alert(t('patientManager.encryptionNotAvailable', 'Encryption service not available.'));
                 return;
             }
             try {
@@ -652,7 +661,7 @@ DRC.PatientManager = (() => {
                 _downloadFile(encrypted, 'diabetes_risk_patients.drc', 'application/octet-stream');
             } catch (e) {
                 console.error('Encryption failed:', e);
-                alert('Encryption failed. Please try again.');
+                alert(t('patientManager.encryptionFailed', 'Encryption failed. Please try again.'));
             }
         } else {
             // Download as regular Excel file
@@ -663,7 +672,7 @@ DRC.PatientManager = (() => {
     /** Export a single patient profile with formatted filename. */
     const exportSinglePatient = async (patientId) => {
         const patient = patients.find(p => p.id === patientId);
-        if (!patient) { alert('Patient not found.'); return; }
+        if (!patient) { alert(t('patientManager.patientNotFound', 'Patient not found.')); return; }
 
         // Show encryption modal
         const result = await showEncryptionModal();
@@ -690,7 +699,7 @@ DRC.PatientManager = (() => {
         if (result.useEncryption && result.password) {
             // Encrypt the data
             if (!DRC.CryptoService) {
-                alert('Encryption service not available.');
+                alert(t('patientManager.encryptionNotAvailable', 'Encryption service not available.'));
                 return;
             }
             try {
@@ -698,7 +707,7 @@ DRC.PatientManager = (() => {
                 _downloadFile(encrypted, `${baseFilename}.drc`, 'application/octet-stream');
             } catch (e) {
                 console.error('Encryption failed:', e);
-                alert('Encryption failed. Please try again.');
+                alert(t('patientManager.encryptionFailed', 'Encryption failed. Please try again.'));
             }
         } else {
             // Download as regular Excel file
@@ -711,7 +720,7 @@ DRC.PatientManager = (() => {
         const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
         if (file.size > MAX_FILE_SIZE) {
-            alert('File is too large. Maximum size is 5MB.');
+            alert(t('patientManager.fileTooLarge', 'File is too large. Maximum size is 5MB.'));
             return;
         }
 
@@ -736,19 +745,19 @@ DRC.PatientManager = (() => {
                         const errorEl = document.getElementById('pwdPromptError');
                         const errorText = document.getElementById('pwdPromptErrorText');
                         if (errorEl) errorEl.style.display = 'block';
-                        if (errorText) errorText.textContent = 'Wrong password or corrupted file';
+                        if (errorText) errorText.textContent = t('patientManager.wrongPassword', 'Wrong password or corrupted file');
                         // Re-show modal
                         const passwordRetry = await showPasswordPrompt(file.name);
                         if (!passwordRetry) return;
                         try {
                             fileData = await DRC.CryptoService.decrypt(fileData, passwordRetry);
                         } catch (retryErr) {
-                            alert('Error decrypting. Please check the password.');
+                            alert(t('patientManager.decryptError', 'Error decrypting. Please check the password.'));
                             return;
                         }
                     }
                 } else if (isDrcFile) {
-                    alert('This file appears to be encrypted, but the encryption format is not recognized.');
+                    alert(t('patientManager.unknownEncryptionFormat', 'This file appears to be encrypted, but the encryption format is not recognized.'));
                     return;
                 }
 
@@ -788,7 +797,7 @@ DRC.PatientManager = (() => {
                 });
                 _persistAndRender();
                 updateNavLabel();
-            } catch (_) { alert('Could not read the Excel file. Please check that it is a valid .xlsx file.'); }
+            } catch (_) { alert(t('patientManager.invalidExcel', 'Could not read the Excel file. Please check that it is a valid .xlsx file.')); }
         };
         reader.readAsArrayBuffer(file);
     };
@@ -799,20 +808,24 @@ DRC.PatientManager = (() => {
         const active = patients.find(p => p.id === activePatientId);
         const label = document.getElementById('patientNameLabel');
         const activeLabel = document.getElementById('pdActiveLabel');
-        if (label) label.textContent = active ? active.name : 'Select Profile';
+        if (label) label.textContent = active ? active.name : t('patientManager.selectProfile', 'Select Profile');
         if (activeLabel) activeLabel.textContent = active
             ? `${active.name} (${active.riskPct?.toFixed(1) || '?'}%)`
-            : 'No profile selected';
+            : t('patientManager.noProfile', 'No profile selected');
     };
 
     const renderList = () => {
         const container = document.getElementById('pdPatientList');
         if (!container) return;
         if (patients.length === 0) {
-            container.innerHTML = '<p class="pd-empty-msg">No patients saved yet.</p>';
+            container.textContent = '';
+            const emptyMsg = document.createElement('p');
+            emptyMsg.className = 'pd-empty-msg';
+            emptyMsg.textContent = t('patientManager.empty', 'No profiles saved yet.');
+            container.appendChild(emptyMsg);
             return;
         }
-        container.innerHTML = '';
+        container.textContent = '';
         patients.forEach(p => {
             const initials = p.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
@@ -832,8 +845,8 @@ DRC.PatientManager = (() => {
 
             const riskEl = document.createElement('div');
             riskEl.className = 'pd-patient-risk';
-            const savedDate = (() => { try { const d = new Date(p.savedAt); return isNaN(d.getTime()) ? 'Unknown' : d.toLocaleDateString(); } catch (e) { console.warn('PatientManager: invalid date for patient', p.id, e); return 'Unknown'; } })();
-            riskEl.textContent = `Risk: ${p.riskPct?.toFixed(1) || '?'}% \u00B7 ${savedDate}`;
+            const savedDate = (() => { try { const d = new Date(p.savedAt); return isNaN(d.getTime()) ? t('patientManager.unknownDate', 'Unknown') : d.toLocaleDateString(); } catch (e) { console.warn('PatientManager: invalid date for patient', p.id, e); return t('patientManager.unknownDate', 'Unknown'); } })();
+            riskEl.textContent = `${t('patientManager.riskLabel', 'Risk')}: ${p.riskPct?.toFixed(1) || '?'}% \u00B7 ${savedDate}`;
 
             info.appendChild(nameEl);
             info.appendChild(riskEl);
@@ -854,10 +867,10 @@ DRC.PatientManager = (() => {
                 return btn;
             };
 
-            const exportBtn = mkBtn('export', 'Export this profile to Excel', 'export', 'download');
-            const renameBtn = mkBtn('rename', 'Rename profile', 'rename', 'pencil');
-            const saveBtn = mkBtn('save', 'Update with current values', 'save', 'save');
-            const delBtn  = mkBtn('delete', 'Delete patient', 'delete', 'trash-2');
+            const exportBtn = mkBtn('export', t('patientManager.exportProfile', 'Export this profile to Excel'), 'export', 'download');
+            const renameBtn = mkBtn('rename', t('patientManager.renameProfile', 'Rename profile'), 'rename', 'pencil');
+            const saveBtn = mkBtn('save', t('patientManager.updateProfile', 'Update with current values'), 'save', 'save');
+            const delBtn  = mkBtn('delete', t('patientManager.deleteProfile', 'Delete profile'), 'delete', 'trash-2');
             actions.appendChild(exportBtn);
             actions.appendChild(renameBtn);
             actions.appendChild(saveBtn);
@@ -871,7 +884,7 @@ DRC.PatientManager = (() => {
             exportBtn.addEventListener('click', (e) => { e.stopPropagation(); exportSinglePatient(p.id); });
             renameBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const newName = prompt(`Rename "${p.name}" to:`, p.name);
+                const newName = prompt(t('patientManager.renamePrompt', 'Rename "{name}" to:').replace('{name}', p.name), p.name);
                 if (newName && newName.trim() && newName.trim() !== p.name) {
                     renamePatient(p.id, newName.trim());
                 }
@@ -879,7 +892,7 @@ DRC.PatientManager = (() => {
             saveBtn.addEventListener('click', (e) => { e.stopPropagation(); updatePatient(p.id); });
             delBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (confirm(`Delete patient "${p.name}"?`)) deletePatient(p.id);
+                if (confirm(t('patientManager.deleteConfirm', 'Delete profile "{name}"?').replace('{name}', p.name))) deletePatient(p.id);
             });
             container.appendChild(card);
         });
@@ -907,6 +920,14 @@ DRC.PatientManager = (() => {
         // Initialize encryption modals
         initEncryptionModal();
         initPasswordPromptModal();
+
+        // Subscribe to language changes to re-render UI
+        if (DRC.I18n?.onLanguageChange) {
+            DRC.I18n.onLanguageChange(() => {
+                renderList();
+                updateNavLabel();
+            });
+        }
 
         document.getElementById('patientMenuBtn')?.addEventListener('click', () => {
             const isOpen = document.getElementById('patientDrawer')?.classList.contains('open');
