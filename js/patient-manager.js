@@ -797,6 +797,9 @@ DRC.PatientManager = (() => {
                 });
                 _persistAndRender();
                 updateNavLabel();
+
+                // Notify that import is complete (for tutorial trigger)
+                window.dispatchEvent(new CustomEvent('drc:import:completed'));
             } catch (_) { alert(t('patientManager.invalidExcel', 'Could not read the Excel file. Please check that it is a valid .xlsx file.')); }
         };
         reader.readAsArrayBuffer(file);

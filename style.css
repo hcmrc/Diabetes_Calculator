@@ -3988,6 +3988,53 @@ body.ocr-modal-open .col-step-label {
     color: var(--text-primary);
 }
 
+/* Restart Setup Button - matches other settings buttons */
+.btn-restart-setup {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    height: 32px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: inherit;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-restart-setup:hover {
+    background: var(--bg-page);
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+.btn-restart-setup:active {
+    transform: translateY(0);
+}
+
+.btn-restart-setup .lucide-icon {
+    width: 14px;
+    height: 14px;
+    color: currentColor;
+}
+
+[data-theme="dark"] .btn-restart-setup {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--border);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .btn-restart-setup:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+}
+
 /* Rotate chevron when model dropdown is open */
 #settingsModelBtn[aria-expanded="true"] .lang-chevron {
     transform: rotate(180deg);
@@ -6587,7 +6634,7 @@ body.tutorial-active .tutorial-highlight {
 .landing-step-subtitle {
     font-size: var(--text-base);
     color: var(--text-secondary);
-    margin-bottom: var(--space-6);
+    margin-bottom: var(--space-4);
     line-height: 1.5;
 }
 
@@ -6601,12 +6648,12 @@ body.tutorial-active .tutorial-highlight {
     width: 80px;
     height: 80px;
     margin: 0 auto var(--space-6);
-    background: linear-gradient(135deg, var(--safe), #28a745);
+    background: linear-gradient(135deg, var(--safe), var(--safe-hover, #2e9e4f));
     border-radius: var(--radius-lg);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 8px 32px rgba(48, 161, 78, 0.3);
+    box-shadow: 0 8px 32px var(--safe-glow, rgba(48, 161, 78, 0.3));
 }
 
 .landing-welcome-icon .lucide-icon {
@@ -6637,36 +6684,106 @@ body.tutorial-active .tutorial-highlight {
     min-width: 200px;
 }
 
-/* Get Started button — medium size so it fits without scrolling */
-.landing-get-started {
-    padding: var(--space-3) var(--space-6);
-    font-size: var(--text-base);
-    min-width: 160px;
+/* Landing Summary (for data import summary step) */
+.landing-summary {
+    background: var(--bg-page);
+    border-radius: var(--radius);
+    padding: var(--space-4);
+    margin: var(--space-4) 0;
 }
 
-/* Skip import button — more prominent */
-.landing-skip-btn {
-    display: block;
-    margin: var(--space-4) auto 0;
-    background: none;
-    border: 1.5px solid var(--border-strong);
+.landing-summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.landing-summary-item:last-child {
+    border-bottom: none;
+}
+
+.summary-label {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+.summary-value {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Alias classes for JS compatibility */
+.landing-title {
+    font-size: var(--text-hero);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+    line-height: 1.2;
+}
+
+.landing-subtitle {
+    font-size: var(--text-base);
+    color: var(--text-secondary);
+    max-width: 400px;
+    margin: 0 auto var(--space-8);
+    line-height: 1.5;
+}
+
+/* Get Started button — extends .btn-primary with larger size (CTA) */
+.landing-get-started {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-7);
+    font-family: inherit;
+    font-size: var(--text-lg);
+    font-weight: 600;
     border-radius: var(--radius);
-    padding: var(--space-3) var(--space-6);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 200px;
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 2px 8px var(--primary-glow);
+}
+
+.landing-get-started:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+/* Skip import button / Enter values manually — extends .btn-secondary */
+.landing-skip-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    margin: var(--space-4) auto var(--space-6);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-3) var(--space-5);
     font-family: inherit;
     font-size: var(--text-base);
-    font-weight: 500;
-    color: var(--text-secondary);
+    font-weight: 600;
+    color: var(--text-primary);
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.2s ease;
     width: 100%;
-    max-width: 320px;
+    max-width: 280px;
 }
 
 .landing-skip-btn:hover,
 .landing-skip-btn.active {
-    border-color: var(--primary);
-    color: var(--primary);
-    background: var(--primary-light);
+    background: var(--bg-page);
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
 }
 
 /* Restart link on ready step — more prominent */
@@ -6697,10 +6814,10 @@ body.tutorial-active .tutorial-highlight {
     gap: var(--space-2);
     margin-top: var(--space-3);
     padding: var(--space-2) var(--space-4);
-    background: var(--color-safe-bg, #f0fdf4);
-    border: 1px solid var(--color-safe, #16a34a);
+    background: var(--safe-light);
+    border: 1px solid var(--safe-border);
     border-radius: var(--radius);
-    color: var(--color-safe, #16a34a);
+    color: var(--safe);
     font-size: var(--text-sm);
     font-weight: 500;
 }
@@ -6782,10 +6899,6 @@ body.tutorial-active .tutorial-highlight {
     transition: all 0.25s ease;
 }
 
-.landing-card.selected .card-icon {
-    background: var(--primary);
-}
-
 .landing-card .card-icon .lucide-icon {
     width: 24px;
     height: 24px;
@@ -6793,7 +6906,7 @@ body.tutorial-active .tutorial-highlight {
 }
 
 .landing-card.selected .card-icon .lucide-icon {
-    color: white;
+    color: var(--text-secondary);
 }
 
 .landing-card .card-title {
@@ -6830,8 +6943,8 @@ body.tutorial-active .tutorial-highlight {
 }
 
 .landing-card.selected .check-indicator {
-    background: var(--primary);
-    border-color: var(--primary);
+    background: var(--safe);
+    border-color: var(--safe);
 }
 
 .landing-card .check-indicator .lucide-icon {
@@ -6870,13 +6983,13 @@ body.tutorial-active .tutorial-highlight {
 .btn-primary {
     background: var(--primary);
     color: white;
-    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
+    box-shadow: 0 2px 8px var(--primary-glow);
 }
 
 .btn-primary:hover {
-    background: var(--primary-dark, #0056cc);
+    background: var(--primary-hover);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.35);
+    box-shadow: 0 4px 12px var(--shadow-color, rgba(58, 58, 60, 0.25));
 }
 
 .btn-secondary {
@@ -6903,10 +7016,6 @@ body.tutorial-active .tutorial-highlight {
     transition: all 0.25s ease;
 }
 
-.landing-card.selected .landing-card-icon {
-    background: var(--primary);
-}
-
 .landing-card-icon .lucide-icon {
     width: 24px;
     height: 24px;
@@ -6914,13 +7023,7 @@ body.tutorial-active .tutorial-highlight {
 }
 
 .landing-card.selected .landing-card-icon .lucide-icon {
-    color: white;
-}
-
-/* Fix checkmark color to be green when selected */
-.landing-card.selected .check-indicator {
-    background: var(--safe);
-    border-color: var(--safe);
+    color: var(--text-secondary);
 }
 
 /* Language Card Specific */
@@ -6934,11 +7037,22 @@ body.tutorial-active .tutorial-highlight {
     border-radius: var(--radius-sm);
     overflow: hidden;
     margin-bottom: var(--space-3);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border);
+    background: var(--bg-page);
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.language-card:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+.language-card.selected {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    box-shadow: var(--shadow-glow);
 }
 
 .language-card .card-title {
@@ -6951,6 +7065,7 @@ body.tutorial-active .tutorial-highlight {
     align-items: flex-start;
     text-align: left;
     padding: var(--space-5);
+    margin-top: var(--space-4);
 }
 
 .model-card .model-header {
@@ -6974,17 +7089,17 @@ body.tutorial-active .tutorial-highlight {
 }
 
 .model-card .accuracy-badge.basic {
-    background: rgba(196, 61, 53, 0.1);
+    background: var(--danger-light, rgba(196, 61, 53, 0.1));
     color: var(--danger);
 }
 
 .model-card .accuracy-badge.good {
-    background: rgba(212, 148, 44, 0.1);
+    background: var(--alert-light, rgba(212, 148, 44, 0.1));
     color: var(--alert);
 }
 
 .model-card .accuracy-badge.best {
-    background: rgba(48, 161, 78, 0.1);
+    background: var(--safe-light, rgba(48, 161, 78, 0.1));
     color: var(--safe);
 }
 
@@ -7001,6 +7116,18 @@ body.tutorial-active .tutorial-highlight {
     font-size: var(--text-xs);
     color: var(--text-tertiary);
     width: 100%;
+}
+
+.model-card:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+.model-card.selected {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    box-shadow: var(--shadow-glow);
 }
 
 /* Import Card Specific */
@@ -7020,6 +7147,18 @@ body.tutorial-active .tutorial-highlight {
 .import-card .card-description {
     font-size: var(--text-xs);
     color: var(--text-tertiary);
+}
+
+.import-card:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+.import-card.selected {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    box-shadow: var(--shadow-glow);
 }
 
 /* Skip Link */
@@ -7177,7 +7316,7 @@ body.tutorial-active .tutorial-highlight {
     align-items: center;
     justify-content: center;
     animation: successPop 0.5s ease-out;
-    box-shadow: 0 8px 32px rgba(48, 161, 78, 0.3);
+    box-shadow: 0 8px 32px var(--safe-border);
 }
 
 @keyframes successPop {
@@ -7266,13 +7405,15 @@ body.tutorial-active .tutorial-highlight {
 }
 
 .landing-footer .btn-secondary {
-    background: transparent;
-    color: var(--text-secondary);
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
 }
 
 .landing-footer .btn-secondary:hover {
-    background: var(--primary-light);
-    color: var(--text-primary);
+    background: var(--bg-page);
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
 }
 
 .landing-footer .btn-primary {
@@ -7321,7 +7462,7 @@ body.tutorial-active .tutorial-highlight {
 }
 
 .dark-mode .landing-welcome-icon {
-    box-shadow: 0 8px 32px rgba(48, 161, 78, 0.2);
+    box-shadow: 0 8px 32px var(--safe-glow-dark, rgba(48, 161, 78, 0.2));
 }
 
 .dark-mode .landing-tutorial-toggle .toggle-icon {
@@ -7329,19 +7470,19 @@ body.tutorial-active .tutorial-highlight {
 }
 
 .dark-mode .landing-success-icon {
-    box-shadow: 0 8px 32px rgba(48, 161, 78, 0.2);
+    box-shadow: 0 8px 32px var(--safe-border);
 }
 
 .dark-mode .model-card .accuracy-badge.basic {
-    background: rgba(196, 61, 53, 0.15);
+    background: var(--danger-light-dark, rgba(196, 61, 53, 0.15));
 }
 
 .dark-mode .model-card .accuracy-badge.good {
-    background: rgba(212, 148, 44, 0.15);
+    background: var(--alert-light-dark, rgba(212, 148, 44, 0.15));
 }
 
 .dark-mode .model-card .accuracy-badge.best {
-    background: rgba(48, 161, 78, 0.15);
+    background: var(--safe-light-dark, rgba(48, 161, 78, 0.15));
 }
 
 /* ============================================================================

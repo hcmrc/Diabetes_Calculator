@@ -110,6 +110,12 @@ DRC.SettingsPanel = (() => {
             _unitToggle.addEventListener('change', _handleUnitToggle);
         }
 
+        // Restart Setup button
+        const restartSetupBtn = document.getElementById('restartSetupBtn');
+        if (restartSetupBtn) {
+            restartSetupBtn.addEventListener('click', _handleRestartSetup);
+        }
+
         // Listen for dark mode changes
         window.addEventListener('darkmode:change', () => {
             _updateDarkModeButtonState();
@@ -489,12 +495,25 @@ DRC.SettingsPanel = (() => {
         if (!_unitToggle) return;
 
         const isMetric = _unitToggle.checked;
-        
+
         const usLabel = document.getElementById('unit-label-us');
         const siLabel = document.getElementById('unit-label-si');
         if (usLabel && siLabel) {
             usLabel.style.opacity = isMetric ? '0.5' : '1';
             siLabel.style.opacity = isMetric ? '1' : '0.5';
+        }
+    };
+
+    const _handleRestartSetup = () => {
+        // Close settings panel first
+        _close();
+
+        // Restart landing page
+        if (DRC.LandingPage && typeof DRC.LandingPage.restart === 'function') {
+            DRC.LandingPage.restart();
+        } else {
+            // Fallback: reload page if landing page module not available
+            window.location.reload();
         }
     };
 

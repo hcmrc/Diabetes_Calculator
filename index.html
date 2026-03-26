@@ -92,7 +92,7 @@
             <!-- Settings Button -->
             <button id="settingsBtn" type="button" class="btn-settings" aria-label="Settings" aria-expanded="false">
                 <i data-lucide="settings" class="lucide-icon"></i>
-                <span class="settings-label">Settings</span>
+                <span class="settings-label" data-i18n="nav.settings">Settings</span>
             </button>
         </div>
     </div>
@@ -155,6 +155,13 @@
                 </label>
                 <span class="toggle-label-nav" id="unit-label-si">SI</span>
             </div>
+        </div>
+        <!-- Restart Setup Option -->
+        <div class="settings-option">
+            <span class="settings-option-label" data-i18n="settings.restartSetup">Setup</span>
+            <button id="restartSetupBtn" type="button" class="btn-restart-setup" data-i18n="settings.restartSetupBtn">
+                <i data-lucide="rotate-ccw" class="lucide-icon"></i> Start Over
+            </button>
         </div>
     </div>
 </div>

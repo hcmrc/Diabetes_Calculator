@@ -348,7 +348,7 @@ DRC.LandingPage = (() => {
     };
 
     /**
-     * Update navigation button states
+     * Update navigation button states and labels
      */
     const _updateNavigation = () => {
         if (!_backBtn || !_nextBtn || !_finishBtn || !_restartBtn) return;
@@ -371,6 +371,13 @@ DRC.LandingPage = (() => {
 
         // Hide footer entirely on step 1 (content has its own CTA button)
         if (_footer) _footer.hidden = _currentStep === 1;
+
+        // Update button labels (for language changes)
+        _backBtn.textContent = _t('landing.back');
+        _nextBtn.textContent = _t('landing.next');
+        _finishBtn.textContent = _t('landing.ready.start');
+        const restartText = _restartBtn.querySelector('span') || _restartBtn;
+        restartText.textContent = _t('landing.restart');
     };
 
     /**
@@ -958,6 +965,10 @@ DRC.LandingPage = (() => {
             case 'select-language':
                 _state.language = target.dataset.language;
                 _saveState();
+                // Apply language immediately so the rest of the setup is translated
+                if (typeof DRC !== 'undefined' && DRC.I18n && DRC.I18n.setLanguage) {
+                    DRC.I18n.setLanguage(_state.language);
+                }
                 _renderStep();
                 _updateNavigation();
                 break;
@@ -1007,6 +1018,10 @@ DRC.LandingPage = (() => {
                     if (target.dataset.language) {
                         _state.language = target.dataset.language;
                         _saveState();
+                        // Apply language immediately so the rest of the setup is translated
+                        if (typeof DRC !== 'undefined' && DRC.I18n && DRC.I18n.setLanguage) {
+                            DRC.I18n.setLanguage(_state.language);
+                        }
                         _renderStep();
                         _updateNavigation();
                     } else if (target.dataset.model) {
@@ -1069,8 +1084,9 @@ DRC.LandingPage = (() => {
     /**
      * Trigger file import based on selected import type
      * @param {string} importType - 'image' | 'pdf' | 'excel' | 'encrypted'
+     * @param {boolean} skipDrawer - If true, don't open patient drawer (for setup flow)
      */
-    const _triggerImport = (importType) => {
+    const _triggerImport = (importType, skipDrawer = false) => {
         switch (importType) {
             case 'image':
             case 'pdf':
@@ -1087,10 +1103,13 @@ DRC.LandingPage = (() => {
                 break;
             case 'excel':
             case 'encrypted': {
-                const drawer = document.getElementById('patientDrawer');
-                const overlay = document.getElementById('patientOverlay');
-                if (drawer) drawer.classList.add('open');
-                if (overlay) overlay.classList.add('open');
+                // Only open drawer if not in setup flow (skipDrawer = true)
+                if (!skipDrawer) {
+                    const drawer = document.getElementById('patientDrawer');
+                    const overlay = document.getElementById('patientOverlay');
+                    if (drawer) drawer.classList.add('open');
+                    if (overlay) overlay.classList.add('open');
+                }
                 if (_pendingFile) {
                     setTimeout(() => {
                         const input = document.getElementById('pdImportFile');
@@ -1131,9 +1150,9 @@ DRC.LandingPage = (() => {
         // Hide overlay
         hide();
 
-        // Trigger import if a type was selected
+        // Trigger import if a type was selected (skip drawer for setup flow)
         if (_state.importType) {
-            setTimeout(() => _triggerImport(_state.importType), 400);
+            setTimeout(() => _triggerImport(_state.importType, true), 400);
         }
 
         // Start tutorial after import completes, or immediately if no import
@@ -1228,6 +1247,15 @@ DRC.LandingPage = (() => {
             const restartText = _restartBtn.querySelector('span') || _restartBtn;
             restartText.textContent = _t('landing.restart');
         }
+
+        // Listen for language changes while landing page is open
+        window.addEventListener('drc:language-changed', () => {
+            if (_isVisible) {
+                _renderStep();
+                _updateNavigation();
+                _updateStepCounter();
+            }
+        });
     };
 
     /**
