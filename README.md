@@ -40,6 +40,8 @@ Intercept σ = -9.9808
 - **Treatment zone map** - heatmap visualization of treatment zones
 - **Patient management** - save and load patient profiles via localStorage
 - **Model transparency** - beta vector visualization and causal chains to disclose model structure (EID Abstraction Hierarchy)
+- **Internationalization (i18n)** - Multi-language support (EN/DE)
+- **Multi-model support** - Three model variants (Clinical, Clinical+Glucose, Full Model)
 
 ## EID Design Principles
 
@@ -71,6 +73,7 @@ js/
   conversion-service.js   Unit conversion (US ↔ SI)
   risk-model.js           Logistic regression, contribution calculation
   ui-helpers.js           Utility functions (clamping, formatting)
+  utils.js                Shared utilities (escapeHtml, debounce, i18n cache)
   ui-controller.js        DOM rendering, slider updates, gauge animation
   radar-chart.js          SVG radar chart of risk factors
   timeline-chart.js       SVG timeline chart with snapshot tracking
@@ -78,6 +81,14 @@ js/
   patient-manager.js      Patient management (localStorage) with Excel I/O
   app.js                  Application logic, event binding, state management
   main.js                 Bootstrap (DOMContentLoaded)
+  i18n/                   Internationalization
+    translations/         JSON translation files
+    i18n-service.js       Core i18n functionality
+    i18n-ui.js            UI language switching
+  settings-panel.js       Settings panel component
+  profile-warning.js      Profile warning system
+  tutorial.js             Interactive tutorial
+  landing-page.js         Landing page functionality
   lib/
     lucide.min.js         Local icon library
 tests/
@@ -134,6 +145,17 @@ This application:
 - Uses `localStorage` for data persistence (stored locally in the browser)
 - Implements **Content Security Policy (CSP)** headers
 - Uses cryptographically secure random ID generation (`crypto.randomUUID`)
+- **XSS Protection** — All dynamic content uses `textContent` or `createElement()` instead of `innerHTML`
+- **Password Protection** — Optional AES-GCM encryption for Excel exports
+
+### Security Best Practices Implemented
+
+| Practice | Implementation |
+|----------|---------------|
+| XSS Prevention | `DRC.Utils.escapeHtml()` for text content |
+| Safe DOM | `DRC.Utils.createElement()` instead of HTML strings |
+| Event Handling | Delegated events instead of document-level handlers |
+| Data Sanitization | Input validation in `DRC.Validation` utilities |
 
 See [SECURITY.md](.github/SECURITY.md) for details on reporting vulnerabilities.
 

@@ -160,6 +160,7 @@ function loadPatientManager(localStorageInstance, domOverrides) {
         }
     };
 
+    require('../js/utils.js');
     require('../js/patient-manager.js');
     return DRC.PatientManager;
 }
@@ -412,6 +413,7 @@ console.log('\n═══ TEST SUITE 7: captureCurrentValues() tolerates missing 
         }
     };
 
+    require('../js/utils.js');
     require('../js/patient-manager.js');
     const pm = DRC.PatientManager;
 
@@ -521,6 +523,7 @@ console.log('\n═══ TEST SUITE 8: applyValues() unit conversion ═══')
         }
     };
 
+    require('../js/utils.js');
     require('../js/patient-manager.js');
     const pm = DRC.PatientManager;
     pm.init();
@@ -545,6 +548,7 @@ console.log('\n═══ TEST SUITE 8: applyValues() unit conversion ═══')
 
     unloadModules();
     global.DRC.App._getState = () => ({ isMetric: true }); // current mode: SI
+    require('../js/utils.js');
     require('../js/patient-manager.js');
     const pm2 = DRC.PatientManager;
     pm2.init();

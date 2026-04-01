@@ -21,6 +21,43 @@ DRC.I18nUI = (() => {
     // ─── Private Methods ─────────────────────────────────────────────────
 
     /**
+     * SVG Flag strings for each language (simplified flag designs)
+     */
+    const FLAG_SVGS = {
+        // UK Flag - Union Jack simplified
+        en: `<svg viewBox="0 0 20 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="0.5" y="0.5" width="19" height="13" rx="1" fill="#1e3a8a" stroke="currentColor" stroke-width="0.5"/>
+            <path d="M0 0L20 14M20 0L0 14" stroke="#f8fafc" stroke-width="2.5"/>
+            <path d="M0 0L20 14M20 0L0 14" stroke="#dc2626" stroke-width="1.5"/>
+            <rect x="8.5" y="0" width="3" height="14" fill="#f8fafc"/>
+            <rect x="0" y="5.5" width="20" height="3" fill="#f8fafc"/>
+            <rect x="9" y="0" width="2" height="14" fill="#dc2626"/>
+            <rect x="0" y="6" width="20" height="2" fill="#dc2626"/>
+        </svg>`,
+        // Germany Flag - Black Red Gold horizontal
+        de: `<svg viewBox="0 0 20 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="0.5" y="0.5" width="19" height="13" rx="1" stroke="currentColor" stroke-width="0.5"/>
+            <rect x="1" y="1" width="18" height="4" fill="#1f2937"/>
+            <rect x="1" y="5" width="18" height="4" fill="#dc2626"/>
+            <rect x="1" y="9" width="18" height="4" fill="#f59e0b"/>
+        </svg>`,
+        // France Flag - Blue White Red vertical
+        fr: `<svg viewBox="0 0 20 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="0.5" y="0.5" width="19" height="13" rx="1" stroke="currentColor" stroke-width="0.5"/>
+            <rect x="1" y="1" width="6" height="12" fill="#1e40af"/>
+            <rect x="7" y="1" width="6" height="12" fill="#f8fafc"/>
+            <rect x="13" y="1" width="6" height="12" fill="#dc2626"/>
+        </svg>`,
+        // Spain Flag - Red Yellow Red horizontal
+        es: `<svg viewBox="0 0 20 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="0.5" y="0.5" width="19" height="13" rx="1" stroke="currentColor" stroke-width="0.5"/>
+            <rect x="1" y="1" width="18" height="3" fill="#dc2626"/>
+            <rect x="1" y="4" width="18" height="6" fill="#fbbf24"/>
+            <rect x="1" y="10" width="18" height="3" fill="#dc2626"/>
+        </svg>`
+    };
+
+    /**
      * Create the language dropdown element
      * @returns {HTMLElement} Dropdown element
      */
@@ -47,7 +84,7 @@ DRC.I18nUI = (() => {
 
             const flag = document.createElement('span');
             flag.className = 'lang-flag';
-            flag.textContent = DRC.I18n.getFlag(lang);
+            flag.innerHTML = FLAG_SVGS[lang] || DRC.I18n.getFlag(lang);
             flag.setAttribute('aria-hidden', 'true');
 
             const name = document.createElement('span');
@@ -95,10 +132,12 @@ DRC.I18nUI = (() => {
         if (!_button) return;
 
         const lang = DRC.I18n.getCurrentLang();
-        const flag = _button.querySelector('.lang-flag');
-        const code = _button.querySelector('.lang-code');
+        const flagIcon = document.getElementById('langFlagIcon');
+        const code = document.getElementById('langCode');
 
-        if (flag) flag.textContent = DRC.I18n.getFlag(lang);
+        if (flagIcon && FLAG_SVGS[lang]) {
+            flagIcon.innerHTML = FLAG_SVGS[lang];
+        }
         if (code) code.textContent = lang.toUpperCase();
     };
 

@@ -39,6 +39,11 @@ DRC.DarkMode = (() => {
             currentTheme = systemPreference;
             applyTheme(currentTheme);
             updateToggleButton();
+
+            // Dispatch event to notify other components
+            window.dispatchEvent(new CustomEvent('darkmode:change', {
+                detail: { theme: currentTheme }
+            }));
         }
     };
 
@@ -58,22 +63,30 @@ DRC.DarkMode = (() => {
     };
 
     const setupToggleButton = () => {
-        const toggleBtn = document.getElementById('darkModeToggle');
-        if (toggleBtn) {
-            toggleBtn.addEventListener('click', toggle);
-            updateToggleButton();
-        }
+        const toggleBtns = document.querySelectorAll('#darkModeToggle, #settingsDarkModeBtn');
+        toggleBtns.forEach(btn => {
+            if (btn && !btn._darkModeListenerAttached) {
+                // Mark button to prevent duplicate listeners
+                btn._darkModeListenerAttached = true;
+                btn.addEventListener('click', toggle);
+            }
+        });
+        updateToggleButton();
     };
 
     const updateToggleButton = () => {
-        const toggleBtn = document.getElementById('darkModeToggle');
-        if (!toggleBtn) return;
+        const toggleBtns = document.querySelectorAll('#darkModeToggle, #settingsDarkModeBtn');
         const isDark = document.documentElement.classList.contains('dark');
-        toggleBtn.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
-        toggleBtn.setAttribute('aria-pressed', String(isDark));
-        toggleBtn.classList.toggle('active', isDark);
-        const icon = toggleBtn.querySelector('.lucide-icon');
-        if (icon) icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+
+        toggleBtns.forEach(btn => {
+            if (!btn) return;
+            btn.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+            btn.setAttribute('aria-pressed', String(isDark));
+            btn.classList.toggle('active', isDark);
+            const icon = btn.querySelector('.lucide-icon');
+            if (icon) icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+        });
+
         DRC.UIHelpers.refreshIcons();
     };
 
@@ -86,6 +99,11 @@ DRC.DarkMode = (() => {
         applyTheme(newTheme);
         updateToggleButton();
         setTimeout(() => document.body.classList.remove('theme-transition'), 300);
+
+        // Dispatch event to notify other components
+        window.dispatchEvent(new CustomEvent('darkmode:change', {
+            detail: { theme: newTheme }
+        }));
     };
 
     const isDark = () => document.documentElement.classList.contains('dark');
@@ -96,6 +114,11 @@ DRC.DarkMode = (() => {
             currentTheme = theme;
             applyTheme(theme);
             updateToggleButton();
+
+            // Dispatch event to notify other components
+            window.dispatchEvent(new CustomEvent('darkmode:change', {
+                detail: { theme: theme }
+            }));
         }
     };
 

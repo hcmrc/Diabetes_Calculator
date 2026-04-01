@@ -27,6 +27,30 @@
 window.DRC = window.DRC || {};
 
 /**
+ * ARIC study beta coefficients from Schmidt et al. (2005).
+ * Full clinical model: Clinical + Glucose + Lipids.
+ * @const {Object}
+ */
+const ARIC_BETAS = {
+    age:        0.0173,
+    race:       0.4433,
+    parentHist: 0.4981,
+    sbp:        0.0111,
+    waist:      0.0273,     // per cm
+    height:    -0.0326,     // per cm
+    fastGlu:    1.5849,     // per mmol/L
+    cholHDL:   -0.4718,     // per mmol/L
+    cholTri:    0.242       // per mmol/L
+};
+
+/**
+ * ARIC study intercept from Schmidt et al. (2005).
+ * Full clinical model intercept.
+ * @const {number}
+ */
+const ARIC_INTERCEPT = -9.9808;
+
+/**
  * Immutable application configuration.
  * @const {Object}
  * @memberof DRC
@@ -37,18 +61,7 @@ DRC.CONFIG = Object.freeze({
      * Logistic-regression beta coefficients from Schmidt et al. (2005).
      * All continuous predictors use SI units internally.
      */
-    BETAS: {
-        age:        0.0173,
-        race:       0.4433,
-        parentHist: 0.4981,
-        sbp:        0.0111,
-        waist:      0.0273,     // per cm
-        height:    -0.0326,     // per cm
-        fastGlu:    1.5849,     // per mmol/L
-        cholHDL:   -0.4718,     // per mmol/L
-        cholTri:    0.242,      // per mmol/L
-        sigma:     -9.9808      // intercept
-    },
+    BETAS: { ...ARIC_BETAS, sigma: ARIC_INTERCEPT },
 
     /**
      * Population means from the ARIC Study baseline cohort (all SI).
@@ -211,13 +224,17 @@ DRC.CONFIG = Object.freeze({
     /** Fields requiring unit conversion between US and SI. */
     CONVERTIBLE_FIELDS: ['height', 'waist', 'fastGlu', 'cholHDL', 'cholTri'],
 
-    /** Treatment color palette for timeline chart and legends. */
+    /** Treatment color palette for timeline chart and legends.
+     * Unified with traffic-light risk colors: green (safe), amber (alert),
+     * orange (warning), red (danger). Treatments use colors semantically
+     * matching their clinical risk profile.
+     */
     TREATMENT_COLORS: {
-        'Fasting Glucose Management':           '#e74c3c',
-        'Blood Pressure Control':              '#2ecc71',
-        'HDL Cholesterol Improvement':         '#f39c12',
-        'Blood Fats (Triglycerides) Treatment': '#9b59b6',
-        'Weight Management':                    '#1abc9c'
+        'Fasting Glucose Management':           '#c43d35',  /* danger red - highest priority */
+        'Blood Pressure Control':              '#30a14e',  /* safe green */
+        'HDL Cholesterol Improvement':         '#d4942c',  /* alert amber */
+        'Blood Fats (Triglycerides) Treatment': '#d4653a',  /* warning orange */
+        'Weight Management':                    '#d4942c'   /* alert amber */
     },
 
     /** Animation timing constants. */
@@ -231,5 +248,56 @@ DRC.CONFIG = Object.freeze({
 
     /** Timeline chart limits. */
     MAX_SNAPSHOTS: 20,
-    MIN_Y_AXIS: 25
+    MIN_Y_AXIS: 25,
+
+    /** Default model identifier. */
+    DEFAULT_MODEL: 'clinicalGlucoseLipids',
+
+    /**
+     * Multi-model definitions for the model switcher feature.
+     * Each model contains its own intercept, betas, and field lists.
+     * The 'clinicalGlucoseLipids' model reproduces the existing Schmidt et al. (2005)
+     * ARIC full model (same coefficients as CONFIG.BETAS / CONFIG.MEANS).
+     */
+    MODELS: {
+        clinical: {
+            id: 'clinical',
+            name: 'Clinical Only',
+            description: 'Nur Körpermaße & Demografie, kein Bluttest nötig',
+            accuracy: 'basis',
+            accuracyLabel: 'Basis',
+            intercept: -7.3359,
+            betas: { age: 0.0271, race: 0.2295, parentHist: 0.5463, sbp: 0.0161, waist: 0.0412, height: -0.0115 },
+            fields: ['age', 'sex', 'race', 'parentHist', 'sbp', 'height', 'waist'],
+            sliderFields: ['age', 'sbp', 'height', 'waist'],
+            treatmentFields: ['sbp', 'waist'],
+            radarFields: ['sbp', 'waist', 'age']
+        },
+        clinicalGlucose: {
+            id: 'clinicalGlucose',
+            name: 'Clinical + Glucose',
+            description: 'Klinische Werte plus Nüchternglukose',
+            accuracy: 'gut',
+            accuracyLabel: 'Gut',
+            intercept: -12.2555,
+            betas: { age: 0.0168, race: 0.2631, parentHist: 0.5088, sbp: 0.0120, waist: 0.0328, height: -0.0261, fastGlu: 1.6445 },
+            fields: ['age', 'sex', 'race', 'parentHist', 'sbp', 'height', 'waist', 'fastGlu'],
+            sliderFields: ['age', 'sbp', 'height', 'waist', 'fastGlu'],
+            treatmentFields: ['fastGlu', 'sbp', 'waist'],
+            radarFields: ['fastGlu', 'sbp', 'waist', 'age']
+        },
+        clinicalGlucoseLipids: {
+            id: 'clinicalGlucoseLipids',
+            name: 'Clinical + Glucose + Lipids',
+            description: 'Vollständiges Modell mit allen Laborwerten',
+            accuracy: 'beste',
+            accuracyLabel: 'Beste',
+            intercept: ARIC_INTERCEPT,
+            betas: ARIC_BETAS,
+            fields: ['age', 'sex', 'race', 'parentHist', 'sbp', 'height', 'waist', 'fastGlu', 'cholHDL', 'cholTri'],
+            sliderFields: ['age', 'sbp', 'height', 'waist', 'fastGlu', 'cholHDL', 'cholTri'],
+            treatmentFields: ['fastGlu', 'sbp', 'cholHDL', 'cholTri', 'waist'],
+            radarFields: ['fastGlu', 'sbp', 'cholTri', 'waist', 'cholHDL', 'age']
+        }
+    }
 });

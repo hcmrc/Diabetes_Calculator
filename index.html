@@ -10,7 +10,7 @@
                    script-src 'self' 'wasm-unsafe-eval' https://cdn.sheetjs.com https://cdn.jsdelivr.net;
                    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
                    font-src https://fonts.gstatic.com https://fonts.googleapis.com;
-                   connect-src 'self' https://cdn.jsdelivr.net;
+                   connect-src 'self' https://cdn.jsdelivr.net https://tessdata.projectnaptha.com data: blob:;
                    worker-src 'self' blob:;
                    img-src 'self' data: blob:;
                    object-src 'none';
@@ -41,6 +41,27 @@
 </head>
 <body>
 
+<!-- ===================== LANDING PAGE OVERLAY ===================== -->
+<div id="landingOverlay" class="landing-overlay" role="dialog" aria-modal="true" hidden>
+    <div class="landing-container">
+        <div class="landing-header">
+            <div class="landing-header-top">
+                <span class="step-counter" id="landingStepCounter"></span>
+                <button type="button" class="restart-btn" id="landingRestartBtn" hidden>
+                    <i data-lucide="rotate-ccw"></i> <span data-i18n="landing.restart">Start Over</span>
+                </button>
+            </div>
+            <div class="progress-dots" id="landingProgressDots"></div>
+        </div>
+        <div class="landing-content" id="landingContent"></div>
+        <div class="landing-footer">
+            <button type="button" class="btn btn-secondary" id="landingBackBtn" hidden data-i18n="landing.back">Back</button>
+            <button type="button" class="btn btn-primary" id="landingNextBtn" data-i18n="landing.next">Next</button>
+            <button type="button" class="btn btn-primary" id="landingFinishBtn" hidden data-i18n="landing.ready.start">Start Calculator</button>
+        </div>
+    </div>
+</div>
+
 <!-- ===================== TOP NAV ===================== -->
 <nav class="top-nav">
     <div class="nav-inner">
@@ -49,18 +70,6 @@
             <span data-i18n="nav.brand">Diabetes Risk Calculator</span>
         </div>
         <div class="nav-actions">
-            <div class="unit-toggle-nav">
-                <span class="toggle-label-nav" id="unit-label-us">US</span>
-                <label class="toggle-switch-nav" aria-label="Switch between US and SI units">
-                    <input type="checkbox" id="unit-toggle">
-                    <span class="toggle-track-nav"></span>
-                </label>
-                <span class="toggle-label-nav" id="unit-label-si">SI</span>
-            </div>
-            <!-- Dark Mode Toggle -->
-            <button id="darkModeToggle" type="button" class="btn-dark-mode" aria-label="Toggle dark mode" aria-pressed="false">
-                <i data-lucide="moon" class="lucide-icon"></i>
-            </button>
             <button id="resetBtn" type="button" class="btn-reset" aria-label="Reset all values">
                 <i data-lucide="rotate-ccw" class="lucide-icon"></i>
             </button>
@@ -75,21 +84,93 @@
                 <span class="patient-name-label" id="patientNameLabel" data-i18n="nav.selectProfile">Select Profile</span>
                 <i data-lucide="chevron-down" class="lucide-icon patient-chevron"></i>
             </button>
-            <!-- Language Button -->
-            <button id="langBtn" type="button" class="btn-language" aria-label="Select language" aria-expanded="false">
-                <span class="lang-flag" aria-hidden="true">🇺🇸</span>
-                <span class="lang-code">EN</span>
-                <i data-lucide="chevron-down" class="lucide-icon"></i>
+            <!-- Tutorial Button -->
+            <button id="tutorialBtn" type="button" class="btn-tutorial" aria-label="Tutorial">
+                <i data-lucide="graduation-cap" class="lucide-icon"></i>
+                <span class="btn-tutorial-label" data-i18n="tutorial.button">Tutorial</span>
+            </button>
+            <!-- Settings Button -->
+            <button id="settingsBtn" type="button" class="btn-settings" aria-label="Settings" aria-expanded="false">
+                <i data-lucide="settings" class="lucide-icon"></i>
+                <span class="settings-label" data-i18n="nav.settings">Settings</span>
             </button>
         </div>
     </div>
 </nav>
 
+<!-- Settings Panel -->
+<div id="settingsPanel" class="settings-panel" hidden>
+    <div class="settings-panel-inner">
+        <!-- Prediction Model Option -->
+        <div class="settings-option">
+            <span class="settings-option-label" data-i18n="settings.model">Prediction Model</span>
+            <button id="settingsModelBtn" type="button" class="btn-settings-model" aria-label="Select prediction model" aria-expanded="false">
+                <i data-lucide="layers" class="lucide-icon"></i>
+                <span class="settings-model-label" id="settingsModelLabel">Basic Model</span>
+                <i data-lucide="chevron-right" class="lucide-icon lang-chevron"></i>
+            </button>
+            <!-- Model Dropdown in Settings (expands downward) -->
+            <div id="settingsModelDropdown" class="settings-model-dropdown" role="menu" hidden>
+                <!-- Populated by JS -->
+            </div>
+        </div>
+        <!-- Language Option -->
+        <div class="settings-option">
+            <span class="settings-option-label" data-i18n="settings.language">Language</span>
+            <button id="settingsLangBtn" type="button" class="btn-language" aria-label="Select language" aria-expanded="false">
+                <span class="lang-flag" id="langFlagIcon" aria-hidden="true">
+                    <svg viewBox="0 0 20 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <rect x="0.5" y="0.5" width="19" height="13" rx="1" fill="#1e3a8a" stroke="currentColor" stroke-width="0.5"/>
+                        <path d="M0 0L20 14M20 0L0 14" stroke="#f8fafc" stroke-width="2.5"/>
+                        <path d="M0 0L20 14M20 0L0 14" stroke="#dc2626" stroke-width="1.5"/>
+                        <rect x="8.5" y="0" width="3" height="14" fill="#f8fafc"/>
+                        <rect x="0" y="5.5" width="20" height="3" fill="#f8fafc"/>
+                        <rect x="9" y="0" width="2" height="14" fill="#dc2626"/>
+                        <rect x="0" y="6" width="20" height="2" fill="#dc2626"/>
+                    </svg>
+                </span>
+                <span class="lang-code" id="langCode">EN</span>
+                <i data-lucide="chevron-right" class="lucide-icon lang-chevron"></i>
+            </button>
+            <!-- Language Dropdown in Settings (expands downward) -->
+            <div id="settingsLangDropdown" class="settings-lang-dropdown" role="menu" hidden>
+                <!-- Populated by JS -->
+            </div>
+        </div>
+        <!-- Dark Mode Option -->
+        <div class="settings-option">
+            <span class="settings-option-label" data-i18n="settings.darkMode">Dark Mode</span>
+            <button id="settingsDarkModeBtn" type="button" class="btn-settings-darkmode" aria-label="Toggle dark mode" aria-pressed="false">
+                <i data-lucide="moon" class="lucide-icon"></i>
+            </button>
+        </div>
+        <!-- Units Option -->
+        <div class="settings-option">
+            <span class="settings-option-label" data-i18n="settings.units">Units</span>
+            <div class="unit-toggle-nav settings-unit-toggle">
+                <span class="toggle-label-nav" id="unit-label-us">US</span>
+                <label class="toggle-switch-nav" aria-label="Switch between US and SI units">
+                    <input type="checkbox" id="unit-toggle">
+                    <span class="toggle-track-nav"></span>
+                </label>
+                <span class="toggle-label-nav" id="unit-label-si">SI</span>
+            </div>
+        </div>
+        <!-- Restart Setup Option -->
+        <div class="settings-option">
+            <span class="settings-option-label" data-i18n="settings.restartSetup">Setup</span>
+            <button id="restartSetupBtn" type="button" class="btn-restart-setup" data-i18n="settings.restartSetupBtn">
+                <i data-lucide="rotate-ccw" class="lucide-icon"></i> Start Over
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- ===================== PATIENT MANAGEMENT DRAWER ===================== -->
 <div class="patient-overlay" id="patientOverlay"></div>
 <aside class="patient-drawer" id="patientDrawer" aria-label="Patient Management">
     <div class="pd-header">
-        <h2><i data-lucide="users" class="lucide-icon"></i> My Profiles</h2>
+        <h2 data-i18n="patientManager.title"><i data-lucide="users" class="lucide-icon"></i> My Profiles</h2>
         <button class="pd-close-btn" id="patientDrawerClose" aria-label="Close patient menu">
             <i data-lucide="x" class="lucide-icon"></i>
         </button>
@@ -97,13 +178,13 @@
 
     <!-- Active Patient Indicator -->
     <div class="pd-active-patient" id="pdActivePatient">
-        <i data-lucide="map-pin-user" class="lucide-icon"></i>
+        <i data-lucide="user-round" class="lucide-icon"></i>
         <span id="pdActiveLabel">No profile selected</span>
     </div>
 
     <!-- Patient List -->
     <div class="pd-section">
-        <div class="pd-section-label">Saved Profiles</div>
+        <div class="pd-section-label" data-i18n="patientManager.savedProfiles">Saved Profiles</div>
         <div class="pd-patient-list" id="pdPatientList">
             <p class="pd-empty-msg">No profiles saved yet.</p>
         </div>
@@ -111,10 +192,10 @@
 
     <!-- Add New Patient -->
     <div class="pd-section">
-        <div class="pd-section-label">Add New Profile</div>
+        <div class="pd-section-label" data-i18n="patientManager.addNew">Add New Profile</div>
         <div class="pd-add-form">
             <input type="text" id="pdNewPatientName" class="pd-input" placeholder="Profile name…" maxlength="60" />
-            <button id="pdAddPatientBtn" type="button" class="pd-btn-add">
+            <button id="pdAddPatientBtn" type="button" class="pd-btn-add" data-i18n="buttons.addAndSave">
                 <i data-lucide="user-plus" class="lucide-icon"></i> Add &amp; Save Current Values
             </button>
         </div>
@@ -122,17 +203,17 @@
 
     <!-- Import / Export / OCR -->
     <div class="pd-section pd-io-section">
-        <div class="pd-section-label">Import / Export / OCR</div>
+        <div class="pd-section-label" data-i18n="patientManager.importExport">Import / Export / OCR</div>
         <div class="pd-io-actions">
-            <button id="pdExportBtn" type="button" class="pd-btn-io">
+            <button id="pdExportBtn" type="button" class="pd-btn-io" data-i18n="buttons.export">
                 <i data-lucide="download" class="lucide-icon"></i> Export .xlsx / .drc
             </button>
-            <label class="pd-btn-io pd-btn-import" for="pdImportFile">
+            <label class="pd-btn-io pd-btn-import" for="pdImportFile" data-i18n="buttons.import">
                 <i data-lucide="upload" class="lucide-icon"></i> Import .xlsx / .drc
             </label>
             <input type="file" id="pdImportFile" accept=".xlsx,.xls,.drc" style="display:none;" aria-label="Import patient profiles from Excel or encrypted .drc file" />
             <!-- NEU: OCR Laborbericht Button -->
-            <button id="pdOCRBtn" type="button" class="pd-btn-io pd-btn-ocr">
+            <button id="pdOCRBtn" type="button" class="pd-btn-io pd-btn-ocr" data-i18n="buttons.scan">
                 <i data-lucide="scan-line" class="lucide-icon"></i> Scan Lab Report
             </button>
         </div>
@@ -175,14 +256,14 @@
         <div class="timeline-expandable-header">
             <div class="timeline-expandable-title">
                 <i data-lucide="line-chart" class="lucide-icon"></i>
-                <h3>Risk Timeline</h3>
-                <span class="timeline-hint">Simulate treatments to track risk changes over time</span>
+                <h3 data-i18n="timeline.title">Risk Timeline</h3>
+                <span class="timeline-hint" data-i18n="timeline.hint">Simulate treatments to track risk changes over time</span>
             </div>
             <div class="timeline-expandable-actions">
-                <button id="compareScenarioBtn" type="button" class="btn-compare-scenario-section" aria-label="Set baseline for comparison">
+                <button id="compareScenarioBtn" type="button" class="btn-compare-scenario-section" aria-label="Set baseline for comparison" data-i18n="buttons.setBaseline">
                     <i data-lucide="flag" class="lucide-icon"></i> Set Baseline
                 </button>
-                <button id="snapshotBtn" type="button" class="btn-snapshot">
+                <button id="snapshotBtn" type="button" class="btn-snapshot" data-i18n="timeline.snapshot">
                     <i data-lucide="plus-circle" class="lucide-icon"></i> Snapshot
                 </button>
             </div>
@@ -245,7 +326,7 @@
                     <div class="slider-labels slider-labels-numeric"><span>20</span><span>50</span><span>80</span></div>
                     <div class="factor-value-row">
                         <input type="number" id="age-value" value="50" min="20" max="80" step="1" class="value-input" aria-label="Age in years">
-                        <span class="value-unit-label">years</span>
+                        <span class="value-unit-label" data-i18n="units.years">years</span>
                         <span class="what-if-badge" id="what-if-age"></span>
                     </div>
                 </div>
@@ -256,9 +337,9 @@
                         <label><i data-lucide="users" class="lucide-icon ig-icon"></i> <span data-i18n="factors.race">Ethnicity</span></label>
                     </div>
                     <div class="toggle-group">
-                        <span class="toggle-option">Other</span>
+                        <span class="toggle-option" data-i18n="units.other">Other</span>
                         <label class="toggle-switch"><input type="checkbox" id="race-toggle"><span class="toggle-slider"></span></label>
-                        <span class="toggle-option">Black</span>
+                        <span class="toggle-option" data-i18n="units.black">Black</span>
                     </div>
                 </div>
 
@@ -268,9 +349,9 @@
                         <label><i data-lucide="users-round" class="lucide-icon ig-icon"></i> <span data-i18n="factors.parentHist">Parental Diabetes</span></label>
                     </div>
                     <div class="toggle-group">
-                        <span class="toggle-option">No</span>
+                        <span class="toggle-option" data-i18n="units.no">No</span>
                         <label class="toggle-switch"><input type="checkbox" id="parentHist-toggle"><span class="toggle-slider"></span></label>
-                        <span class="toggle-option">Yes</span>
+                        <span class="toggle-option" data-i18n="units.yes">Yes</span>
                     </div>
                 </div>
 
@@ -280,9 +361,9 @@
                         <label><i data-lucide="user" class="lucide-icon ig-icon"></i> <span data-i18n="factors.sex">Sex</span></label>
                     </div>
                     <div class="toggle-group">
-                        <span class="toggle-option">Female</span>
+                        <span class="toggle-option" data-i18n="units.female">Female</span>
                         <label class="toggle-switch"><input type="checkbox" id="sex-toggle" checked><span class="toggle-slider"></span></label>
-                        <span class="toggle-option">Male</span>
+                        <span class="toggle-option" data-i18n="units.male">Male</span>
                     </div>
                 </div>
 
@@ -309,7 +390,7 @@
                 <button class="section-collapse-btn" data-target="mod-section" aria-expanded="true">
                     <i data-lucide="chevron-down" class="lucide-icon"></i>
                 </button>
-                <div class="input-section-label modifiable">
+                <div class="input-section-label modifiable" data-i18n="sections.clinical">
                     <i data-lucide="sliders-horizontal" class="lucide-icon"></i>
                     Clinical Values
                 </div>
@@ -431,22 +512,22 @@
     <!-- ========== CENTER COLUMN: Model Visualization ========== -->
     <section class="col-panel col-center" id="panel-model" aria-label="Model Visualization">
         <div class="col-step-label">
-            <span>Risk Analysis</span>
+            <span data-i18n="panels.riskAnalysis">Risk Analysis</span>
         </div>
         <div class="panel-header-bar">
             <i data-lucide="bar-chart-3" class="lucide-icon"></i>
-            <h2>Risk Factors</h2>
+            <h2 data-i18n="panels.riskFactors">Risk Factors</h2>
             <button class="panel-collapse-btn" data-panel="panel-model" aria-label="Collapse section" aria-expanded="true">
                 <i data-lucide="chevron-up" class="lucide-icon"></i>
             </button>
         </div>
-        <p class="panel-subtitle">Which factors influence risk by how much compared to the average</p>
+        <p class="panel-subtitle" data-i18n="panels.riskFactorsSubtitle">Which factors influence risk by how much compared to the average</p>
         <div class="panel-body">
 
             <!-- Model Tabs Navigation -->
             <div class="model-tabs">
-                <button class="model-tab active" data-tab="contributions">Contributions</button>
-                <button class="model-tab" data-tab="causality">Connections</button>
+                <button class="model-tab active" data-tab="contributions" data-i18n="panels.contributions">Contributions</button>
+                <button class="model-tab" data-tab="causality" data-i18n="panels.connections">Connections</button>
             </div>
 
             <!-- Tab Content: Contributions -->
@@ -456,8 +537,8 @@
 
             <!-- Tab Content: Causality -->
             <div class="model-tab-content" id="tab-causality">
-                <h3>How Your Risk Factors Connect</h3>
-                <p class="card-desc">Type 2 diabetes is characterized by insulin resistance and insulin deficiency, among others caused by beta-cell dysfunction. Risk factors can be the cause or caused by this.</p>
+                <h3 data-i18n="panels.connectionsTitle">How Your Risk Factors Connect</h3>
+                <p class="card-desc" data-i18n="panels.connectionsDesc">Type 2 diabetes is characterized by insulin resistance and insulin deficiency, among others caused by beta-cell dysfunction. Risk factors can be the cause or caused by this.</p>
                 <div id="causality-chain" class="causality-chain-container"></div>
             </div>
 
@@ -467,16 +548,16 @@
     <!-- ========== RIGHT COLUMN: Treatment Recommendations ========== -->
     <section class="col-panel col-right" id="panel-treatment" aria-label="Treatment Recommendations">
         <div class="col-step-label">
-            <span>Take Action</span>
+            <span data-i18n="panels.takeAction">Take Action</span>
         </div>
         <div class="panel-header-bar">
             <i data-lucide="stethoscope" class="lucide-icon"></i>
-            <h2>What Can I Do?</h2>
+            <h2 data-i18n="panels.whatCanIDo">What Can I Do?</h2>
             <button class="panel-collapse-btn" data-panel="panel-treatment" aria-label="Collapse section" aria-expanded="true">
                 <i data-lucide="chevron-up" class="lucide-icon"></i>
             </button>
         </div>
-        <p class="panel-subtitle">Evidence-based steps to reduce your risk</p>
+        <p class="panel-subtitle" data-i18n="panels.takeActionSubtitle">Evidence-based steps to reduce your risk</p>
         <div class="panel-body">
             <div class="treatment-overview" id="treatment-overview" role="region" aria-live="polite" aria-label="Treatment overview with expandable recommendations sorted by risk contribution">
                 <!-- Populated by ui-controller.js -->
@@ -495,6 +576,7 @@
 <script src="js/conversion-service.js"></script>
 <script src="js/risk-model.js"></script>
 <script src="js/ui-helpers.js"></script>
+<script src="js/utils.js"></script>
 <script src="js/ui-controller.js"></script>
 <script src="js/timeline-chart.js"></script>
 <script src="js/app.js"></script>
@@ -507,6 +589,9 @@
 <script src="js/ocr-service.js"></script>
 <script src="js/ocr-ui-controller.js"></script>
 <script src="js/dark-mode.js"></script>
+<script src="js/settings-panel.js"></script>
+<script src="js/tutorial.js"></script>
+<script src="js/landing-page.js"></script>
 <script src="js/main.js"></script>
 
 <!-- ===================== OCR MODAL ===================== -->
@@ -807,7 +892,7 @@
 <div class="modal-overlay" id="profileWarningModal" role="dialog" aria-modal="true" aria-labelledby="profileWarnTitle" style="display:none;">
     <div class="modal-content" style="max-width: 420px;">
         <div class="modal-header">
-            <h3 id="profileWarnTitle">
+            <h3 id="profileWarnTitle" data-i18n="modals.profileWarning.title">
                 <i data-lucide="alert-circle" class="lucide-icon"></i>
                 Save Your Data?
             </h3>
@@ -819,33 +904,49 @@
             <div class="profile-warn-icon">
                 <i data-lucide="alert-triangle" class="lucide-icon"></i>
             </div>
-            <p style="font-size: 16px; color: var(--text-primary); margin-bottom: 8px; font-weight: 500;">
+            <p style="font-size: 16px; color: var(--text-primary); margin-bottom: 8px; font-weight: 500;" data-i18n="modals.profileWarning.message1">
                 You haven't created a profile yet.
             </p>
-            <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 24px;">
+            <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 24px;" data-i18n="modals.profileWarning.message2">
                 Create a profile to save your data and track your progress over time. Without a profile, your data may be lost when you close the browser.
             </p>
         </div>
         <div class="modal-footer" style="flex-direction: column; gap: 10px;">
-            <button type="button" class="modal-btn modal-btn-primary" id="profileWarnCreateBtn">
+            <button type="button" class="modal-btn modal-btn-primary" id="profileWarnCreateBtn" data-i18n="modals.profileWarning.create">
                 <i data-lucide="user-plus" class="lucide-icon"></i>
                 Create Profile
             </button>
-            <button type="button" class="modal-btn modal-btn-secondary" id="profileWarnContinueBtn">
+            <button type="button" class="modal-btn modal-btn-secondary" id="profileWarnContinueBtn" data-i18n="modals.profileWarning.continue">
                 Continue Without Saving
             </button>
-            <button type="button" class="modal-btn modal-btn-secondary" id="profileWarnCancelBtn" style="border-color: transparent; color: var(--text-secondary);">
+            <button type="button" class="modal-btn modal-btn-secondary" id="profileWarnCancelBtn" style="border-color: transparent; color: var(--text-secondary);" data-i18n="modals.profileWarning.cancel">
                 Cancel
             </button>
         </div>
     </div>
 </div>
 
-<!-- Initialize Lucide Icons -->
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        lucide.createIcons();
-    });
-</script>
+<!-- ===================== TUTORIAL ===================== -->
+<!-- Dim overlay (pointer-events: none so clicks pass through) -->
+<div id="tutorialOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:7000; pointer-events:none;"></div>
+<!-- SVG layer for pointer lines -->
+<svg id="tutorialLines" style="display:none; position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:9001;" aria-hidden="true"></svg>
+<!-- Tutorial navigation bar -->
+<div id="tutorialNav" class="tutorial-nav-bar" style="display:none;" role="navigation" aria-label="Tutorial navigation">
+    <button id="tutorialPrevBtn" type="button" class="tutorial-nav-btn">
+        <i data-lucide="chevron-left" class="lucide-icon"></i>
+        <span data-i18n="tutorial.prev">Back</span>
+    </button>
+    <span id="tutorialStepLabel" class="tutorial-step-label"></span>
+    <button id="tutorialNextBtn" type="button" class="tutorial-nav-btn tutorial-nav-primary">
+        <span data-i18n="tutorial.next">Next</span>
+        <i data-lucide="chevron-right" class="lucide-icon"></i>
+    </button>
+    <button id="tutorialCloseBtn" type="button" class="tutorial-nav-btn tutorial-nav-close" aria-label="Close tutorial">
+        <i data-lucide="x" class="lucide-icon"></i>
+        <span data-i18n="tutorial.close">Close</span>
+    </button>
+</div>
+
 </body>
 </html>

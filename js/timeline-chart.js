@@ -70,7 +70,7 @@ DRC.TimelineChart = (() => {
     };
 
     /** Get a consistent color for a treatment label from centralized config. */
-    const getTreatmentColor = (label) => DRC.CONFIG.TREATMENT_COLORS[label] || '#007aff';
+    const getTreatmentColor = (label) => DRC.CONFIG.TREATMENT_COLORS[label] || '#6e6e73';
 
     /**
      * Compute nice Y-axis grid steps that adapt to data range.
@@ -108,7 +108,8 @@ DRC.TimelineChart = (() => {
             clearContainer(container);
             const emptyMsg = document.createElement('p');
             emptyMsg.className = 'timeline-empty';
-            emptyMsg.textContent = 'Set a baseline and add snapshots to track your risk over scenarios.';
+            const t = DRC.Utils.createTranslator();
+            emptyMsg.textContent = t('timeline.empty', 'Set a baseline and add snapshots to track your risk over scenarios.');
             container.appendChild(emptyMsg);
             renderLegend();
             return;
@@ -206,7 +207,8 @@ DRC.TimelineChart = (() => {
             baselineLabel.setAttribute('x', PAD.left + 6);
             baselineLabel.setAttribute('y', (y - 8).toFixed(1));
             baselineLabel.setAttribute('class', 'tl-baseline-label');
-            baselineLabel.textContent = `Baseline ${_baselineRisk.toFixed(1)}%`;
+            const baselineText = DRC.I18n?.t('timeline.baselineLabel', 'Baseline') || 'Baseline';
+            baselineLabel.textContent = `${baselineText} ${_baselineRisk.toFixed(1)}%`;
             baselineGroup.appendChild(baselineLabel);
 
             svg.appendChild(baselineGroup);
@@ -351,11 +353,11 @@ DRC.TimelineChart = (() => {
         const titleIcon = document.createElement('i');
         titleIcon.setAttribute('data-lucide', 'history');
         titleIcon.className = 'lucide-icon';
-        const accentColor = cssVar('--accent-color', '#007aff');
-        titleIcon.style.cssText = `width:14px; height:14px; color:${accentColor};`;
+        // Icon color is controlled by CSS (.tl-legend-title .lucide-icon)
 
         titleDiv.appendChild(titleIcon);
-        titleDiv.appendChild(document.createTextNode(' Treatment History'));
+        const _t = (k, fb) => DRC.I18n?.t(k, fb) || fb;
+        titleDiv.appendChild(document.createTextNode(' ' + _t('timeline.treatmentHistory', 'Treatment History')));
         legendEl.appendChild(titleDiv);
 
         // Create legend items (O(n) with pre-computed indices)
@@ -419,6 +421,13 @@ DRC.TimelineChart = (() => {
 
     /** Return the most recent snapshot (or null). */
     const getLastSnapshot = () => snapshots.length ? snapshots[snapshots.length - 1] : null;
+
+    // Subscribe to language changes to re-render with translations
+    if (DRC.I18n?.onLanguageChange) {
+        DRC.I18n.onLanguageChange(() => {
+            render();
+        });
+    }
 
     return { addSnapshot, render, clear, setBaseline, clearBaseline, getLastSnapshot, hasBaseline: () => _baselineRisk !== null };
 })();

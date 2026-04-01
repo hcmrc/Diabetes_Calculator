@@ -26,14 +26,17 @@ global.window = global;
 global.DRC    = {
     CONFIG: {
         TREATMENT_COLORS: {
-            'Fasting Glucose Management': '#FF6B6B',
-            'Blood Pressure Control': '#4ECDC4'
+            'Fasting Glucose Management': '#ff3b30',  /* danger red */
+            'Blood Pressure Control': '#34c759'       /* safe green */
         },
         MAX_SNAPSHOTS: 20,
         MIN_Y_AXIS: 25
     },
     UIHelpers: {
         refreshIcons: () => {}
+    },
+    Utils: {
+        createTranslator: () => (key, fallback) => fallback || key
     }
 };
 
@@ -288,14 +291,14 @@ assert(containerHTML.tagName === 'svg', 'SVG rendered for treatment snapshots');
 const hasCircles = containerHTML.children.some(child => child.tagName === 'circle');
 assert(hasCircles, 'SVG contains circle elements for data points');
 
-// Unknown treatment → fallback color #007aff
+// Unknown treatment → fallback color #6e6e73
 TC.addSnapshot(19.0, SI, 'Some Unknown Treatment');
-// Unknown treatment → fallback color #007aff
+// Unknown treatment → fallback color #6e6e73
 const hasUnknownTreatmentCircle = containerHTML.children.some(child =>
-    child.tagName === 'circle' && child.attributes.fill === '#007aff'
+    child.tagName === 'circle' && child.attributes.fill === '#6e6e73'
 );
 assert(hasUnknownTreatmentCircle,
-    'Unknown treatment label uses fallback color (#007aff) - circle.attributes.fill verified');
+    'Unknown treatment label uses fallback color (#6e6e73) - circle.attributes.fill verified');
 
 TC.clear();
 

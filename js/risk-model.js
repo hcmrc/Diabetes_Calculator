@@ -13,7 +13,14 @@
 'use strict';
 
 DRC.RiskModel = (() => {
-    const { BETAS: B, MEANS: M, CONVERSIONS: C, RANGES, THRESHOLDS: T } = DRC.CONFIG;
+    const { MEANS: M, CONVERSIONS: C, RANGES, THRESHOLDS: T } = DRC.CONFIG;
+
+    /**
+     * Return the active model object, falling back to the default model.
+     * @param {Object|undefined} model — Optional model object from CONFIG.MODELS.
+     * @returns {Object} Model definition with intercept and betas.
+     */
+    const getModel = (model) => model || DRC.CONFIG.MODELS[DRC.CONFIG.DEFAULT_MODEL];
 
     /**
      * Convert raw UI values to SI units for model computation.
@@ -27,27 +34,27 @@ DRC.RiskModel = (() => {
     /**
      * Compute the logistic-regression linear predictor (log-odds).
      * @param {Object} si — Risk-factor values in SI units.
+     * @param {Object} [model] — Optional model definition from CONFIG.MODELS.
+     *   When omitted, falls back to DEFAULT_MODEL (clinicalGlucoseLipids).
      * @returns {number} The linear predictor score.
      */
-    const linearPredictor = (si) =>
-        B.sigma +
-        B.age        * si.age        +
-        B.race       * si.race       +
-        B.parentHist * si.parentHist +
-        B.sbp        * si.sbp        +
-        B.waist      * si.waist      +
-        B.height     * si.height     +
-        B.fastGlu    * si.fastGlu    +
-        B.cholHDL    * si.cholHDL    +
-        B.cholTri    * si.cholTri;
+    const linearPredictor = (si, model) => {
+        const m = getModel(model);
+        let lp = m.intercept;
+        for (const key of Object.keys(m.betas)) {
+            lp += m.betas[key] * si[key];
+        }
+        return lp;
+    };
 
     /**
      * Compute 9-year diabetes probability via logistic function.
      * @param {Object} siVals — Risk-factor values in SI units.
+     * @param {Object} [model] — Optional model definition from CONFIG.MODELS.
      * @returns {number} Probability in [0, 1].
      */
-    const computeProbability = (siVals) => {
-        const lp = linearPredictor(siVals);
+    const computeProbability = (siVals, model) => {
+        const lp = linearPredictor(siVals, model);
         if (!isFinite(lp)) {
             console.warn('RiskModel: non-finite linear predictor, returning NaN');
             return NaN;
@@ -67,13 +74,14 @@ DRC.RiskModel = (() => {
      * contributions via computeMarginalContributions.
      *
      * @param {Object} siVals — Risk-factor values in SI units.
+     * @param {Object} [model] — Optional model definition from CONFIG.MODELS.
      * @returns {Object} Log-odds contribution per factor.
      */
-    const computeContributions = (siVals) => {
+    const computeContributions = (siVals, model) => {
+        const m = getModel(model);
         const result = {};
-        for (const key of DRC.CONFIG.ALL_FIELDS) {
-            if (B[key] == null) continue; // skip non-model fields (e.g. sex)
-            result[key] = B[key] * (siVals[key] - M[key]);
+        for (const key of Object.keys(m.betas)) {
+            result[key] = m.betas[key] * (siVals[key] - M[key]);
         }
         return result;
     };
@@ -106,35 +114,33 @@ DRC.RiskModel = (() => {
      * @param {boolean} isMetric — Current unit system.
      * @param {string} field — The field to perturb.
      * @param {number} direction — +1 or -1.
+     * @param {Object} [model] — Optional model definition from CONFIG.MODELS.
      * @returns {number} Delta in percentage points.
      */
-    const computeWhatIfDelta = (rawInputs, isMetric, field, direction) => {
-        const baseProb = computeProbability(toSI(rawInputs, isMetric));
+    const computeWhatIfDelta = (rawInputs, isMetric, field, direction, model) => {
+        const m = getModel(model);
+        const baseProb = computeProbability(toSI(rawInputs, isMetric), m);
         const mode = isMetric ? 'si' : 'us';
         const step = RANGES[field]?.[mode]?.[2] ?? 1;
         const range = RANGES[field]?.[mode];
         let perturbedVal = rawInputs[field] + direction * step * 5;
         if (range) perturbedVal = Math.min(Math.max(perturbedVal, range[0]), range[1]);
         const altered = { ...rawInputs, [field]: perturbedVal };
-        return (computeProbability(toSI(altered, isMetric)) - baseProb) * 100;
+        return (computeProbability(toSI(altered, isMetric), m) - baseProb) * 100;
     };
 
     /**
      * Compute the baseline (population mean) diabetes risk.
-     * LP_baseline = σ + Σ(βⱼ × μⱼ), P_baseline = 1/(1 + e^(-LP_baseline))
+     * LP_baseline = intercept + Σ(βⱼ × μⱼ), P_baseline = 1/(1 + e^(-LP_baseline))
+     * @param {Object} [model] — Optional model definition from CONFIG.MODELS.
      * @returns {number} Baseline probability in [0, 1].
      */
-    const computeBaselineRisk = () => {
-        const lpBaseline = B.sigma +
-            B.age        * M.age        +
-            B.race       * M.race       +
-            B.parentHist * M.parentHist +
-            B.sbp        * M.sbp        +
-            B.waist      * M.waist      +
-            B.height     * M.height     +
-            B.fastGlu    * M.fastGlu    +
-            B.cholHDL    * M.cholHDL    +
-            B.cholTri    * M.cholTri;
+    const computeBaselineRisk = (model) => {
+        const m = getModel(model);
+        let lpBaseline = m.intercept;
+        for (const key of Object.keys(m.betas)) {
+            lpBaseline += m.betas[key] * M[key];
+        }
         return 1 / (1 + Math.exp(-lpBaseline));
     };
 
@@ -154,15 +160,16 @@ DRC.RiskModel = (() => {
      * Note: Δᵢ values are NOT additive in probability space (sigmoid nonlinearity).
      *
      * @param {Object} siVals — Risk-factor values in SI units.
+     * @param {Object} [model] — Optional model definition from CONFIG.MODELS.
      * @returns {Object} Marginal probability contribution per factor (e.g. 0.042 = 4.2 pp).
      */
-    const computeMarginalContributions = (siVals) => {
+    const computeMarginalContributions = (siVals, model) => {
+        const m = getModel(model);
         const result = {};
-        const lpFull = linearPredictor(siVals);
+        const lpFull = linearPredictor(siVals, m);
         const pFull = 1 / (1 + Math.exp(-lpFull));
-        for (const key of DRC.CONFIG.ALL_FIELDS) {
-            if (B[key] == null) continue; // skip non-model fields (e.g. sex)
-            const ci = B[key] * (siVals[key] - M[key]);
+        for (const key of Object.keys(m.betas)) {
+            const ci = m.betas[key] * (siVals[key] - M[key]);
             const pWithoutI = 1 / (1 + Math.exp(-(lpFull - ci)));
             result[key] = pFull - pWithoutI;
         }
@@ -172,12 +179,14 @@ DRC.RiskModel = (() => {
     /**
      * Compute comprehensive marginal probability summary.
      * @param {Object} siVals — Risk-factor values in SI units.
+     * @param {Object} [model] — Optional model definition from CONFIG.MODELS.
      * @returns {{ contributions: Object, pFull: number, pBaseline: number, netDeviation: number, sumMarginals: number }}
      */
-    const computeMarginalSummary = (siVals) => {
-        const pFull = computeProbability(siVals);
-        const pBaseline = computeBaselineRisk();
-        const contributions = computeMarginalContributions(siVals);
+    const computeMarginalSummary = (siVals, model) => {
+        const m = getModel(model);
+        const pFull = computeProbability(siVals, m);
+        const pBaseline = computeBaselineRisk(m);
+        const contributions = computeMarginalContributions(siVals, m);
         const sumMarginals = Object.values(contributions).reduce((a, b) => a + b, 0);
         return { contributions, pFull, pBaseline, netDeviation: pFull - pBaseline, sumMarginals };
     };

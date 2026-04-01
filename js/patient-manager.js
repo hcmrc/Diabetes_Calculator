@@ -12,7 +12,7 @@
 'use strict';
 
 // Translation helper
-const t = (key, fallback) => DRC.I18n?.t(key, fallback) || fallback || key;
+const t = DRC.Utils.createTranslator();
 
 DRC.PatientManager = (() => {
     const STORAGE_KEY = 'drc_v1_patients';
@@ -132,6 +132,8 @@ DRC.PatientManager = (() => {
         vals._riskPct  = parseFloat(document.getElementById('risk-percentage')?.textContent) || 0;
         // Store active unit system so values can be correctly interpreted on load
         vals._isMetric = DRC.App?._getState?.()?.isMetric ?? false;
+        // Store active model so it can be restored on load
+        vals._activeModel = DRC.App?._getState?.()?.activeModel || 'clinicalGlucoseLipids';
         return vals;
     };
 
@@ -587,6 +589,10 @@ DRC.PatientManager = (() => {
         if (!patient) return;
         activePatientId = id;
         applyValues(patient.data);
+        // Restore active model if saved with profile
+        if (patient.data._activeModel && DRC.App?.switchModel) {
+            DRC.App.switchModel(patient.data._activeModel);
+        }
         _persistAndRender();
         updateNavLabel();
         if (DRC.App?.trigger) {
@@ -791,6 +797,9 @@ DRC.PatientManager = (() => {
                 });
                 _persistAndRender();
                 updateNavLabel();
+
+                // Notify that import is complete (for tutorial trigger)
+                window.dispatchEvent(new CustomEvent('drc:import:completed'));
             } catch (_) { alert(t('patientManager.invalidExcel', 'Could not read the Excel file. Please check that it is a valid .xlsx file.')); }
         };
         reader.readAsArrayBuffer(file);
@@ -803,9 +812,15 @@ DRC.PatientManager = (() => {
         const label = document.getElementById('patientNameLabel');
         const activeLabel = document.getElementById('pdActiveLabel');
         if (label) label.textContent = active ? active.name : t('patientManager.selectProfile', 'Select Profile');
-        if (activeLabel) activeLabel.textContent = active
-            ? `${active.name} (${active.riskPct?.toFixed(1) || '?'}%)`
-            : t('patientManager.noProfile', 'No profile selected');
+        if (activeLabel) {
+            if (active) {
+                const liveRisk = parseFloat(document.getElementById('risk-percentage')?.textContent);
+                const displayRisk = (!isNaN(liveRisk) && liveRisk > 0) ? liveRisk.toFixed(1) : (active.riskPct?.toFixed(1) || '?');
+                activeLabel.textContent = `${active.name} (${displayRisk}%)`;
+            } else {
+                activeLabel.textContent = t('patientManager.noProfile', 'No profile selected');
+            }
+        }
     };
 
     const renderList = () => {

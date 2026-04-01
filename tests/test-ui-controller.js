@@ -27,6 +27,7 @@ global.DRC    = {};
 require('../js/config.js');
 require('../js/conversion-service.js');
 require('../js/ui-helpers.js');
+require('../js/utils.js');
 
 // Stub App before UIController loads (the filter-toggle handler calls it)
 DRC.App = { _calculate: () => {} };
@@ -34,34 +35,50 @@ DRC.App = { _calculate: () => {} };
 // ─── DOM mock ─────────────────────────────────────────────────────────────────
 
 function makeEl(props) {
+    const children = [];
+    let _textContent = '';
     const el = {
         value:       '0',
         checked:     false,
-        textContent: '',
+        get textContent() { return _textContent; },
+        set textContent(v) { _textContent = v; },
+        _textContent: '',
         innerHTML:   '',
         style:       { color: '', left: '', bottom: '', borderColor: '', width: '', fontWeight: '' },
         min:  '0',
         max:  '100',
         step: '1',
         className: '',
+        tagName:   'div',
         classList: {
             toggle:   () => {},
             add:      () => {},
             remove:   () => {},
             contains: () => false
         },
+        children: children,
         _attrs:       {},
         setAttribute: function(k, v) { this._attrs[k] = v; },
         getAttribute: function(k)    { return this._attrs[k] ?? null; },
         addEventListener:  () => {},
-        appendChild:       () => {},
+        appendChild: function(child) {
+            if (child) {
+                children.push(child);
+            }
+            return child;
+        },
         querySelector:     () => makeEl(),
         querySelectorAll:  () => [],
         closest:           () => null,
         focus:             () => {},
         dispatchEvent:     () => {}
     };
-    return Object.assign(el, props || {});
+    const result = Object.assign(el, props || {});
+    // Ensure _textContent stays in sync if provided
+    if (props?.textContent !== undefined) {
+        _textContent = props.textContent;
+    }
+    return result;
 }
 
 // The registry of named DOM elements used by UIController
@@ -167,7 +184,11 @@ global.document = {
     getElementById:   (id) => ELEMS[id] ?? null,
     querySelector:    ()   => null,
     querySelectorAll: ()   => [],
-    createElement:    ()   => makeEl({ appendChild: () => {}, querySelector: () => makeEl() })
+    createElement:    ()   => {
+        const el = makeEl();
+        el.querySelector = () => makeEl();
+        return el;
+    }
 };
 
 require('../js/ui-controller.js');
@@ -290,31 +311,58 @@ try { UIC.renderWhatIfBadge('nonexistentField', 5.0); } catch (e) { threw = true
 assert(!threw, 'renderWhatIfBadge with unknown field → no throw');
 
 // ─── TEST SUITE 4: renderScenarioComparison() ─────────────────────────────────
+// NOTE: renderScenarioComparison now uses secure DOM creation (no innerHTML).
+// Tests verify the DOM structure via children tracking.
 
 console.log('\n═══ TEST SUITE 4: renderScenarioComparison() ═══');
 
+// Store original children for verification
+let scenarioChildren = [];
+const scenarioPanel = ELEMS['scenario-comparison'];
+const origAppendChild = scenarioPanel.appendChild.bind(scenarioPanel);
+scenarioPanel.appendChild = function(child) {
+    scenarioChildren.push(child);
+    return origAppendChild(child);
+};
+
+// Helper to get text content from element mock
+function getText(el) {
+    return el?.textContent || el?._textContent || '';
+}
+
 // Improvement (current < baseline)
+scenarioChildren = [];
 UIC.renderScenarioComparison(20.0, 15.0);
-const html1 = ELEMS['scenario-comparison'].innerHTML;
-assert(html1.includes('improved'),    'baseline=20, current=15 → contains "improved"');
-assert(html1.includes('20.0%'),       'Baseline value 20.0% in output');
-assert(html1.includes('15.0%'),       'Current value 15.0% in output');
-assert(html1.includes('-5.00%'),      'Delta -5.00% in output');
-assert(html1.includes('trending-down'), 'Improvement uses trending-down icon');
+const deltaDiv1 = scenarioChildren[0]?.children?.[3];
+assert(deltaDiv1?.className?.includes('improved'),    'baseline=20, current=15 → contains "improved"');
+// Baseline item is children[0], which has baselineValue as children[2]
+const baselineValue1 = scenarioChildren[0]?.children?.[0]?.children?.[2];
+assert(getText(baselineValue1).includes('20.0'),       'Baseline value 20.0% in output');
+// Current item is children[2], which has currentValue as children[2]
+const currentValue1 = scenarioChildren[0]?.children?.[2]?.children?.[2];
+assert(getText(currentValue1).includes('15.0'),       'Current value 15.0% in output');
+// Delta div has text span as children[1]
+const deltaText1 = deltaDiv1?.children?.[1];
+assert(getText(deltaText1).includes('-5.00'),      'Delta -5.00% in output');
+assert(deltaDiv1?.children?.[0]?._attrs?.['data-lucide'] === 'trending-down', 'Improvement uses trending-down icon');
 
 // Worsening (current > baseline)
+scenarioChildren = [];
 UIC.renderScenarioComparison(20.0, 27.5);
-const html2 = ELEMS['scenario-comparison'].innerHTML;
-assert(html2.includes('worsened'),   'baseline=20, current=27.5 → contains "worsened"');
-assert(html2.includes('+7.50%'),     'Delta +7.50% in output');
-assert(html2.includes('trending-up'), 'Worsening uses trending-up icon');
+const deltaDiv2 = scenarioChildren[0]?.children?.[3];
+assert(deltaDiv2?.className?.includes('worsened'),   'baseline=20, current=27.5 → contains "worsened"');
+const deltaText2 = deltaDiv2?.children?.[1];
+assert(getText(deltaText2).includes('+7.50'),     'Delta +7.50% in output');
+assert(deltaDiv2?.children?.[0]?._attrs?.['data-lucide'] === 'trending-up', 'Worsening uses trending-up icon');
 
 // No change (delta = 0)
+scenarioChildren = [];
 UIC.renderScenarioComparison(15.0, 15.0);
-const html3 = ELEMS['scenario-comparison'].innerHTML;
-assert(html3.includes('unchanged'),       'delta=0 → classified as "unchanged"');
-assert(html3.includes('data-lucide="minus"'), 'delta=0 → uses minus icon (trending-flat does not exist in Lucide)');
-assert(html3.includes('+0.00%'),         'delta=0 → shows "+0.00%"');
+const deltaDiv3 = scenarioChildren[0]?.children?.[3];
+assert(deltaDiv3?.className?.includes('unchanged'),       'delta=0 → classified as "unchanged"');
+assert(deltaDiv3?.children?.[0]?._attrs?.['data-lucide'] === 'minus', 'delta=0 → uses minus icon');
+const deltaText3 = deltaDiv3?.children?.[1];
+assert(getText(deltaText3).includes('+0.00'),         'delta=0 → shows "+0.00%"');
 
 // ─── TEST SUITE 5: updateNonModSummary() ─────────────────────────────────────
 
@@ -330,12 +378,12 @@ UIC.updateNonModSummary();
 
 assert(ELEMS['summary-age'].textContent    === 'Age: 58',     'summary-age = "Age: 58"');
 assert(ELEMS['summary-race'].textContent   === 'Black',       'summary-race = "Black" (toggle checked)');
-assert(ELEMS['summary-parent'].textContent === 'No history of diabetes in family', 'summary-parent = "No history of diabetes in family" (toggle unchecked)');
+assert(ELEMS['summary-parent'].textContent === 'No', 'summary-parent = "No" (toggle unchecked)');
 
 // Test checked case
 ELEMS['parentHist-toggle'].checked = true;
 UIC.updateNonModSummary();
-assert(ELEMS['summary-parent'].textContent === 'History of diabetes in family', 'summary-parent = "History of diabetes in family" (toggle checked)');
+assert(ELEMS['summary-parent'].textContent === 'Yes', 'summary-parent = "Yes" (toggle checked)');
 ELEMS['parentHist-toggle'].checked = false;  // restore for next test
 assert(ELEMS['summary-height'].textContent === '175 cm',      'summary-height = "175 cm"');
 
