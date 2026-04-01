@@ -8,6 +8,11 @@ memory/
 
 # Claude AI project instructions
 CLAUDE.md
+.impeccable.md
+
+# Documentation and prompts (internal)
+docs/
+prompts/
 
 # Logs
 logs
