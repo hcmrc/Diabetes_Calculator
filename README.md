@@ -7,7 +7,7 @@ An interactive, web-based interface for communicating the logistic regression mo
 
 ## Scientific Background
 
-The interface implements the validated risk model from the **Atherosclerosis Risk in Communities (ARIC)** study, which estimates the 8-year incidence of type 2 diabetes based on nine predictors:
+The interface implements the validated risk model from the **Atherosclerosis Risk in Communities (ARIC)** study, which estimates the 9-year incidence of type 2 diabetes based on nine predictors:
 
 **Model equation:**
 
@@ -28,6 +28,22 @@ where LP = σ + Σ βᵢ · xᵢ with the following coefficients:
 | Triglycerides | 0.242 | mmol/L | Modifiable |
 
 Intercept σ = -9.9808
+
+### Population Means (ARIC Cohort)
+
+The contribution analysis computes each factor's deviation from the ARIC cohort baseline. The following population means are used, yielding a **baseline population risk of ~10.94%**:
+
+| Variable | Mean | Unit |
+|----------|------|------|
+| Age | 54 | years |
+| Ethnicity (African-American) | 0.15 | proportion |
+| Family history of diabetes | 0.38 | proportion |
+| Systolic blood pressure | 120 | mmHg |
+| Waist circumference | 94.76 | cm |
+| Height | 168 | cm |
+| Fasting glucose | 5.44 | mmol/L |
+| HDL cholesterol | 1.492 | mmol/L |
+| Triglycerides | 1.38 | mmol/L |
 
 ## Features
 
