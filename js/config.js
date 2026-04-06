@@ -67,11 +67,15 @@ DRC.CONFIG = Object.freeze({
      * Population means from the ARIC Study baseline cohort (all SI).
      * race = 0.15: Schmidt et al. (2005) reports 85% white → 15% African-American.
      * fastGlu = 5.44: Median fasting glucose reported in the ARIC cohort (5.44 mmol/L).
-     * parentHist = 0.3: Not explicitly reported in the publication; used as approximation.
+     * parentHist = 0.38: 38% with parental diabetes history in the ARIC cohort.
+     * waist = 94.76: Mean waist circumference (cm) from the ARIC cohort.
+     * cholHDL = 1.492: Mean HDL cholesterol (mmol/L) from the ARIC cohort.
+     * cholTri = 1.38: Mean triglycerides (mmol/L) from the ARIC cohort.
+     * → Baseline population risk: ~10.9%
      */
     MEANS: {
-        age: 54, race: 0.15, parentHist: 0.3, sbp: 120,
-        waist: 97, height: 168, fastGlu: 5.44, cholHDL: 1.3, cholTri: 1.7
+        age: 54, race: 0.15, parentHist: 0.38, sbp: 120,
+        waist: 94.76, height: 168, fastGlu: 5.44, cholHDL: 1.492, cholTri: 1.38
     },
 
     /** US-to-SI conversion multipliers. */

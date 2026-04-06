@@ -135,9 +135,9 @@ console.log('\n═══ TEST SUITE 3: Model Probability (Schmidt et al. 2005) �
 // Population means → known reference risk
 const popMeans = { ...CONFIG.MEANS };
 const popRisk = computeProbability(popMeans) * 100;
-// Expected: 12.93% — recalculated after correcting MEANS.race (0.15) and MEANS.fastGlu (5.44)
-// from Schmidt et al. (2005): 15% African-American, median glucose 5.44 mmol/L
-assertApprox(popRisk, 12.93, 0.1, 'Population means → ~12.93% risk (corrected from publication)');
+// Expected: 10.94% — recalculated with updated MEANS (parentHist=0.38, waist=94.76, cholHDL=1.492, cholTri=1.38)
+// from updated ARIC cohort baseline values
+assertApprox(popRisk, 10.94, 0.1, 'Population means → ~10.94% risk (updated MEANS)');
 
 // Lowest possible risk (young, tall, low glucose, high HDL)
 const lowRiskInputs = {
@@ -191,7 +191,7 @@ console.log('\n═══ TEST SUITE 3b: Baseline Risk (computeBaselineRisk) ═�
 
 // computeBaselineRisk should return risk for population means
 const baselineRisk = computeBaselineRisk() * 100;
-assertApprox(baselineRisk, 12.93, 0.1, 'computeBaselineRisk() returns population mean risk ~12.93%');
+assertApprox(baselineRisk, 10.94, 0.1, 'computeBaselineRisk() returns population mean risk ~10.94%');
 
 // Should match computeProbability(CONFIG.MEANS)
 const computedViaMeans = computeProbability(CONFIG.MEANS) * 100;
@@ -437,9 +437,9 @@ assert(CONFIG.HIGH_RISK_CUTOFF === 0.26,
     'HIGH_RISK_CUTOFF = 0.26 (Schmidt et al. 2005: sensitivity 52%, specificity 86%)');
 
 // Verify that the population-mean risk sits below the high-risk cutoff.
-// popRisk ≈ 12.93% — if HIGH_RISK_CUTOFF were accidentally set to 0.10 this would fail.
+// popRisk ≈ 10.94% — if HIGH_RISK_CUTOFF were accidentally set to 0.10 this would fail.
 assert(computeProbability(CONFIG.MEANS) < CONFIG.HIGH_RISK_CUTOFF,
-    'Population-mean risk is below HIGH_RISK_CUTOFF (12.93% < 26%)');
+    'Population-mean risk is below HIGH_RISK_CUTOFF (10.94% < 26%)');
 
 // =====================================================================
 // SUMMARY

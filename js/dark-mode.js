@@ -63,7 +63,7 @@ DRC.DarkMode = (() => {
     };
 
     const setupToggleButton = () => {
-        const toggleBtns = document.querySelectorAll('#darkModeToggle, #settingsDarkModeBtn');
+        const toggleBtns = document.querySelectorAll('#settingsDarkModeBtn');
         toggleBtns.forEach(btn => {
             if (btn && !btn._darkModeListenerAttached) {
                 // Mark button to prevent duplicate listeners
@@ -75,7 +75,7 @@ DRC.DarkMode = (() => {
     };
 
     const updateToggleButton = () => {
-        const toggleBtns = document.querySelectorAll('#darkModeToggle, #settingsDarkModeBtn');
+        const toggleBtns = document.querySelectorAll('#settingsDarkModeBtn');
         const isDark = document.documentElement.classList.contains('dark');
 
         toggleBtns.forEach(btn => {

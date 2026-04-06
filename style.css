@@ -238,7 +238,7 @@ body {
     width: 14px;
     left: 2px;
     bottom: 2px;
-    background: white;
+    background: var(--bg-card);
     transition: transform 0.3s var(--ease-smooth);
     border-radius: 50%;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
@@ -350,7 +350,7 @@ body {
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    background: white;
+    background: var(--bg-card);
     border: 3px solid var(--safe);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     transition: left 0.5s var(--ease-out), border-color 0.4s ease;
@@ -491,16 +491,16 @@ body {
 
 
 .hero-section[data-risk-level="safe"] {
-    background: linear-gradient(180deg, rgba(48, 161, 78, 0.03) 0%, #ffffff 100%);
+    background: linear-gradient(180deg, rgba(48, 161, 78, 0.03) 0%, var(--bg-card) 100%);
 }
 .hero-section[data-risk-level="alert"] {
-    background: linear-gradient(180deg, rgba(212, 148, 44, 0.04) 0%, #ffffff 100%);
+    background: linear-gradient(180deg, rgba(212, 148, 44, 0.04) 0%, var(--bg-card) 100%);
 }
 .hero-section[data-risk-level="warning"] {
-    background: linear-gradient(180deg, rgba(212, 101, 58, 0.05) 0%, #ffffff 100%);
+    background: linear-gradient(180deg, rgba(212, 101, 58, 0.05) 0%, var(--bg-card) 100%);
 }
 .hero-section[data-risk-level="danger"] {
-    background: linear-gradient(180deg, rgba(196, 61, 53, 0.06) 0%, #ffffff 100%);
+    background: linear-gradient(180deg, rgba(196, 61, 53, 0.06) 0%, var(--bg-card) 100%);
 }
 
 
@@ -881,7 +881,7 @@ body.ocr-modal-open .col-step-label {
     right: 14px;
     height: 6px;
     border-radius: 3px;
-    background: #e5e5ea;
+    background: var(--border);
     overflow: hidden;
     pointer-events: none;
 }
@@ -1015,7 +1015,7 @@ body.ocr-modal-open .col-step-label {
     position: absolute;
     cursor: pointer;
     inset: 0;
-    background: #e5e5ea;
+    background: var(--border-strong);
     transition: background 0.3s;
     border-radius: 22px;
 }
@@ -1027,7 +1027,7 @@ body.ocr-modal-open .col-step-label {
     width: 18px;
     left: 2px;
     bottom: 2px;
-    background: white;
+    background: var(--bg-card);
     transition: transform 0.3s var(--ease-smooth);
     border-radius: 50%;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
@@ -1109,7 +1109,7 @@ body.ocr-modal-open .col-step-label {
     left: 50%;
     transform: translateX(-50%);
     background: var(--text-primary);
-    color: white;
+    color: var(--bg-card);
     padding: 8px 12px;
     border-radius: var(--radius-sm);
     font-size: var(--text-xs);
@@ -1197,7 +1197,7 @@ body.ocr-modal-open .col-step-label {
 
 .chain-node {
     padding: 5px 8px;
-    background: white;
+    background: var(--bg-card);
     border-radius: 4px;
     border: 1px solid var(--border);
     white-space: nowrap;
@@ -1225,7 +1225,7 @@ body.ocr-modal-open .col-step-label {
 }
 
 .causality-chain.highlighted .chain-node {
-    background: white;
+    background: var(--bg-card);
     border-color: rgba(255, 59, 48, 0.3);
 }
 
@@ -1720,8 +1720,8 @@ body.ocr-modal-open .col-step-label {
 
 [data-field]:hover,
 [data-field].factor-highlight {
-    background: rgba(0, 102, 204, 0.15);
-    box-shadow: 0 0 0 1px rgba(0, 102, 204, 0.45);
+    background: var(--primary-light);
+    box-shadow: 0 0 0 1px var(--primary-glow);
     border-radius: var(--radius);
 }
 
@@ -1885,19 +1885,19 @@ body.ocr-modal-open .col-step-label {
 
 .tl-dot {
     fill: var(--blue, #007aff);
-    stroke: #fff;
+    stroke: var(--bg-card);
     stroke-width: 2;
     transition: r 0.15s ease;
 }
 
 .tl-dot-baseline {
     fill: var(--blue, #007aff);
-    stroke: #fff;
+    stroke: var(--bg-card);
     stroke-width: 2.5;
 }
 
 .tl-dot-treatment {
-    stroke: #fff;
+    stroke: var(--bg-card);
     stroke-width: 2.5;
     filter: drop-shadow(0 1px 3px rgba(0,0,0,0.15));
 }
@@ -1973,6 +1973,17 @@ body.ocr-modal-open .col-step-label {
     font-size: 14px;
 }
 
+.dark .btn-snapshot,
+[data-theme="dark"] .btn-snapshot {
+    color: var(--blue);
+    background: var(--blue-light);
+}
+
+.dark .btn-snapshot:hover,
+[data-theme="dark"] .btn-snapshot:hover {
+    background: var(--blue-glow);
+}
+
 .timeline-line {
     fill: none;
     stroke: var(--blue);
@@ -1982,12 +1993,12 @@ body.ocr-modal-open .col-step-label {
 }
 
 .timeline-area {
-    fill: rgba(0, 102, 204, 0.1);
+    fill: rgba(58, 58, 60, 0.08);
 }
 
 .timeline-dot {
     fill: var(--blue);
-    stroke: white;
+    stroke: var(--bg-card);
     stroke-width: 2;
     transition: r 0.15s ease;
 }
@@ -2644,9 +2655,9 @@ body.ocr-modal-open .col-step-label {
 .scenario-comparison-inline {
     display: flex;
     padding: 8px 12px;
-    background: rgba(0, 102, 204, 0.04);
+    background: var(--primary-light);
     border-radius: var(--radius-sm);
-    border: 1px solid rgba(0, 102, 204, 0.1);
+    border: 1px solid var(--border-strong);
     margin-bottom: 10px;
 }
 
@@ -2762,6 +2773,28 @@ body.ocr-modal-open .col-step-label {
     color: white !important;
 }
 
+.dark .btn-compare-scenario-inline,
+[data-theme="dark"] .btn-compare-scenario-inline {
+    color: var(--blue);
+    background: var(--blue-light);
+}
+
+.dark .btn-compare-scenario-inline:hover,
+[data-theme="dark"] .btn-compare-scenario-inline:hover {
+    background: var(--blue-glow);
+}
+
+.dark .btn-compare-scenario-inline.active,
+[data-theme="dark"] .btn-compare-scenario-inline.active {
+    background: var(--blue);
+    color: white;
+}
+
+.dark .btn-compare-scenario-inline.active .lucide-icon,
+[data-theme="dark"] .btn-compare-scenario-inline.active .lucide-icon {
+    color: white !important;
+}
+
 /* Timeline actions row */
 .timeline-actions {
     display: flex;
@@ -2805,7 +2838,7 @@ body.ocr-modal-open .col-step-label {
     background: var(--bg-card);
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-card);
-    border: 2px solid rgba(0, 102, 204, 0.15);
+    border: 2px solid var(--border-strong);
     overflow: hidden;
 }
 
@@ -2854,7 +2887,7 @@ body.ocr-modal-open .col-step-label {
     font-weight: 600;
     color: var(--blue);
     background: var(--blue-light);
-    border: 1px solid rgba(0, 102, 204, 0.15);
+    border: 1px solid var(--border-strong);
     border-radius: 20px;
     cursor: pointer;
     transition: background 0.2s, transform 0.2s, color 0.2s;
@@ -2877,6 +2910,31 @@ body.ocr-modal-open .col-step-label {
 }
 
 .btn-compare-scenario-section.active .lucide-icon {
+    color: white !important;
+}
+
+.dark .btn-compare-scenario-section,
+[data-theme="dark"] .btn-compare-scenario-section {
+    color: var(--blue);
+    background: var(--blue-light);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .btn-compare-scenario-section:hover,
+[data-theme="dark"] .btn-compare-scenario-section:hover {
+    background: var(--blue-glow);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.dark .btn-compare-scenario-section.active,
+[data-theme="dark"] .btn-compare-scenario-section.active {
+    background: var(--blue);
+    color: white;
+    border-color: var(--blue);
+}
+
+.dark .btn-compare-scenario-section.active .lucide-icon,
+[data-theme="dark"] .btn-compare-scenario-section.active .lucide-icon {
     color: white !important;
 }
 
@@ -3336,7 +3394,7 @@ body.ocr-modal-open .col-step-label {
     font-size: 13px;
     font-weight: 700;
     color: #fff;
-    background: #3a3a3c;
+    background: var(--primary);
     border: none;
     border-radius: 10px;
     cursor: pointer;
@@ -3548,8 +3606,8 @@ body.ocr-modal-open .col-step-label {
                 opacity 0.3s ease,
                 padding 0.3s ease;
     opacity: 0;
-    background: var(--bg-primary);
-    border-bottom: 1px solid var(--border-light);
+    background: var(--bg-page);
+    border-bottom: 1px solid var(--border);
 }
 
 .timeline-expandable-area.open {
@@ -3836,6 +3894,22 @@ body.ocr-modal-open .col-step-label {
     color: var(--text-primary);
 }
 
+.dark .btn-language {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-secondary);
+}
+
+.dark .btn-language:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.dark .btn-language:active,
+.dark .btn-language[aria-expanded="true"] {
+    background: rgba(255, 255, 255, 0.14);
+    color: var(--text-primary);
+}
+
 
 /* ============================================
    36. SETTINGS BUTTON & PANEL
@@ -4046,6 +4120,18 @@ body.ocr-modal-open .col-step-label {
 }
 
 [data-theme="dark"] .btn-restart-setup:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+}
+
+.dark .btn-restart-setup {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--border);
+    color: var(--text-secondary);
+}
+
+.dark .btn-restart-setup:hover {
     background: rgba(255, 255, 255, 0.1);
     border-color: var(--border-strong);
     color: var(--text-primary);
@@ -4517,21 +4603,21 @@ body.ocr-modal-open .col-step-label {
 }
 
 .dark .hero-section[data-risk-level="safe"] {
-    background: linear-gradient(180deg, rgba(48, 161, 78, 0.06) 0%, #1a1a1f 100%);
+    background: linear-gradient(180deg, rgba(48, 161, 78, 0.06) 0%, var(--bg-card) 100%);
 }
 .dark .hero-section[data-risk-level="alert"] {
-    background: linear-gradient(180deg, rgba(212, 148, 44, 0.07) 0%, #1a1a1f 100%);
+    background: linear-gradient(180deg, rgba(212, 148, 44, 0.07) 0%, var(--bg-card) 100%);
 }
 .dark .hero-section[data-risk-level="warning"] {
-    background: linear-gradient(180deg, rgba(212, 101, 58, 0.08) 0%, #1a1a1f 100%);
+    background: linear-gradient(180deg, rgba(212, 101, 58, 0.08) 0%, var(--bg-card) 100%);
 }
 .dark .hero-section[data-risk-level="danger"] {
-    background: linear-gradient(180deg, rgba(196, 61, 53, 0.08) 0%, #1a1a1f 100%);
+    background: linear-gradient(180deg, rgba(196, 61, 53, 0.08) 0%, var(--bg-card) 100%);
 }
 
 /* Risk bar marker */
 .dark .risk-bar-marker {
-    background: #1a1a1f;
+    background: var(--bg-card);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
@@ -4588,8 +4674,8 @@ body.ocr-modal-open .col-step-label {
 }
 
 .dark .input-group-highlight {
-    background: rgba(0, 102, 204, 0.1);
-    border-color: rgba(0, 102, 204, 0.25);
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.15);
 }
 
 /* Sliders */
@@ -4620,7 +4706,7 @@ body.ocr-modal-open .col-step-label {
 
 .dark .value-input:focus {
     border-color: var(--blue);
-    box-shadow: 0 0 0 2px rgba(0, 113, 227, 0.25);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15);
 }
 
 /* Toggle switches */
@@ -4691,7 +4777,7 @@ body.ocr-modal-open .col-step-label {
 
 .dark .model-tab.active {
     background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(0, 113, 227, 0.3);
+    border-color: rgba(255, 255, 255, 0.25);
     color: #fff;
 }
 
@@ -4713,7 +4799,7 @@ body.ocr-modal-open .col-step-label {
 }
 
 .dark .treatment-overview-row:hover {
-    background: rgba(0, 102, 204, 0.1);
+    background: rgba(255, 255, 255, 0.06);
 }
 
 .dark .tov-bar-container {
@@ -4737,6 +4823,13 @@ body.ocr-modal-open .col-step-label {
 .dark .timeline-chart {
     background: var(--bg-elevated);
     border-color: var(--border);
+}
+
+.dark .tl-dot,
+.dark .tl-dot-baseline,
+.dark .tl-dot-treatment,
+.dark .timeline-dot {
+    stroke: var(--bg-card);
 }
 
 /* Patient drawer */
@@ -4774,8 +4867,8 @@ body.ocr-modal-open .col-step-label {
 }
 
 .dark .pd-btn-io:hover {
-    background: rgba(0, 102, 204, 0.1);
-    border-color: rgba(0, 102, 204, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--border-strong);
 }
 
 /* Tooltips */
@@ -4807,7 +4900,7 @@ body.ocr-modal-open .col-step-label {
 }
 
 .dark .section-collapse-btn:hover {
-    background: rgba(0, 113, 227, 0.2);
+    background: rgba(255, 255, 255, 0.12);
 }
 
 .dark .section-summary {
@@ -4940,14 +5033,14 @@ body.ocr-modal-open .col-step-label {
 }
 
 .radio-option:hover {
-    background: rgba(0, 102, 204, 0.04);
-    border-color: rgba(0, 102, 204, 0.2);
+    background: var(--primary-light);
+    border-color: var(--border-strong);
 }
 
 .radio-option:has(input:checked) {
     background: var(--blue-light);
-    border-color: rgba(0, 113, 227, 0.3);
-    box-shadow: 0 0 0 1px rgba(0, 113, 227, 0.15);
+    border-color: var(--primary-glow);
+    box-shadow: var(--shadow-glow);
 }
 
 .radio-option input {
@@ -5496,6 +5589,11 @@ body.ocr-modal-open .col-step-label {
     border-radius: var(--radius-md);
     font-size: var(--text-xs);
     color: #6b7280;
+}
+
+.dark .ocr-privacy-notice {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
 }
 
 .ocr-privacy-notice .lucide-icon {
@@ -6108,7 +6206,7 @@ body.ocr-modal-open .col-step-label {
     top: calc(100% + 4px);
     right: 0;
     min-width: 300px;
-    background: var(--card-bg, #fff);
+    background: var(--bg-card);
     border: 1px solid var(--border, #e5e7eb);
     border-radius: 12px;
     box-shadow: 0 8px 30px rgba(0,0,0,0.12);
@@ -6408,6 +6506,15 @@ body.tutorial-active .tutorial-highlight .panel-header-bar *,
 body.tutorial-active .tutorial-highlight .panel-subtitle {
     filter: none !important;
     opacity: 1 !important;
+}
+
+/* Tutorial button remains clickable during tutorial (toggle to close) */
+body.tutorial-active .btn-tutorial {
+    pointer-events: auto !important;
+    filter: none !important;
+    opacity: 1 !important;
+    position: relative;
+    z-index: 9600;
 }
 
 /* Prevent page scrolling during tutorial */
@@ -7363,7 +7470,7 @@ body.tutorial-active {
     position: absolute;
     width: 24px;
     height: 24px;
-    background: white;
+    background: var(--bg-card);
     border-radius: 50%;
     top: 2px;
     left: 2px;

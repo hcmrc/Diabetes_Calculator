@@ -116,6 +116,11 @@ DRC.SettingsPanel = (() => {
             restartSetupBtn.addEventListener('click', _handleRestartSetup);
         }
 
+        // Defensiver Check: Initialisiere Dark Mode Button State wenn verfügbar
+        if (_darkModeBtn && DRC.DarkMode && typeof DRC.DarkMode.isDark === 'function') {
+            _updateDarkModeButtonState();
+        }
+
         // Listen for dark mode changes
         window.addEventListener('darkmode:change', () => {
             _updateDarkModeButtonState();
@@ -469,10 +474,6 @@ DRC.SettingsPanel = (() => {
         const icon = _darkModeBtn.querySelector('i');
         if (icon) {
             icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
-        }
-
-        if (window.lucide) {
-            lucide.createIcons();
         }
     };
 
