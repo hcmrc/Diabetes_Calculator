@@ -53,11 +53,19 @@ DRC.CryptoService = (() => {
         }
         const metadataLengthView = new DataView(encryptedPackage.buffer, MAGIC_HEADER.length, 4);
         const metadataLength = metadataLengthView.getUint32(0, false);
+        if (metadataLength > 4096) {
+            throw new Error('Invalid encrypted file format: metadata too large');
+        }
         const metadataStart = MAGIC_HEADER.length + 4;
         const metadataBytes = encryptedPackage.slice(metadataStart, metadataStart + metadataLength);
         const metadata = JSON.parse(new TextDecoder().decode(metadataBytes));
         if (metadata.version !== VERSION) {
             throw new Error(`Unsupported encryption version: ${metadata.version}`);
+        }
+        if (!Array.isArray(metadata.salt) || metadata.salt.length !== SALT_LENGTH ||
+            !Array.isArray(metadata.iv)   || metadata.iv.length   !== IV_LENGTH   ||
+            !Array.isArray(metadata.tag)  || metadata.tag.length  !== TAG_LENGTH) {
+            throw new Error('Invalid encrypted file format: malformed metadata');
         }
         const salt = new Uint8Array(metadata.salt);
         const iv = new Uint8Array(metadata.iv);

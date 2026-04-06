@@ -304,7 +304,12 @@ DRC.LandingPage = (() => {
         try {
             const data = localStorage.getItem(STORAGE_KEY);
             if (data) {
-                return JSON.parse(data);
+                return JSON.parse(data, (key, value) => {
+                    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+                        return undefined;
+                    }
+                    return value;
+                });
             }
         } catch (e) {
             console.warn('Failed to load landing page settings:', e);

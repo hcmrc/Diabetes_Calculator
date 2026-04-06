@@ -352,7 +352,7 @@
 
         // Patient name section (separate, at the top)
         const patientName = values.patientName;
-        let profileName = patientName || 'Unknown Profile';
+        let profileName = DRC.Utils.escapeHtml(patientName || 'Unknown Profile');
 
         html += `
             <div class="ocr-result-item ${patientName ? 'high' : 'none'}" data-field="patientName">

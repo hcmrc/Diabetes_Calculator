@@ -183,7 +183,12 @@ DRC.TreatmentSimulator = (() => {
             const simFactor = b.getAttribute('data-sim-factor');
             if (_simulated.has(simFactor)) {
                 const alreadyText = DRC.I18n?.t('buttons.alreadySimulated', 'Already Simulated') || 'Already Simulated';
-                b.innerHTML = `<i data-lucide="check-circle" class="lucide-icon"></i> ${alreadyText}`;
+                b.replaceChildren();
+                const icon = document.createElement('i');
+                icon.setAttribute('data-lucide', 'check-circle');
+                icon.className = 'lucide-icon';
+                b.appendChild(icon);
+                b.appendChild(document.createTextNode(' ' + alreadyText));
             }
         });
         DRC.UIHelpers?.refreshIcons();

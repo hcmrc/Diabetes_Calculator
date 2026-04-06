@@ -17,7 +17,7 @@
     const VALUE_PATTERNS = {
         glucose: {
             patterns: [
-                { regex: /(?:gluc(?:os|k)e|blutzucker|zucker)[^\n]*?nuechtern[^\n]*?(\d+[.,]?\d*)\s*(mg\/d?l|mg%|mmol\/l)?/i, priority: 10 },
+                { regex: /(?:gluc(?:os|k)e|blutzucker|zucker)[^\n]{0,80}?nuechtern[^\n]{0,80}?(\d+[.,]?\d*)\s*(mg\/d?l|mg%|mmol\/l)?/i, priority: 10 },
                 { regex: /(?:gluc(?:os|k)e|blutzucker|zucker)[^\n]*?(\d+[.,]?\d*)\s*(mg\/d?l|mg%|mmol\/l)?/i, priority: 8 },
                 { regex: /(?:glucose|fasting)[^\n]*?(\d+[.,]?\d*)\s*(mg\/d?l|mg%|mmol\/l)?/i, priority: 8 },
                 { regex: /\b(glucose|glukose|blutzucker)\b[^\n]*?(\d+[.,]?\d*)/i, priority: 5, group: 2 },
@@ -32,7 +32,7 @@
                 { regex: /hdl[^a-z0-9]*(?:cholesterol|chol)[^\n]*?(\d+[.,]?\d*)\s*(mg\/d?l|mmol\/l)?/i, priority: 10 },
                 { regex: /hdl-c[^\n]*?(\d+[.,]?\d*)/i, priority: 9 },
                 { regex: /hdl[^\n]*?(\d+[.,]?\d*)\s*(mg\/d?l|mmol\/l)?/i, priority: 7 },
-                { regex: /"gutes"[^\n]*?cholesterol[^\n]*?(\d+[.,]?\d*)/i, priority: 6 },
+                { regex: /"gutes"[^\n]{0,80}?cholesterol[^\n]{0,80}?(\d+[.,]?\d*)/i, priority: 6 },
                 { regex: /hdl[\s\|]+(\d+[.,]?\d*)/i, priority: 7 }
             ],
             exclude: /ldl|vldl|non-hdl|gesamt|total/i,
