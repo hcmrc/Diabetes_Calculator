@@ -431,7 +431,7 @@
                 const inputType = field === 'patientName' ? 'text' : 'number';
                 const inputReadonly = field === 'patientName' ? 'readonly' : '';
                 const inputStep = field === 'patientName' ? '' : 'step="0.1"';
-                const displayValue = value !== undefined ? value : '';
+                const displayValue = value !== undefined ? DRC.Utils.escapeHtml(String(value)) : '';
                 inputHtml = `
                     <input type="${inputType}" class="ocr-result-input ${confidenceClass}"
                         value="${displayValue}" data-field="${field}"

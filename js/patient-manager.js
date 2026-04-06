@@ -24,17 +24,22 @@ DRC.PatientManager = (() => {
     let activePatientId = null;
 
     // ─── Encryption Storage Helpers ─────────────────────────────────────
-    // NOTE: sessionStorage is used instead of localStorage for password storage
-    // as it is cleared when the page session ends, providing better security
+    // NOTE: Passwords are held in-memory only — never written to any Web Storage
+    // API — to prevent clear-text storage of sensitive information.
+    // They are cleared automatically when the page is closed or refreshed.
+    let _lastPassword = null;
+    let _defaultPassword = null;
+    let _defaultEnabled = false;
+
     const ENCRYPTION_STORAGE = {
-        getLastPassword: () => sessionStorage.getItem('drc_last_password'),
-        setLastPassword: (pwd) => sessionStorage.setItem('drc_last_password', pwd),
-        clearLastPassword: () => sessionStorage.removeItem('drc_last_password'),
-        getDefaultPassword: () => sessionStorage.getItem('drc_default_password'),
-        setDefaultPassword: (pwd) => sessionStorage.setItem('drc_default_password', pwd),
-        clearDefaultPassword: () => sessionStorage.removeItem('drc_default_password'),
-        isDefaultEnabled: () => sessionStorage.getItem('drc_default_enabled') === 'true',
-        setDefaultEnabled: (enabled) => sessionStorage.setItem('drc_default_enabled', enabled ? 'true' : 'false')
+        getLastPassword: () => _lastPassword,
+        setLastPassword: (pwd) => { _lastPassword = pwd; },
+        clearLastPassword: () => { _lastPassword = null; },
+        getDefaultPassword: () => _defaultPassword,
+        setDefaultPassword: (pwd) => { _defaultPassword = pwd; },
+        clearDefaultPassword: () => { _defaultPassword = null; },
+        isDefaultEnabled: () => _defaultEnabled,
+        setDefaultEnabled: (enabled) => { _defaultEnabled = !!enabled; }
     };
 
     // ─── Persistence ────────────────────────────────────────────────────
