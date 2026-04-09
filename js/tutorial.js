@@ -1,7 +1,7 @@
 /**
  * @fileoverview Interactive Tutorial Module
  *
- * Guides users through 6 interface sections with small explanation cards
+ * Guides users through interface sections with small explanation cards
  * connected by SVG lines to their target elements.
  * Global nav bar handles Prev/Next/Close. Fully i18n-aware.
  *
@@ -11,10 +11,6 @@
  *  - For the top nav step, cards are distributed horizontally below the bar.
  *  - Cards are sorted by their target element's Y position so lines stay short.
  *  - No collision-resolution loops needed — the column is always non-overlapping.
- *
- * Timeline step timing:
- *  - The timeline uses a 0.4 s CSS max-height transition. We wait 450 ms
- *    before measuring element positions so rects are accurate.
  *
  * @module Tutorial
  * @memberof DRC
@@ -38,11 +34,6 @@ DRC.Tutorial = (() => {
                     textKey:  'tutorial.steps.nav.resetBtn.text'
                 },
                 {
-                    selector: '#timelineToggleBtn',
-                    titleKey: 'tutorial.steps.nav.timelineBtn.title',
-                    textKey:  'tutorial.steps.nav.timelineBtn.text'
-                },
-                {
                     selector: '#patientMenuBtn',
                     titleKey: 'tutorial.steps.nav.patientBtn.title',
                     textKey:  'tutorial.steps.nav.patientBtn.text'
@@ -51,44 +42,6 @@ DRC.Tutorial = (() => {
                     selector: '#settingsBtn',
                     titleKey: 'tutorial.steps.nav.settingsBtn.title',
                     textKey:  'tutorial.steps.nav.settingsBtn.text'
-                }
-            ]
-        },
-        {
-            sectionSelector: '#risk-score-card',
-            titleKey: 'tutorial.steps.hero.title',
-            items: [
-                {
-                    selector: '#risk-percentage',
-                    titleKey: 'tutorial.steps.hero.percentage.title',
-                    textKey:  'tutorial.steps.hero.percentage.text'
-                },
-                {
-                    selector: '#expandHeroBtn',
-                    titleKey: 'tutorial.steps.hero.expand.title',
-                    textKey:  'tutorial.steps.hero.expand.text'
-                }
-            ]
-        },
-        {
-            sectionSelector: '#timeline-expandable',
-            titleKey: 'tutorial.steps.timeline.title',
-            forceBelow: true,   // section is full-width → place cards below, never inside
-            items: [
-                {
-                    selector: '#snapshotBtn',
-                    titleKey: 'tutorial.steps.timeline.snapshot.title',
-                    textKey:  'tutorial.steps.timeline.snapshot.text'
-                },
-                {
-                    selector: '#compareScenarioBtn',
-                    titleKey: 'tutorial.steps.timeline.baseline.title',
-                    textKey:  'tutorial.steps.timeline.baseline.text'
-                },
-                {
-                    selector: '#timeline-chart',
-                    titleKey: 'tutorial.steps.timeline.chart.title',
-                    textKey:  'tutorial.steps.timeline.chart.text'
                 }
             ]
         },
@@ -127,19 +80,19 @@ DRC.Tutorial = (() => {
             titleKey: 'tutorial.steps.model.title',
             items: [
                 {
-                    selector: '.model-tabs',
-                    titleKey: 'tutorial.steps.model.tabs.title',
-                    textKey:  'tutorial.steps.model.tabs.text'
+                    selector: '#your-risk-field',
+                    titleKey: 'tutorial.steps.model.yourRisk.title',
+                    textKey:  'tutorial.steps.model.yourRisk.text'
+                },
+                {
+                    selector: '#chosen-risk-field',
+                    titleKey: 'tutorial.steps.model.chosenRisk.title',
+                    textKey:  'tutorial.steps.model.chosenRisk.text'
                 },
                 {
                     selector: '#contribution-chart',
                     titleKey: 'tutorial.steps.model.contributions.title',
                     textKey:  'tutorial.steps.model.contributions.text'
-                },
-                {
-                    selector: '#causality-chain',
-                    titleKey: 'tutorial.steps.model.causality.title',
-                    textKey:  'tutorial.steps.model.causality.text'
                 }
             ]
         },
@@ -168,7 +121,6 @@ DRC.Tutorial = (() => {
     const EDGE_PAD           = 10;   // min distance from viewport edges
     const CARD_GAP           = 12;   // vertical gap between cards in a column
     const NAV_BAR_HEIGHT     = 100;  // space reserved for tutorial nav bar at bottom
-    const TIMELINE_ANIM_WAIT = 450;  // ms to wait for timeline 0.4 s max-height transition
 
     // ─── State ─────────────────────────────────────────────────────────
     let _currentStep  = 0;
@@ -714,38 +666,15 @@ DRC.Tutorial = (() => {
 
     // ─── Step Rendering ────────────────────────────────────────────────
     const _renderStep = (index) => {
-        const prevStep = STEPS[_currentStep];
-        _currentStep  = index;
-        const step    = STEPS[index];
-
-        // Close the timeline when navigating away from the timeline step.
-        // This prevents it from consuming vertical space and pushing later panels off-screen.
-        if (prevStep &&
-            prevStep.sectionSelector === '#timeline-expandable' &&
-            step.sectionSelector    !== '#timeline-expandable') {
-            const timelineEl = _el('#timeline-expandable');
-            if (timelineEl) timelineEl.classList.remove('open');
-        }
-
-        // The timeline panel uses a 0.4 s CSS max-height transition.
-        // We must wait for the animation to finish before measuring element rects.
-        let buildDelay = 0;
-        if (step.sectionSelector === '#timeline-expandable') {
-            const timelineEl = _el('#timeline-expandable');
-            if (timelineEl && !timelineEl.classList.contains('open')) {
-                timelineEl.classList.add('open');
-                buildDelay = TIMELINE_ANIM_WAIT;
-            }
-        }
+        _currentStep = index;
+        const step   = STEPS[index];
 
         _highlight(step);
         _updateNav();
 
-        setTimeout(() => {
-            requestAnimationFrame(() => {
-                if (_active) _buildCards(step);
-            });
-        }, buildDelay);
+        requestAnimationFrame(() => {
+            if (_active) _buildCards(step);
+        });
     };
 
     // ─── Resize Handler ────────────────────────────────────────────────

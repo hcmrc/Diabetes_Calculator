@@ -1,0 +1,14 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Python HTTP Server",
+      "runtimeExecutable": "/Users/marcohaeckel/.nvm/versions/node/v16.20.2/bin/node",
+      "runtimeArgs": ["/Users/marcohaeckel/.nvm/versions/node/v16.20.2/bin/npx", "serve", "-l", "8080", "."],
+      "port": 8080,
+      "env": {
+        "PATH": "/Users/marcohaeckel/.nvm/versions/node/v16.20.2/bin:/usr/local/bin:/usr/bin:/bin"
+      }
+    }
+  ]
+}

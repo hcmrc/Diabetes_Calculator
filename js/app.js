@@ -1,9 +1,8 @@
 /**
  * @fileoverview Application controller — state management & event wiring.
  *
- * Orchestrates the interaction between the RiskModel, UIController,
- * and TimelineChart modules. Handles slider events, unit
- * toggling, reset, snapshot, and scenario comparison logic.
+ * Orchestrates the interaction between the RiskModel and UIController
+ * modules. Handles slider events, unit toggling, and reset logic.
  *
  * @module App
  * @memberof DRC
@@ -14,7 +13,6 @@
 DRC.App = (() => {
     const UI    = () => DRC.UIController;
     const Model = () => DRC.RiskModel;
-    const Timeline = () => DRC.TimelineChart;
     const CFG   = DRC.CONFIG;
 
     /** Application state (mutable). */
@@ -22,8 +20,6 @@ DRC.App = (() => {
         isMetric: false,
         prevRiskPct: null,
         activeField: null,
-        baselineRisk: null,
-        isComparingScenario: false,
         /**
          * Precise SI-unit values, updated on every calculation.
          * Used as the "source of truth" during unit switches to prevent
@@ -89,47 +85,66 @@ DRC.App = (() => {
      * Full recalculation: reads inputs, runs the model, updates all UI.
      * @returns {number} Current risk percentage.
      */
+    /**
+     * Compute the "original" raw inputs by overriding any simulated
+     * factors with their stored pre-simulation slider values.
+     * Used to show the pre-treatment "Your Risk" reference value.
+     * @param {Object} rawInputs - Current slider values
+     * @returns {Object} Raw inputs with simulated factors reverted
+     */
+    const _getOriginalRawInputs = (rawInputs) => {
+        const originals = DRC.TreatmentSimulator?.getOriginalValues?.() || null;
+        if (!originals || Object.keys(originals).length === 0) return rawInputs;
+        return { ...rawInputs, ...originals };
+    };
+
     const calculate = () => {
         const activeModel   = getActiveModel();
         const rawInputs     = UI().readInputs();
-        const siVals        = Model().toSI(rawInputs, state.isMetric);
-        state.preciseSI     = { ...siVals };   // Preserve full-precision SI values
-        const riskPct       = Model().computeProbability(siVals, activeModel) * 100;
-        const logOddsContributions = Model().computeContributions(siVals, activeModel);
-        const marginalSummary = Model().computeMarginalSummary(siVals, activeModel);
+        const siValsCurrent = Model().toSI(rawInputs, state.isMetric);
+        state.preciseSI     = { ...siValsCurrent };   // Preserve full-precision SI values
+
+        // "Your Risk" = risk based on the original (pre-simulation) slider values
+        const rawOriginal     = _getOriginalRawInputs(rawInputs);
+        const siValsOriginal  = Model().toSI(rawOriginal, state.isMetric);
+        const riskPctOriginal = Model().computeProbability(siValsOriginal, activeModel) * 100;
+
+        // "Your Risk with Chosen Treatments" = current (possibly simulated) risk
+        const riskPctCurrent  = Model().computeProbability(siValsCurrent, activeModel) * 100;
+
+        const logOddsContributions = Model().computeContributions(siValsCurrent, activeModel);
+        const marginalSummary = Model().computeMarginalSummary(siValsCurrent, activeModel);
         const isMale        = rawInputs.sex === 1;
-        const treatStatus   = Model().getElevatedFactors(siVals, isMale);
+        const treatStatus   = Model().getElevatedFactors(siValsCurrent, isMale);
 
         // Render all views with the calculated data
-        _renderAllViews(riskPct, logOddsContributions, marginalSummary, treatStatus, siVals, activeModel);
-        return riskPct;
+        _renderAllViews(riskPctOriginal, riskPctCurrent, logOddsContributions, marginalSummary, treatStatus, siValsCurrent, activeModel);
+        return riskPctCurrent;
     };
 
     /**
      * Render all views with calculated data.
-     * @param {number} riskPct - Current risk percentage
+     * @param {number} riskPctOriginal - Pre-simulation (baseline) risk percentage
+     * @param {number} riskPctCurrent - Current (post-simulation) risk percentage
      * @param {Object} logOddsContributions - Log-odds contributions (for treatment recommendations)
      * @param {Object} marginalSummary - Marginal probability summary (for chart + treatments)
      * @param {Object} treatStatus - Treatment status with elevated factors
-     * @param {Object} siVals - SI-unit values
+     * @param {Object} siVals - SI-unit values (current)
      * @param {Object} [model] - Active model definition from CONFIG.MODELS
      */
-    const _renderAllViews = (riskPct, logOddsContributions, marginalSummary, treatStatus, siVals, model) => {
-        UI().renderRisk(riskPct);
+    const _renderAllViews = (riskPctOriginal, riskPctCurrent, logOddsContributions, marginalSummary, treatStatus, siVals, model) => {
+        UI().renderRisk(riskPctOriginal);
+        UI().renderChosenRisk(riskPctCurrent, riskPctOriginal);
+        UI().renderChosenTreatmentsList(DRC.TreatmentSimulator?.getSimulatedFactors?.() || []);
         UI().updateNonModSummary();
         UI().updateModSummary();
-        UI().renderIconArray(riskPct);
+        UI().renderIconArray(riskPctOriginal);
         UI().renderContributionChart(marginalSummary);
         UI().renderTreatmentOverview(treatStatus, logOddsContributions, marginalSummary.contributions);
         UI().renderTreatmentRecommendations(treatStatus, logOddsContributions);
-        UI().renderCausalityChains(siVals, treatStatus.elevatedFactors, marginalSummary.contributions);
-
-        if (state.isComparingScenario && state.baselineRisk !== null) {
-            UI().renderScenarioComparison(state.baselineRisk, riskPct);
-        }
 
         if (state.activeField && state.prevRiskPct !== null) {
-            UI().renderWhatIfBadge(state.activeField, riskPct - state.prevRiskPct);
+            UI().renderWhatIfBadge(state.activeField, riskPctCurrent - state.prevRiskPct);
         }
 
         // Refresh cache after DOM updates (for performance optimization)
@@ -232,12 +247,18 @@ DRC.App = (() => {
         // Render with precise SI values (no rounding in the model path)
         const activeModel   = getActiveModel();
         const preciseSI     = state.preciseSI || Model().toSI(UI().readInputs(), state.isMetric);
-        const riskPct       = Model().computeProbability(preciseSI, activeModel) * 100;
+        const riskPctCurrent = Model().computeProbability(preciseSI, activeModel) * 100;
+
+        // Recompute "original" (pre-simulation) risk for the top field
+        const rawOriginal     = _getOriginalRawInputs(UI().readInputs());
+        const siValsOriginal  = Model().toSI(rawOriginal, state.isMetric);
+        const riskPctOriginal = Model().computeProbability(siValsOriginal, activeModel) * 100;
+
         const logOddsContributions = Model().computeContributions(preciseSI, activeModel);
         const marginalSummary = Model().computeMarginalSummary(preciseSI, activeModel);
         const treatStatus   = Model().getElevatedFactors(preciseSI, sexIsMale);
 
-        _renderAllViews(riskPct, logOddsContributions, marginalSummary, treatStatus, preciseSI, activeModel);
+        _renderAllViews(riskPctOriginal, riskPctCurrent, logOddsContributions, marginalSummary, treatStatus, preciseSI, activeModel);
     };
 
     // ─── Reset ──────────────────────────────────────────────────────────
@@ -294,60 +315,8 @@ DRC.App = (() => {
         const isMale = document.getElementById('sex-toggle')?.checked ?? true;
         UI().updateWaistSegments(isMale, state.isMetric);
         UI().updateAllSliderFills();
-        Timeline().clear();
         if (DRC.TreatmentSimulator?.resetSimulated) DRC.TreatmentSimulator.resetSimulated();
         calculate();
-    };
-
-    // ─── Snapshot & scenario comparison ─────────────────────────────────
-
-    const onSnapshot = () => {
-        const raw   = UI().readInputs();
-        const si    = Model().toSI(raw, state.isMetric);
-        const risk  = Model().computeProbability(si) * 100;
-        Timeline().addSnapshot(risk, si);
-    };
-
-    const onCompareScenario = () => {
-        const raw  = UI().readInputs();
-        const si   = Model().toSI(raw, state.isMetric);
-        const risk = Model().computeProbability(si) * 100;
-
-        state.isComparingScenario = !state.isComparingScenario;
-        const btn   = document.getElementById('compareScenarioBtn');
-        const panel = document.getElementById('scenario-comparison');
-
-        if (state.isComparingScenario) {
-            state.baselineRisk = risk;
-            if (btn) {
-                btn.classList.add('active');
-                btn.textContent = '';
-                const icon = document.createElement('i');
-                icon.setAttribute('data-lucide', 'flag');
-                icon.className = 'lucide-icon';
-                btn.appendChild(icon);
-                btn.appendChild(document.createTextNode(' Reset Baseline'));
-                DRC.UIHelpers.refreshIcons();
-            }
-            if (panel) panel.style.display = 'flex';
-            UI().renderScenarioComparison(state.baselineRisk, risk);
-            Timeline().setBaseline(risk); // render() handles lucide.createIcons() internally
-        } else {
-            state.baselineRisk = null;
-            Timeline().clearBaseline();
-            if (btn) {
-                btn.classList.remove('active');
-                btn.textContent = '';
-                const icon = document.createElement('i');
-                icon.setAttribute('data-lucide', 'flag');
-                icon.className = 'lucide-icon';
-                btn.appendChild(icon);
-                btn.appendChild(document.createTextNode(' ' + DRC.I18n?.t('buttons.setBaseline', 'Set Baseline')));
-                DRC.UIHelpers.refreshIcons();
-            }
-            if (panel) panel.style.display = 'none';
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-        }
     };
 
     // ─── Initialization ─────────────────────────────────────────────────
@@ -395,20 +364,6 @@ DRC.App = (() => {
         // Action buttons
         const resetBtn = document.getElementById('resetBtn');
         if (resetBtn) resetBtn.addEventListener('click', onReset);
-        const snapshotBtn = document.getElementById('snapshotBtn');
-        if (snapshotBtn) snapshotBtn.addEventListener('click', onSnapshot);
-        const compareScenarioBtn = document.getElementById('compareScenarioBtn');
-        if (compareScenarioBtn) compareScenarioBtn.addEventListener('click', onCompareScenario);
-
-        // Timeline expandable toggle
-        const timelineToggleBtn = document.getElementById('timelineToggleBtn');
-        const timelineExpandable = document.getElementById('timeline-expandable');
-        if (timelineToggleBtn && timelineExpandable) {
-            timelineToggleBtn.addEventListener('click', () => {
-                const isOpen = timelineExpandable.classList.toggle('open');
-                timelineToggleBtn.classList.toggle('active', isOpen);
-            });
-        }
 
         // Hero expandable toggle
         const expandHeroBtn = document.getElementById('expandHeroBtn');
@@ -461,20 +416,6 @@ DRC.App = (() => {
 
                 _highlightedField = null;
             }, true); // Use capture for reliable detection
-        });
-
-        // Tab navigation — scoped per panel so Model and Treatment tabs
-        // operate independently and don't interfere with each other.
-        document.querySelectorAll('.model-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                const panelBody = tab.closest('.panel-body');
-                if (!panelBody) return;
-                panelBody.querySelectorAll('.model-tab').forEach(t => t.classList.remove('active'));
-                panelBody.querySelectorAll('.model-tab-content').forEach(c => c.classList.remove('active'));
-                tab.classList.add('active');
-                const target = document.getElementById('tab-' + tab.getAttribute('data-tab'));
-                if (target) target.classList.add('active');
-            });
         });
 
         // Collapsible sections
@@ -549,19 +490,6 @@ DRC.App = (() => {
         DRC.I18n.onLanguageChange(() => {
             DRC.I18n.translateDOM();
             calculate();
-            // Update baseline button text based on current state
-            const btn = document.getElementById('timelineBaselineBtn');
-            if (btn) {
-                const baseLabel = DRC.I18n?.t('buttons.setBaseline', 'Set Baseline');
-                const resetLabel = DRC.I18n?.t('buttons.resetBaseline', 'Reset Baseline');
-                btn.textContent = '';
-                const icon = document.createElement('i');
-                icon.setAttribute('data-lucide', 'flag');
-                icon.className = 'lucide-icon';
-                btn.appendChild(icon);
-                btn.appendChild(document.createTextNode(' ' + (state.isComparingScenario ? resetLabel : baseLabel)));
-                DRC.UIHelpers?.refreshIcons();
-            }
             // Update model switcher label and hero info with translated strings
             const currentModel = getActiveModel();
             if (currentModel) {
@@ -575,12 +503,6 @@ DRC.App = (() => {
             // Trigger global language changed event for other modules
             window.dispatchEvent(new CustomEvent('drc:language-changed-complete'));
         });
-    };
-
-    /** Activate scenario-comparison mode (called by TreatmentSimulator). */
-    const setCompareScenario = (baselineRisk) => {
-        state.isComparingScenario = true;
-        state.baselineRisk = baselineRisk;
     };
 
     /**
@@ -645,5 +567,5 @@ DRC.App = (() => {
     // Register core events
     on('risk:recalculate', calculate);
 
-    return { init, _calculate: calculate, _getState: () => ({ ...state }), _setCompareScenario: setCompareScenario, on, off, trigger, switchModel, getActiveModel };
+    return { init, _calculate: calculate, _getState: () => ({ ...state }), on, off, trigger, switchModel, getActiveModel };
 })();

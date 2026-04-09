@@ -250,7 +250,7 @@ DRC.UIController = (() => {
         if (!_filterHandlerAttached) {
             container.addEventListener('change', (e) => {
                 if (e.target.id === 'risk-filter-toggle') {
-                    container.setAttribute('data-filter-risk', e.target.checked);
+                    container.setAttribute('data-show-protective', e.target.checked);
                     DRC.App.trigger('risk:recalculate');
                 }
             });
@@ -287,67 +287,6 @@ DRC.UIController = (() => {
     };
 
     /**
-     * Render the summary banner showing risk comparison.
-     * @param {HTMLElement} container
-     * @param {Object} data - { pFull, pBaseline, netDeviation }
-     */
-    const renderSummaryBanner = (container, { pFull, pBaseline, netDeviation }) => {
-        const pFullPct = (pFull * 100).toFixed(1);
-        const pBaselinePct = (pBaseline * 100).toFixed(1);
-        const netDeviationPct = Math.abs(netDeviation * 100).toFixed(1);
-        const isLower = netDeviation < 0;
-        const comparisonWord = isLower ? t('chart.lower', 'lower') : t('chart.higher', 'higher');
-        const { level: riskLevel } = getRiskLevel(pFull * 100);
-
-        const summaryBanner = createSafeElement('div', {
-            className: 'contrib-summary-card',
-            attrs: {
-                'data-direction': isLower ? 'lower' : 'higher',
-                'data-risk-level': riskLevel
-            }
-        });
-
-        // Build summary main section
-        const summaryMain = createSafeElement('div', { className: 'contrib-summary-main' });
-        const riskSpan = createSafeElement('span', {
-            className: 'contrib-summary-your-risk',
-            text: pFullPct + '%'
-        });
-        const labelSpan = createSafeElement('span', {
-            className: 'contrib-summary-label',
-            text: t('chart.yourRisk', 'your risk')
-        });
-        summaryMain.appendChild(riskSpan);
-        summaryMain.appendChild(labelSpan);
-
-        // Build divider
-        const divider = createSafeElement('div', { className: 'contrib-summary-divider' });
-
-        // Build comparison section
-        const comparisonDiv = createSafeElement('div', { className: 'contrib-summary-comparison' });
-        const sentenceDiv = createSafeElement('div', { className: 'contrib-summary-sentence' });
-
-        const deltaSpan = createSafeElement('span', {
-            className: ['contrib-summary-delta', isLower ? 'is-lower' : 'is-higher'],
-            text: netDeviationPct + '% ' + comparisonWord
-        });
-
-        const thanAvgText = document.createTextNode(t('chart.thanAverage', 'than the average of') + ' ');
-        const baselineStrong = createSafeElement('strong', { text: pBaselinePct + '%' });
-
-        sentenceDiv.appendChild(deltaSpan);
-        sentenceDiv.appendChild(thanAvgText);
-        sentenceDiv.appendChild(baselineStrong);
-        comparisonDiv.appendChild(sentenceDiv);
-
-        // Assemble banner
-        summaryBanner.appendChild(summaryMain);
-        summaryBanner.appendChild(divider);
-        summaryBanner.appendChild(comparisonDiv);
-        container.appendChild(summaryBanner);
-    };
-
-    /**
      * Render the filter toggle checkbox.
      * @param {HTMLElement} container
      * @param {boolean} isActive
@@ -357,7 +296,7 @@ DRC.UIController = (() => {
 
         const filterLabel = createSafeElement('span', {
             className: 'contrib-filter-label',
-            text: t('chart.filterLabel', 'Show above average risk factors only')
+            text: t('chart.filterLabel', 'Show Protective Factors in addition to Risk Factors')
         });
 
         const toggleLabel = createSafeElement('label', {
@@ -390,40 +329,21 @@ DRC.UIController = (() => {
         const headerCenter = createSafeElement('div', { className: 'contrib-header-center' });
 
         const leftSide = createSafeElement('div', { className: 'contrib-header-left-side' });
-        const betterFull = createSafeElement('span', {
+        const protectiveLabel = createSafeElement('span', {
             className: 'contrib-label-full',
-            text: t('chart.betterThanAvg', 'Better than average')
+            text: t('chart.protectiveFactors', 'Protective Factors')
         });
-        const betterShort = createSafeElement('span', {
-            className: 'contrib-label-short',
-            text: t('chart.betterShort', 'Better')
-        });
-        leftSide.appendChild(betterFull);
-        leftSide.appendChild(betterShort);
+        leftSide.appendChild(protectiveLabel);
 
+        // Unlabeled neutral gray stripe in the center
         const centerLabel = createSafeElement('div', { className: 'contrib-header-center-label' });
-        const avgFull = createSafeElement('span', {
-            className: 'contrib-label-full',
-            text: t('chart.average', 'Average')
-        });
-        const avgShort = createSafeElement('span', {
-            className: 'contrib-label-short',
-            text: t('chart.avgShort', 'Avg')
-        });
-        centerLabel.appendChild(avgFull);
-        centerLabel.appendChild(avgShort);
 
         const rightSide = createSafeElement('div', { className: 'contrib-header-right-side' });
-        const worseFull = createSafeElement('span', {
+        const riskLabel = createSafeElement('span', {
             className: 'contrib-label-full',
-            text: t('chart.worseThanAvg', 'Worse than average')
+            text: t('chart.riskFactors', 'Risk Factors')
         });
-        const worseShort = createSafeElement('span', {
-            className: 'contrib-label-short',
-            text: t('chart.worseShort', 'Worse')
-        });
-        rightSide.appendChild(worseFull);
-        rightSide.appendChild(worseShort);
+        rightSide.appendChild(riskLabel);
 
         headerCenter.appendChild(leftSide);
         headerCenter.appendChild(centerLabel);
@@ -590,19 +510,26 @@ DRC.UIController = (() => {
         if (!container) return;
         container.innerHTML = '';
 
-        const { contributions, pFull, pBaseline, netDeviation } = summaryData;
+        const { contributions } = summaryData;
         const activeModel = DRC.App?.getActiveModel?.();
 
         filterByModel(contributions, activeModel);
         setupContributionEvents(container);
 
-        // Default to showing above average risk factors only (true if not explicitly set to false)
-        const filterState = container.getAttribute('data-filter-risk') !== 'false';
+        // Default to hiding protective factors (button off by default)
+        const showProtective = container.getAttribute('data-show-protective') === 'true';
 
-        renderSummaryBanner(container, { pFull, pBaseline, netDeviation });
-        renderFilterToggle(container, filterState);
-        renderContributionHeader(container);
-        renderContributionRows(container, contributions, filterState);
+        if (showProtective) {
+            container.classList.remove('contrib-simple-mode');
+        } else {
+            container.classList.add('contrib-simple-mode');
+        }
+
+        renderFilterToggle(container, showProtective);
+        if (showProtective) {
+            renderContributionHeader(container);
+        }
+        renderContributionRows(container, contributions, !showProtective);
     };
 
     // ─── Rendering: Treatment overview ──────────────────────────────────
@@ -772,20 +699,18 @@ DRC.UIController = (() => {
      * @returns {HTMLElement} Treatment row element
      */
     const renderTreatmentRow = (item, maxPct, waistIsHigh) => {
-        const { factor, treatment, pct, marginalDelta, isIndicated, isElevated, isAboveAverage } = item;
+        const { factor, treatment, pct, marginalDelta, isIndicated, isElevated, isAboveAverage, isSimulated } = item;
         const barWidth = calculateBarWidth(pct, maxPct);
-        const riskContribText = formatRiskPercent(marginalDelta);
-        const therapiesHTML = buildTherapiesHTML(factor, treatment, waistIsHigh);
-        const { statusIcon, statusLabel, statusClass } = determineTreatmentStatus(isIndicated, isElevated);
 
         // Create row container
+        const rowClasses = [
+            'treatment-overview-row',
+            isIndicated ? 'indicated' : (isElevated ? 'elevated' : 'normal'),
+            isSimulated ? 'simulated' : ''
+        ].filter(c => c !== '');
         const row = createSafeElement('div', {
-            className: ['treatment-overview-row', isIndicated ? 'indicated' : (isElevated ? 'elevated' : 'normal')],
-            attrs: { 'data-field': factor },
-            style: {
-                borderLeftColor: isAboveAverage ? '#ff3b30' : '#34c759',
-                background: isAboveAverage ? 'rgba(255, 59, 48, 0.03)' : 'rgba(52, 199, 89, 0.03)'
-            }
+            className: rowClasses,
+            attrs: { 'data-field': factor }
         });
         row.id = treatment.id;
 
@@ -800,7 +725,7 @@ DRC.UIController = (() => {
         // Main column
         const mainCol = createSafeElement('div', { className: 'tov-main-col' });
 
-        // Label row
+        // Label row — always clickable (expand/collapse)
         const labelRow = createSafeElement('div', {
             className: 'tov-label-row tov-clickable',
             attrs: { 'data-toggle-factor': factor }
@@ -811,26 +736,43 @@ DRC.UIController = (() => {
             text: titleText,
             attrs: { title: titleText }
         });
-        const statusSpan = createSafeElement('span', {
-            className: ['tov-status', statusClass]
-        });
-        const statusIconEl = createSafeElement('i', {
-            className: 'lucide-icon',
-            attrs: { 'data-lucide': statusIcon }
-        });
-        statusSpan.appendChild(statusIconEl);
-        statusSpan.appendChild(document.createTextNode(' ' + statusLabel));
-
-        const chevronIcon = createSafeElement('i', {
-            className: ['lucide-icon', 'tov-chevron', isIndicated ? '' : 'collapsed'],
-            attrs: { 'data-lucide': 'chevron-down' }
-        });
-
         labelRow.appendChild(titleSpan);
-        labelRow.appendChild(statusSpan);
-        labelRow.appendChild(chevronIcon);
 
-        // Bar container
+        if (isSimulated) {
+            // Reduction pill: replaces status badge for simulated cards
+            const reduction = DRC.TreatmentSimulator?.getIndividualReduction?.(factor) ?? 0;
+            const reductionPill = createSafeElement('span', { className: 'tov-reduction-pill' });
+            const arrowIcon = createSafeElement('i', {
+                className: 'lucide-icon',
+                attrs: { 'data-lucide': 'arrow-down' }
+            });
+            reductionPill.appendChild(arrowIcon);
+            reductionPill.appendChild(document.createTextNode('\u00a0' + reduction.toFixed(1) + '%'));
+            labelRow.appendChild(reductionPill);
+            const chevronIcon = createSafeElement('i', {
+                className: ['lucide-icon', 'tov-chevron', 'collapsed'],
+                attrs: { 'data-lucide': 'chevron-down' }
+            });
+            labelRow.appendChild(chevronIcon);
+        } else {
+            // Status badge + expand chevron
+            const { statusIcon, statusLabel, statusClass } = determineTreatmentStatus(isIndicated, isElevated);
+            const statusSpan = createSafeElement('span', { className: ['tov-status', statusClass] });
+            const statusIconEl = createSafeElement('i', {
+                className: 'lucide-icon',
+                attrs: { 'data-lucide': statusIcon }
+            });
+            statusSpan.appendChild(statusIconEl);
+            statusSpan.appendChild(document.createTextNode(' ' + statusLabel));
+            const chevronIcon = createSafeElement('i', {
+                className: ['lucide-icon', 'tov-chevron', isIndicated ? '' : 'collapsed'],
+                attrs: { 'data-lucide': 'chevron-down' }
+            });
+            labelRow.appendChild(statusSpan);
+            labelRow.appendChild(chevronIcon);
+        }
+
+        // Bar container (kept for relative-contribution context)
         const barContainer = createSafeElement('div', { className: 'tov-bar-container' });
         const bar = createSafeElement('div', {
             className: ['tov-bar', isAboveAverage ? 'bar-indicated' : 'bar-normal'],
@@ -838,41 +780,63 @@ DRC.UIController = (() => {
         });
         barContainer.appendChild(bar);
 
-        // Percentage text
-        const pctDiv = createSafeElement('div', {
-            className: 'tov-pct',
-            text: riskContribText + '% ' + t('treatments.riskContribution', 'risk contribution compared to average')
-        });
-
-        // Details section
-        const detailsDiv = createSafeElement('div', {
-            className: ['tov-details', isIndicated ? 'expanded' : '']
-        });
-        const detailsInner = createSafeElement('div', { className: 'tov-details-inner' });
-
-        appendTherapiesToDetails(detailsInner, therapiesHTML);
-
-        if (isIndicated) {
-            detailsInner.appendChild(createSimulateButton(factor));
-        }
-
-        detailsDiv.appendChild(detailsInner);
-
-        // Assemble main column
         mainCol.appendChild(labelRow);
         mainCol.appendChild(barContainer);
-        mainCol.appendChild(pctDiv);
-        mainCol.appendChild(detailsDiv);
+
+        if (isSimulated) {
+            // Expandable details with therapies (collapsed by default)
+            const therapiesHTML = buildTherapiesHTML(factor, treatment, waistIsHigh);
+            const detailsDiv = createSafeElement('div', { className: 'tov-details' });
+            const detailsInner = createSafeElement('div', { className: 'tov-details-inner' });
+            appendTherapiesToDetails(detailsInner, therapiesHTML);
+            detailsDiv.appendChild(detailsInner);
+            mainCol.appendChild(detailsDiv);
+
+            // Undo button always visible below the bar
+            const undoBtn = createSafeElement('button', {
+                className: 'btn-undo-treatment',
+                attrs: {
+                    type: 'button',
+                    'data-sim-factor': factor,
+                    'aria-label': t('buttons.undoTreatment', 'Undo this treatment')
+                }
+            });
+            const undoIcon = createSafeElement('i', {
+                className: 'lucide-icon',
+                attrs: { 'data-lucide': 'rotate-ccw' }
+            });
+            undoBtn.appendChild(undoIcon);
+            undoBtn.appendChild(document.createTextNode(' ' + t('buttons.undo', 'Undo')));
+            mainCol.appendChild(undoBtn);
+        } else {
+            // Risk contribution text + expandable details
+            const riskContribText = formatRiskPercent(marginalDelta);
+            const pctDiv = createSafeElement('div', {
+                className: 'tov-pct',
+                text: riskContribText + '% ' + t('treatments.riskContribution', 'risk contribution compared to average')
+            });
+            mainCol.appendChild(pctDiv);
+
+            const therapiesHTML = buildTherapiesHTML(factor, treatment, waistIsHigh);
+            const detailsDiv = createSafeElement('div', {
+                className: ['tov-details', isIndicated ? 'expanded' : '']
+            });
+            const detailsInner = createSafeElement('div', { className: 'tov-details-inner' });
+            appendTherapiesToDetails(detailsInner, therapiesHTML);
+            if (isIndicated) {
+                detailsInner.appendChild(createSimulateButton(factor));
+            }
+            detailsDiv.appendChild(detailsInner);
+            mainCol.appendChild(detailsDiv);
+        }
 
         // Assemble row
         row.appendChild(iconCol);
         row.appendChild(mainCol);
 
-        // Apply marginal-delta colour to icon col + icon
-        const mColor = isAboveAverage ? '#ff3b30' : '#34c759';
-        const mBg = isAboveAverage ? 'rgba(255, 59, 48, 0.20)' : 'rgba(52, 199, 89, 0.20)';
-        iconCol.style.background = mBg;
-        iconEl.style.setProperty('color', mColor, 'important');
+        // Neutral icon styling — colour stays only on the bar
+        iconCol.style.background = 'rgba(0, 0, 0, 0.07)';
+        iconEl.style.setProperty('color', '#636366', 'important');
 
         return row;
     };
@@ -886,6 +850,21 @@ DRC.UIController = (() => {
 
         const container = el('treatment-overview');
         if (!container) return;
+
+        // Delegated undo handler on the chosen-treatments-list container
+        // (inside #simulation-results, outside #treatment-overview).
+        const chosenList = el('chosen-treatments-list');
+        if (chosenList) {
+            chosenList.addEventListener('click', (e) => {
+                const undoBtn = e.target.closest('.btn-undo-treatment');
+                if (!undoBtn) return;
+                e.stopPropagation();
+                const simFactor = undoBtn.getAttribute('data-sim-factor');
+                if (simFactor && DRC.TreatmentSimulator?.unsimulate) {
+                    DRC.TreatmentSimulator.unsimulate(simFactor);
+                }
+            });
+        }
 
         container.addEventListener('click', (e) => {
             // Expand/collapse handler
@@ -906,8 +885,18 @@ DRC.UIController = (() => {
                 const simFactor = simBtn.getAttribute('data-sim-factor');
                 if (simFactor && DRC.TreatmentSimulator) {
                     expandTreatmentPanel();
-                    expandTimelineSection();
                     handleSimulation(simFactor);
+                }
+                return;
+            }
+
+            // Undo simulation handler
+            const undoBtn = e.target.closest('.btn-undo-treatment');
+            if (undoBtn) {
+                e.stopPropagation();
+                const simFactor = undoBtn.getAttribute('data-sim-factor');
+                if (simFactor && DRC.TreatmentSimulator?.unsimulate) {
+                    DRC.TreatmentSimulator.unsimulate(simFactor);
                 }
             }
         });
@@ -933,18 +922,6 @@ DRC.UIController = (() => {
                 collapseBtn.classList.remove('collapsed');
                 collapseBtn.setAttribute('aria-expanded', 'true');
             }
-        }
-    };
-
-    /**
-     * Expand timeline section if collapsed.
-     */
-    const expandTimelineSection = () => {
-        const timelineExpandable = el('timeline-expandable');
-        const timelineToggleBtn = el('timelineToggleBtn');
-        if (timelineExpandable && !timelineExpandable.classList.contains('open')) {
-            timelineExpandable.classList.add('open');
-            if (timelineToggleBtn) timelineToggleBtn.classList.add('active');
         }
     };
 
@@ -991,14 +968,51 @@ DRC.UIController = (() => {
         const activeModel = DRC.App?.getActiveModel?.();
         const modelFilteredItems = filterContributionsByModel(items, activeModel);
 
-        // Apply risk filter
-        const displayItems = filterRiskOnly ? modelFilteredItems.filter(i => i.isAboveAverage) : modelFilteredItems;
+        // Mark simulated items before filtering — they must always be shown
+        const simulatedSet = new Set(DRC.TreatmentSimulator?.getSimulatedFactors?.() ?? []);
+        modelFilteredItems.forEach(item => { item.isSimulated = simulatedSet.has(item.factor); });
+
+        // Apply risk filter but always keep simulated items (their value changed, not their relevance)
+        const displayItems = filterRiskOnly
+            ? modelFilteredItems.filter(i => i.isAboveAverage || i.isSimulated)
+            : modelFilteredItems;
+        displayItems.sort((a, b) => {
+            if (a.isSimulated !== b.isSimulated) return a.isSimulated ? -1 : 1;
+            return b.absContrib - a.absContrib;
+        });
 
         // Calculate max percentage for bar scaling
         const maxPct = calculateMaxValue(displayItems, i => i.pct, 1);
 
-        // Render rows
-        displayItems.forEach(item => {
+        // Render simulated cards first, then a divider, then the rest
+        const simulatedItems = displayItems.filter(i => i.isSimulated);
+        const remainingItems = displayItems.filter(i => !i.isSimulated);
+
+        if (simulatedItems.length > 0) {
+            const simDivider = createSafeElement('div', { className: 'treatment-section-divider' });
+            const simLabel = createSafeElement('span', {
+                className: 'treatment-section-label',
+                text: t('treatments.simulatedInterventions', 'Simulated Interventions')
+            });
+            simDivider.appendChild(simLabel);
+            container.appendChild(simDivider);
+        }
+
+        simulatedItems.forEach(item => {
+            container.appendChild(renderTreatmentRow(item, maxPct, waistIsHigh));
+        });
+
+        if (simulatedItems.length > 0 && remainingItems.length > 0) {
+            const divider = createSafeElement('div', { className: 'treatment-section-divider' });
+            const label = createSafeElement('span', {
+                className: 'treatment-section-label',
+                text: t('treatments.otherInterventions', 'Other Interventions')
+            });
+            divider.appendChild(label);
+            container.appendChild(divider);
+        }
+
+        remainingItems.forEach(item => {
             container.appendChild(renderTreatmentRow(item, maxPct, waistIsHigh));
         });
 
@@ -1052,142 +1066,60 @@ DRC.UIController = (() => {
         }
     };
 
-    // ─── Rendering: Causality chains ────────────────────────────────────
+    // ─── Rendering: Chosen risk & treatments list ──────────────────────
 
-    const CAUSALITY_CHAINS = [
-        { factors: ['waist'],   riskNode: 0, nodes: ['causality.abdominalFat', 'causality.insulinResistance', 'causality.betaCellDysfunction', 'causality.diabetesRisk'] },
-        { factors: ['fastGlu'], riskNode: 2, nodes: ['causality.insulinResistance', 'causality.gluconeogenesis', 'causality.fastingGlucose', 'causality.betaCellExhaustion', 'causality.diabetesRisk'] },
-        { factors: ['cholHDL'], riskNode: 0, nodes: ['causality.hdlCholesterol', 'causality.pancreaticProtection', 'causality.betaCellDamage', 'causality.diabetesRisk'] },
-        { factors: ['sbp'],     riskNode: 0, nodes: ['causality.bloodPressure', 'causality.insulinResistanceInc', 'causality.betaCellDysfunction', 'causality.diabetesRisk'] },
-        { factors: ['cholTri'], riskNode: 3, nodes: ['causality.insulinResistance', 'causality.lipolysis', 'causality.freeFattyAcids', 'causality.triglycerides'] }
-    ];
+    /**
+     * Render the "Your Risk with Chosen Treatments" value.
+     * @param {number} pct — Post-simulation risk percentage.
+     * @param {number} [originalPct] — Pre-simulation risk percentage for reduction display.
+     */
+    const renderChosenRisk = (pct, originalPct) => {
+        setText('chosen-risk-percentage', pct.toFixed(1));
+        const { color } = getRiskLevel(pct);
+        const chosenEl = el('chosen-risk-percentage');
+        if (chosenEl) chosenEl.style.color = color;
 
-    /** Render causal pathway chains, highlighting those with elevated factors.
-     *  Sorted by absolute contribution size (largest first) when contributions available. */
-    const renderCausalityChains = (siVals, elevatedFactors, contributions) => {
-        const container = el('causality-chain');
-        if (!container) return;
-        container.innerHTML = '';
+        // Color the % unit symbol too
+        const unitEl = el('chosen-risk-unit');
+        if (unitEl) unitEl.style.color = color;
 
-        // Sort chains by absolute contribution (largest first), matching contribution chart order
-        const sorted = [...CAUSALITY_CHAINS].sort((a, b) => {
-            if (!contributions) return 0;
-            const absA = a.factors.reduce((sum, f) => sum + Math.abs(contributions[f] || 0), 0);
-            const absB = b.factors.reduce((sum, f) => sum + Math.abs(contributions[f] || 0), 0);
-            return absB - absA;
-        });
+        // Update original risk display in side-by-side comparison
+        if (originalPct != null) {
+            const origEl = el('orig-risk-display');
+            if (origEl) {
+                origEl.textContent = originalPct.toFixed(1);
+                origEl.style.color = getRiskLevel(originalPct).color;
+            }
+        }
 
-        // Filter chains to only include those with factors in the active model
-        const activeModelForChains = DRC.App?.getActiveModel?.();
-        const chainModelFields = activeModelForChains ? Object.keys(activeModelForChains.betas) : null;
-        const visibleChains = chainModelFields
-            ? sorted.filter(chain => chain.factors.some(f => chainModelFields.includes(f)))
-            : sorted;
+        // Update the risk bar marker position and color
+        const marker = el('chosen-risk-bar-marker');
+        if (marker) {
+            marker.style.left = `${Math.min(pct, 100)}%`;
+            marker.style.borderColor = color;
+        }
 
-        visibleChains.forEach(chain => {
-            const highlighted = chain.factors.some(f => elevatedFactors.includes(f));
-            const chainEl = document.createElement('div');
-            chainEl.className = `causality-chain ${highlighted ? 'highlighted' : ''}`;
-
-            chain.nodes.forEach((nodeKey, idx) => {
-                const nodeEl = document.createElement('div');
-                nodeEl.className = `chain-node${idx === chain.riskNode ? ' risk-node' : ''}`;
-                nodeEl.textContent = t(nodeKey, nodeKey);
-                chainEl.appendChild(nodeEl);
-                if (idx < chain.nodes.length - 1) {
-                    const arrow = document.createElement('div');
-                    arrow.className = 'chain-arrow';
-                    arrow.textContent = '\u2192';
-                    chainEl.appendChild(arrow);
-                }
-            });
-            container.appendChild(chainEl);
-        });
+        // Show total reduction badge
+        const badge = el('treatment-reduction-badge');
+        if (badge && originalPct != null) {
+            const reduction = originalPct - pct;
+            if (reduction > 0.05) {
+                badge.textContent = '↓ ' + reduction.toFixed(1) + '% ' + t('hero.reductionLabel', 'Risk Reduction by Treatments');
+                badge.style.display = 'block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
     };
 
-    // ─── Rendering: Scenario comparison ─────────────────────────────────
-
-    /** Render inline baseline-vs-current comparison panel. */
-    const renderScenarioComparison = (baselineRisk, currentRisk) => {
-        const panel = el('scenario-comparison');
-        if (!panel) return;
-
-        const delta = currentRisk - baselineRisk;
-        const cls   = delta < 0 ? 'improved' : delta > 0 ? 'worsened' : 'unchanged';
-        const icon  = delta < 0 ? 'trending_down' : delta > 0 ? 'trending_up' : 'minus';
-
-        // Clear panel before building new content
-        panel.textContent = '';
-
-        // Build scenario comparison safely
-        const row = createSafeElement('div', { className: 'scenario-inline-row' });
-
-        // Baseline item
-        const baselineItem = createSafeElement('div', { className: 'scenario-inline-item' });
-        const flagIcon = createSafeElement('i', {
-            className: ['lucide-icon', 'scenario-inline-icon'],
-            attrs: { 'data-lucide': 'flag' }
-        });
-        const baselineLabel = createSafeElement('span', {
-            className: 'scenario-inline-label',
-            text: t('scenario.baseline', 'Baseline')
-        });
-        const baselineValue = createSafeElement('span', {
-            className: 'scenario-inline-value',
-            text: baselineRisk.toFixed(1) + '%'
-        });
-        baselineItem.appendChild(flagIcon);
-        baselineItem.appendChild(baselineLabel);
-        baselineItem.appendChild(baselineValue);
-
-        // Arrow
-        const arrowIcon = createSafeElement('i', {
-            className: ['lucide-icon', 'scenario-inline-arrow'],
-            attrs: { 'data-lucide': 'arrow-right' }
-        });
-
-        // Current item
-        const currentItem = createSafeElement('div', { className: 'scenario-inline-item' });
-        const userIcon = createSafeElement('i', {
-            className: ['lucide-icon', 'scenario-inline-icon', 'current-icon'],
-            attrs: { 'data-lucide': 'user' }
-        });
-        const currentLabel = createSafeElement('span', {
-            className: 'scenario-inline-label',
-            text: t('scenario.current', 'Current')
-        });
-        const currentValue = createSafeElement('span', {
-            className: ['scenario-inline-value', 'current-value'],
-            text: currentRisk.toFixed(1) + '%'
-        });
-        currentItem.appendChild(userIcon);
-        currentItem.appendChild(currentLabel);
-        currentItem.appendChild(currentValue);
-
-        // Delta section
-        const deltaDiv = createSafeElement('div', {
-            className: ['scenario-inline-delta', cls]
-        });
-        const deltaIcon = createSafeElement('i', {
-            className: 'lucide-icon',
-            attrs: { 'data-lucide': icon.replace(/_/g, '-') }
-        });
-        const deltaText = createSafeElement('span', {
-            text: (delta >= 0 ? '+' : '') + delta.toFixed(2) + '%'
-        });
-        deltaDiv.appendChild(deltaIcon);
-        deltaDiv.appendChild(deltaText);
-
-        // Assemble
-        row.appendChild(baselineItem);
-        row.appendChild(arrowIcon);
-        row.appendChild(currentItem);
-        row.appendChild(deltaDiv);
-
-        panel.appendChild(row);
-
-        // Initialize Lucide icons for the new content
-        if (typeof lucide !== 'undefined') lucide.createIcons();
+    /**
+     * Show/hide the simulation-results summary panel.
+     * Individual simulated treatments now appear inline in renderTreatmentOverview.
+     * @param {string[]} factors — Array of simulated factor keys.
+     */
+    const renderChosenTreatmentsList = (factors) => {
+        const simResults = el('simulation-results');
+        if (simResults) simResults.style.display = (!factors || factors.length === 0) ? 'none' : '';
     };
 
     // ─── Non-modifiable summary ─────────────────────────────────────────
@@ -1304,57 +1236,16 @@ DRC.UIController = (() => {
     const getUnitToggleState = () =>
         document.getElementById('unit-toggle')?.checked ?? false;
 
-    /**
-     * Activate or deactivate scenario-comparison mode from external callers.
-     * @param {boolean} active — Whether comparison mode should be on.
-     * @param {number} baselineRisk — Baseline risk percentage.
-     */
-    const setComparisonMode = (active, baselineRisk) => {
-        const btn   = el('compareScenarioBtn');
-        const panel = el('scenario-comparison');
-
-        if (active) {
-            DRC.App._setCompareScenario(baselineRisk);
-            if (btn) {
-                btn.classList.add('active');
-                // Clear and build safely
-                btn.textContent = '';
-                const flagIcon = createSafeElement('i', {
-                    className: 'lucide-icon',
-                    attrs: { 'data-lucide': 'flag' }
-                });
-                btn.appendChild(flagIcon);
-                btn.appendChild(document.createTextNode(' ' + t('buttons.resetBaseline', 'Reset Baseline')));
-            }
-            if (panel) panel.style.display = 'flex';
-            renderScenarioComparison(baselineRisk, baselineRisk);
-        } else {
-            if (btn) {
-                btn.classList.remove('active');
-                // Clear and build safely
-                btn.textContent = '';
-                const flagIcon = createSafeElement('i', {
-                    className: 'lucide-icon',
-                    attrs: { 'data-lucide': 'flag' }
-                });
-                btn.appendChild(flagIcon);
-                btn.appendChild(document.createTextNode(' ' + t('buttons.setBaseline', 'Set Baseline')));
-            }
-            if (panel) panel.style.display = 'none';
-        }
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-    };
-
     // ─── Public API ─────────────────────────────────────────────────────
 
     return {
         readInputs, updateUnitLabels, updateSliderRanges,
         applyConvertedValues, updateSliderFill, updateAllSliderFills,
-        renderRisk, renderContributionChart,
+        renderRisk, renderChosenRisk, renderChosenTreatmentsList,
+        renderContributionChart,
         renderTreatmentOverview, renderTreatmentRecommendations,
         renderWhatIfBadge, renderIconArray,
-        renderCausalityChains, renderScenarioComparison,
         updateNonModSummary, updateModSummary, updateWaistSegments,
-        getSliderElements, getUnitToggleState, setComparisonMode
+        getSliderElements, getUnitToggleState
     };
 })();

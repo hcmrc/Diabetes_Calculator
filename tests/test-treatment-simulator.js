@@ -4,25 +4,21 @@
  * TreatmentSimulator is the most DOM-entangled module in the codebase —
  * its `simulate()` function drives a setTimeout-based animation loop,
  * reads multiple DOM elements, and calls into UIController, RiskModel,
- * App, and TimelineChart. Full animation testing requires a browser or a
+ * and App. Full animation testing requires a browser or a
  * real timer environment (e.g., Jest fake-timers).
  *
  * What IS testable in a pure Node.js context:
  *
- *   1. API shape          — module exports exactly { simulate, resetSimulated }
+ *   1. API shape          — module exports { simulate, unsimulate, resetSimulated,
+ *                           cancel, getOriginalValues, getSimulatedFactors }
  *   2. Resilience         — simulate() with a null DOM never throws
- *   3. _animating guard   — a second concurrent simulate() call is a no-op
- *   4. Already-simulated  — simulate() is a no-op for a factor already in _simulated
- *   5. resetSimulated()   — clears the already-simulated set (observable via
- *                           the "currentVal === targetVal" early-return path)
- *   6. getEffectDelta     — indirect: effect deltas come from CONFIG and the
- *                           unit-toggle state; verified for all 5 factors
- *   7. computeTarget      — indirect: null DOM → returns null → simulate returns early
+ *   3. getOriginalValues  — returns empty object initially; updated after sim
+ *   4. getSimulatedFactors — returns empty array initially
+ *   5. resetSimulated()   — clears the already-simulated set
+ *   6. unsimulate()       — no-op if factor not simulated, does not throw
+ *   7. getEffectDelta     — indirect: effect deltas come from CONFIG and the
+ *                           unit-toggle state; verified for all factors
  *   8. easeOutCubic       — indirect: animation values stay within the expected range
- *
- * For items 3–5, we provide just enough DOM to get past the `computeTarget`
- * null-check so we can observe the _animating and _simulated flags' effects
- * through the observable behaviour of subsequent simulate() calls.
  *
  * Run with: node tests/test-treatment-simulator.js
  */
@@ -32,6 +28,7 @@
 // ─── Bootstrap ───────────────────────────────────────────────────────────────
 
 global.window = global;
+global.window.addEventListener = () => {};
 global.DRC    = {};
 
 require('../js/config.js');
@@ -61,30 +58,21 @@ function makeRichDocument(overrides) {
 
 function setupStubs() {
     DRC.UIController = {
-        readInputs:              () => ({ age: 54, race: 0, parentHist: 0, sbp: 120,
+        readInputs:              () => ({ age: 54, sex: 1, race: 0, parentHist: 0, sbp: 120,
                                            height: 66, waist: 36, fastGlu: 100,
                                            cholHDL: 50, cholTri: 150 }),
         updateSliderFill:        () => {},
-        renderScenarioComparison:() => {},
         getSliderElements:       () => ({ input: null, slider: null }),
-        getUnitToggleState:      () => false,
-        setComparisonMode:       () => {}
+        getUnitToggleState:      () => false
     };
     DRC.RiskModel = {
         toSI:               (v)    => v,
         computeProbability: ()     => 0.15
     };
     DRC.App = {
-        _getState:           () => ({ isComparingScenario: false, baselineRisk: null }),
-        _setCompareScenario: () => {},
-        _calculate:          () => {},
-        trigger:             () => {}
-    };
-    DRC.TimelineChart = {
-        hasBaseline:    () => false,
-        setBaseline:    () => {},
-        getLastSnapshot:() => null,
-        addSnapshot:    () => {}
+        _getState:  () => ({}),
+        _calculate: () => {},
+        trigger:    () => {}
     };
 }
 
@@ -108,20 +96,24 @@ setupStubs();
 require('../js/treatment-simulator.js');
 const TS = DRC.TreatmentSimulator;
 
-assert(typeof TS                === 'object',   'DRC.TreatmentSimulator is an object');
-assert(typeof TS.simulate       === 'function', 'TreatmentSimulator.simulate is a function');
-assert(typeof TS.resetSimulated === 'function', 'TreatmentSimulator.resetSimulated is a function');
-assert(typeof TS.cancel         === 'function', 'TreatmentSimulator.cancel is a function');
-assert(Object.keys(TS).length   === 3,          'Public API has exactly 3 members');
+assert(typeof TS                      === 'object',   'DRC.TreatmentSimulator is an object');
+assert(typeof TS.simulate             === 'function', 'TreatmentSimulator.simulate is a function');
+assert(typeof TS.unsimulate           === 'function', 'TreatmentSimulator.unsimulate is a function');
+assert(typeof TS.resetSimulated       === 'function', 'TreatmentSimulator.resetSimulated is a function');
+assert(typeof TS.cancel               === 'function', 'TreatmentSimulator.cancel is a function');
+assert(typeof TS.getOriginalValues      === 'function', 'TreatmentSimulator.getOriginalValues is a function');
+assert(typeof TS.getSimulatedFactors    === 'function', 'TreatmentSimulator.getSimulatedFactors is a function');
+assert(typeof TS.getIndividualReduction === 'function', 'TreatmentSimulator.getIndividualReduction is a function');
+assert(typeof TS.resimulate             === 'function', 'TreatmentSimulator.resimulate is a function');
+assert(Object.keys(TS).length           === 8,          'Public API has exactly 8 members');
 
 // ─── TEST SUITE 2: Resilience — null DOM ──────────────────────────────────────
 
-console.log('\n═══ TEST SUITE 2: simulate() resilience with null DOM ═══');
+console.log('\n═══ TEST SUITE 2: simulate()/unsimulate() resilience with null DOM ═══');
 
 global.document = makeNullDocument();
 setupStubs();
 
-// All valid factor names
 const ALL_FACTORS = Object.keys(DRC.CONFIG.SIMULATION_EFFECTS);
 
 ALL_FACTORS.forEach(factor => {
@@ -129,6 +121,12 @@ ALL_FACTORS.forEach(factor => {
     let threw = false;
     try { TS.simulate(factor); } catch (e) { threw = true; }
     assert(!threw, `simulate('${factor}') with null DOM does not throw`);
+});
+
+ALL_FACTORS.forEach(factor => {
+    let threw = false;
+    try { TS.unsimulate(factor); } catch (e) { threw = true; }
+    assert(!threw, `unsimulate('${factor}') with null DOM does not throw`);
 });
 
 // Invalid / unknown factor name
@@ -142,11 +140,23 @@ threw = false;
 try { TS.simulate(''); } catch (e) { threw = true; }
 assert(!threw, "simulate('') does not throw");
 
-// ─── TEST SUITE 3: resetSimulated() ──────────────────────────────────────────
+// ─── TEST SUITE 3: getOriginalValues / getSimulatedFactors ────────────────────
 
-console.log('\n═══ TEST SUITE 3: resetSimulated() ═══');
+console.log('\n═══ TEST SUITE 3: getOriginalValues / getSimulatedFactors ═══');
 
-// resetSimulated() does not throw when called repeatedly
+TS.resetSimulated();
+const origs0 = TS.getOriginalValues();
+assert(typeof origs0 === 'object' && origs0 !== null, 'getOriginalValues returns an object');
+assert(Object.keys(origs0).length === 0, 'getOriginalValues is empty after resetSimulated');
+
+const factors0 = TS.getSimulatedFactors();
+assert(Array.isArray(factors0), 'getSimulatedFactors returns an array');
+assert(factors0.length === 0, 'getSimulatedFactors is empty after resetSimulated');
+
+// ─── TEST SUITE 4: resetSimulated() ───────────────────────────────────────────
+
+console.log('\n═══ TEST SUITE 4: resetSimulated() ═══');
+
 threw = false;
 try {
     TS.resetSimulated();
@@ -155,43 +165,15 @@ try {
 } catch (e) { threw = true; }
 assert(!threw, 'resetSimulated() is safe to call multiple times');
 
-// After resetSimulated(), simulate() is not blocked by the "already simulated" guard.
-// With null DOM, simulate() exits early (computeTarget returns null), so _simulated
-// never gets populated — but we can verify the call itself returns without error.
-TS.resetSimulated();
-threw = false;
-try { TS.simulate('fastGlu'); } catch (e) { threw = true; }
-assert(!threw, 'simulate() after resetSimulated() does not throw');
-
-// ─── TEST SUITE 4: computeTarget null-guard (null DOM → early return) ─────────
-
-console.log('\n═══ TEST SUITE 4: computeTarget null-guard ═══');
-
-// When getElementById returns null, simulate() must return without setting _animating.
-// We verify this by confirming a second call to simulate() with the same factor
-// also completes without error (it would be blocked if _animating were stuck = true).
-global.document = makeNullDocument();
-setupStubs();
-TS.resetSimulated();
-
-TS.simulate('fastGlu');    // should return immediately (computeTarget → null)
-threw = false;
-try { TS.simulate('fastGlu'); } catch (e) { threw = true; }
-assert(!threw, 'Second simulate() call with null DOM is safe (not blocked by _animating)');
-
-// ─── TEST SUITE 5: getEffectDelta — CONFIG values for all factors ──────────────
+// ─── TEST SUITE 5: getEffectDelta — CONFIG values for all factors ─────────────
 
 console.log('\n═══ TEST SUITE 5: getEffectDelta values from CONFIG ═══');
 
-// getEffectDelta is private, but we can verify the CONFIG values it reads
-// directly, since it reads from DRC.CONFIG.SIMULATION_EFFECTS.
 const FX = DRC.CONFIG.SIMULATION_EFFECTS;
 
-// All 5 modifiable factors must have non-zero treatment deltas
 ALL_FACTORS.forEach(factor => {
     const fx = FX[factor];
     if (fx.siMale !== undefined) {
-        // Sex-dependent factor (e.g. sbp)
         assert(fx.usMale !== 0, `SIMULATION_EFFECTS.${factor}.usMale is non-zero`);
         assert(fx.siMale !== 0, `SIMULATION_EFFECTS.${factor}.siMale is non-zero`);
         assert(fx.usFemale !== 0, `SIMULATION_EFFECTS.${factor}.usFemale is non-zero`);
@@ -202,8 +184,6 @@ ALL_FACTORS.forEach(factor => {
     }
 });
 
-// Unit system affects which delta is used (isMetric selects .si vs .us)
-// Verify the CONFIG values match the expected clinical evidence magnitudes
 assert(Math.abs(FX.fastGlu.us) >= 10, 'fastGlu US delta magnitude ≥ 10 mg/dL');
 assert(Math.abs(FX.sbp.usMale) >= 5,  'sbp US (male) delta magnitude ≥ 5 mmHg');
 assert(Math.abs(FX.sbp.usFemale) >= 5, 'sbp US (female) delta magnitude ≥ 5 mmHg');
@@ -211,23 +191,15 @@ assert(Math.abs(FX.waist.us)   >= 1,  'waist US delta magnitude ≥ 1 in');
 assert(Math.abs(FX.cholHDL.us) >= 1,  'cholHDL US delta magnitude ≥ 1 mg/dL');
 assert(Math.abs(FX.cholTri.us) >= 10, 'cholTri US delta magnitude ≥ 10 mg/dL');
 
-// ─── TEST SUITE 6: simulate() with enough DOM to pass computeTarget ───────────
+// ─── TEST SUITE 6: simulate() with partial DOM (currentVal === targetVal) ─────
 
 console.log('\n═══ TEST SUITE 6: simulate() with partial DOM (currentVal === targetVal) ═══');
 
-// If current value already equals the post-treatment clamped target,
-// simulate() returns early (no-op, no animation needed).
-// We provoke this by setting the slider value to min (already at max treatment effect).
 const factor = 'fastGlu';
-const [siMin] = DRC.CONFIG.RANGES[factor].us;
 
-// unit-toggle: unchecked = US mode; delta for fastGlu US = -20
-// Set current to slider min (50) + delta = 30 → clamp to min (50)
-// So targetVal = clampAndRound(50 + (-20), 50, 300, 1) = clampAndRound(30, 50, 300, 1) = 50
-// currentVal = 50 = targetVal → simulate returns early
 const richDoc = makeRichDocument({
     'unit-toggle':       { checked: false },
-    'fastGlu-value':     { value: '50' },   // already at min
+    'fastGlu-value':     { value: '50' },
     'fastGlu-slider':    { min: '50', max: '300', step: '1', value: '50' }
 });
 
@@ -240,12 +212,10 @@ try { TS.simulate(factor); } catch (e) { threw = true; }
 assert(!threw,
     'simulate() with currentVal === targetVal (slider at min) returns without throw');
 
-// ─── TEST SUITE 7: easeOutCubic properties (mathematical) ────────────────────
+// ─── TEST SUITE 7: easeOutCubic properties (mathematical) ─────────────────────
 
 console.log('\n═══ TEST SUITE 7: easeOutCubic mathematical properties ═══');
 
-// easeOutCubic is private, but its formula is: 1 - (1 - t)^3
-// We verify the formula directly since it's simple enough to re-implement
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
 assert(Math.abs(easeOutCubic(0)   - 0) < 1e-9,  'easeOutCubic(0) = 0 (animation starts at rest)');
@@ -254,75 +224,10 @@ assert(Math.abs(easeOutCubic(0.5) - 0.875) < 1e-9, 'easeOutCubic(0.5) = 0.875');
 assert(easeOutCubic(0.25) > 0.25,               'easeOutCubic(0.25) > 0.25 (faster start)');
 assert(easeOutCubic(0.75) > 0.75,               'easeOutCubic(0.75) > 0.75 (deceleration)');
 
-// Monotonically increasing
 const steps = Array.from({ length: 30 }, (_, i) => easeOutCubic(i / 29));
 const isMonotonic = steps.every((v, i) => i === 0 || v >= steps[i - 1]);
 assert(isMonotonic, 'easeOutCubic is monotonically non-decreasing on [0, 1]');
-
-// All values in [0, 1]
 assert(steps.every(v => v >= 0 && v <= 1), 'All easeOutCubic values are in [0, 1]');
-
-// ─── TEST SUITE 8: App._setCompareScenario + _getState state verification ────
-
-console.log('\n═══ TEST SUITE 8: _setCompareScenario / _getState state integration ═══');
-
-// Load real app.js to test the actual state management
-// We need a real App instance — load it with enough stubs to init
-{
-    global.window   = global;
-    global.document = makeNullDocument();
-
-    // Real app.js reads DRC.CONFIG, DRC.UIController, etc. at init time
-    // We only need to test _setCompareScenario and _getState which don't touch DOM
-    const appPath = require.resolve('../js/app.js');
-    delete require.cache[appPath];
-
-    // Minimal stubs for app.js module-level setup
-    DRC.UIController    = { readInputs: () => ({}), updateSliderFill: () => {},
-                            updateAllSliderFills: () => {}, renderRisk: () => {},
-                            renderContributionChart: () => {},
-                            renderTreatmentOverview: () => {}, renderScenarioComparison: () => {},
-                            renderWhatIfBadge: () => {}, updateUnitLabels: () => {},
-                            updateSliderRanges: () => {}, applyConvertedValues: () => {},
-                            renderRadarChart: () => {}, updateNonModSummary: () => {},
-                            updateModSummary: () => {} };
-    DRC.RiskModel       = { toSI: v => v, computeProbability: () => 0.15,
-                            computeContributions: () => ({}), getElevatedFactors: () => ({ elevatedFactors: [] }) };
-    DRC.RadarChart      = { render: () => {} };
-    DRC.TimelineChart   = { hasBaseline: () => false, setBaseline: () => {}, clearBaseline: () => {},
-                            addSnapshot: () => {}, getLastSnapshot: () => null, clear: () => {} };
-    DRC.PatientManager  = { init: () => {}, getActivePatientData: () => null,
-                            updateNavLabel: () => {}, applyValues: () => {} };
-    DRC.TreatmentSimulator = { resetSimulated: () => {} };
-
-    require('../js/app.js');
-    const App = DRC.App;
-
-    // Verify _setCompareScenario and _getState are accessible
-    assert(typeof App._setCompareScenario === 'function', 'App._setCompareScenario is a function');
-    assert(typeof App._getState          === 'function', 'App._getState is a function');
-
-    // Initial state
-    const s0 = App._getState();
-    assert(s0.isComparingScenario === false, '_getState: isComparingScenario initially false');
-    assert(s0.baselineRisk        === null,  '_getState: baselineRisk initially null');
-
-    // After _setCompareScenario
-    App._setCompareScenario(42.5);
-    const s1 = App._getState();
-    assert(s1.isComparingScenario === true,  '_setCompareScenario: isComparingScenario → true');
-    assert(s1.baselineRisk        === 42.5,  '_setCompareScenario: baselineRisk → 42.5');
-
-    // Overwrite with new value
-    App._setCompareScenario(18.0);
-    const s2 = App._getState();
-    assert(s2.baselineRisk === 18.0, '_setCompareScenario: second call overwrites baselineRisk');
-
-    // _getState returns a copy — mutations don't affect internal state
-    const s3 = App._getState();
-    s3.baselineRisk = 999;
-    assert(App._getState().baselineRisk === 18.0, '_getState returns a copy (mutation-safe)');
-}
 
 // ─── Summary ─────────────────────────────────────────────────────────────────
 

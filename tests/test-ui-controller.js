@@ -8,7 +8,7 @@
  *   1. getRiskLevel (via renderRisk)  — colour/level thresholds at 0, 9, 10, 25, 49, 50, 100
  *   2. readInputs()                   — reads all 9 fields from DOM
  *   3. renderWhatIfBadge()            — delta formatting, class names, hidden state
- *   4. renderScenarioComparison()     — improved / worsened / flat labelling
+ *   4. renderChosenRisk()             — writes value + color to chosen-risk element
  *   5. renderHeatmapPointer()         — style.left and style.bottom bounds
  *   6. updateNonModSummary()          — text output for non-modifiable factor summary
  *   7. updateModSummary()             — text output for modifiable factor summary
@@ -133,8 +133,9 @@ const ELEMS = {
     'what-if-sbp':      makeEl({ className: 'what-if-badge', textContent: '' }),
     'what-if-age':      makeEl({ className: 'what-if-badge', textContent: '' }),
 
-    // renderScenarioComparison
-    'scenario-comparison': makeEl({ innerHTML: '' }),
+    // renderChosenRisk
+    'chosen-risk-percentage': makeEl({ textContent: '0.0', style: { color: '' } }),
+    'chosen-treatments-list':  makeEl(),
 
     // summary labels (setText targets)
     'summary-age':    makeEl({ textContent: '' }),
@@ -171,9 +172,9 @@ const ELEMS = {
     'cholTri-value-unit-lbl': makeEl({ textContent: '' }),
 
     // renderContributionChart — needs querySelector for filter-toggle addEventListener
-    'contribution-chart': Object.assign(makeEl({ innerHTML: '', _filterAttr: 'true' }), {
-        getAttribute: function(k) { return k === 'data-filter-risk' ? this._filterAttr : null; },
-        setAttribute: function(k, v) { if (k === 'data-filter-risk') this._filterAttr = v; },
+    'contribution-chart': Object.assign(makeEl({ innerHTML: '', _showProtective: 'false' }), {
+        getAttribute: function(k) { return k === 'data-show-protective' ? this._showProtective : null; },
+        setAttribute: function(k, v) { if (k === 'data-show-protective') this._showProtective = v; },
         appendChild: () => {}
     }),
 
@@ -310,59 +311,18 @@ let threw = false;
 try { UIC.renderWhatIfBadge('nonexistentField', 5.0); } catch (e) { threw = true; }
 assert(!threw, 'renderWhatIfBadge with unknown field → no throw');
 
-// ─── TEST SUITE 4: renderScenarioComparison() ─────────────────────────────────
-// NOTE: renderScenarioComparison now uses secure DOM creation (no innerHTML).
-// Tests verify the DOM structure via children tracking.
+// ─── TEST SUITE 4: renderChosenRisk() ─────────────────────────────────────────
 
-console.log('\n═══ TEST SUITE 4: renderScenarioComparison() ═══');
+console.log('\n═══ TEST SUITE 4: renderChosenRisk() ═══');
 
-// Store original children for verification
-let scenarioChildren = [];
-const scenarioPanel = ELEMS['scenario-comparison'];
-const origAppendChild = scenarioPanel.appendChild.bind(scenarioPanel);
-scenarioPanel.appendChild = function(child) {
-    scenarioChildren.push(child);
-    return origAppendChild(child);
-};
-
-// Helper to get text content from element mock
-function getText(el) {
-    return el?.textContent || el?._textContent || '';
+// renderChosenRisk writes into #chosen-risk-percentage
+if (typeof UIC.renderChosenRisk === 'function') {
+    UIC.renderChosenRisk(12.5);
+    assert(ELEMS['chosen-risk-percentage']?.textContent === '12.5',
+        'renderChosenRisk writes value to #chosen-risk-percentage');
+} else {
+    assert(false, 'renderChosenRisk is missing from public API');
 }
-
-// Improvement (current < baseline)
-scenarioChildren = [];
-UIC.renderScenarioComparison(20.0, 15.0);
-const deltaDiv1 = scenarioChildren[0]?.children?.[3];
-assert(deltaDiv1?.className?.includes('improved'),    'baseline=20, current=15 → contains "improved"');
-// Baseline item is children[0], which has baselineValue as children[2]
-const baselineValue1 = scenarioChildren[0]?.children?.[0]?.children?.[2];
-assert(getText(baselineValue1).includes('20.0'),       'Baseline value 20.0% in output');
-// Current item is children[2], which has currentValue as children[2]
-const currentValue1 = scenarioChildren[0]?.children?.[2]?.children?.[2];
-assert(getText(currentValue1).includes('15.0'),       'Current value 15.0% in output');
-// Delta div has text span as children[1]
-const deltaText1 = deltaDiv1?.children?.[1];
-assert(getText(deltaText1).includes('-5.00'),      'Delta -5.00% in output');
-assert(deltaDiv1?.children?.[0]?._attrs?.['data-lucide'] === 'trending-down', 'Improvement uses trending-down icon');
-
-// Worsening (current > baseline)
-scenarioChildren = [];
-UIC.renderScenarioComparison(20.0, 27.5);
-const deltaDiv2 = scenarioChildren[0]?.children?.[3];
-assert(deltaDiv2?.className?.includes('worsened'),   'baseline=20, current=27.5 → contains "worsened"');
-const deltaText2 = deltaDiv2?.children?.[1];
-assert(getText(deltaText2).includes('+7.50'),     'Delta +7.50% in output');
-assert(deltaDiv2?.children?.[0]?._attrs?.['data-lucide'] === 'trending-up', 'Worsening uses trending-up icon');
-
-// No change (delta = 0)
-scenarioChildren = [];
-UIC.renderScenarioComparison(15.0, 15.0);
-const deltaDiv3 = scenarioChildren[0]?.children?.[3];
-assert(deltaDiv3?.className?.includes('unchanged'),       'delta=0 → classified as "unchanged"');
-assert(deltaDiv3?.children?.[0]?._attrs?.['data-lucide'] === 'minus', 'delta=0 → uses minus icon');
-const deltaText3 = deltaDiv3?.children?.[1];
-assert(getText(deltaText3).includes('+0.00'),         'delta=0 → shows "+0.00%"');
 
 // ─── TEST SUITE 5: updateNonModSummary() ─────────────────────────────────────
 

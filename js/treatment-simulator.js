@@ -2,8 +2,9 @@
  * @fileoverview Treatment Simulator — evidence-based animated interventions.
  *
  * Animates slider values toward clinically-derived treatment targets using
- * ease-out cubic interpolation. Records before/after snapshots on the
- * timeline to visualize the treatment effect.
+ * ease-out cubic interpolation. Supports reversing a simulation via
+ * `unsimulate(factor)`, which restores the original (pre-simulation)
+ * slider value.
  *
  * EID mapping: Knowledge-Based Behavior (KBB) — users explore causal
  * treatment effects on the model outcome through interactive simulation.
@@ -20,8 +21,9 @@
 DRC.TreatmentSimulator = (() => {
     const CFG = DRC.CONFIG;
     let _animating = false;
-    const _simulated = new Set();  // Track already-simulated factors
-    let _animationTimeoutId = null;  // Track active animation timeout
+    /** @type {Map<string, number>} factor → original pre-simulation slider value */
+    const _simulated = new Map();
+    let _animationTimeoutId = null;
 
     /**
      * Get the unit-appropriate treatment delta for a factor.
@@ -33,7 +35,6 @@ DRC.TreatmentSimulator = (() => {
         const fx = DRC.CONFIG.SIMULATION_EFFECTS[factor];
         if (!fx) return 0;
         const isMetric = DRC.UIController.getUnitToggleState();
-        // Sex-dependent effect (e.g. sbp): check for siMale/siFemale or usMale/usFemale
         if (fx.siMale !== undefined) {
             const isMale = DRC.UIController.readInputs().sex === 1;
             if (isMetric) return isMale ? fx.siMale : fx.siFemale;
@@ -66,42 +67,21 @@ DRC.TreatmentSimulator = (() => {
     const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
     /**
-     * Run treatment simulation for one factor.
-     * @param {string} factor — Risk factor key (e.g. 'fastGlu', 'sbp').
+     * Animate a slider from its current value to a target value.
+     * @param {string} factor — Risk factor key
+     * @param {number} currentVal — Starting value
+     * @param {number} targetVal — End value
+     * @param {number} decimals — Number of decimal places
+     * @param {Function} onFinish — Callback when animation completes
      */
-    const simulate = (factor) => {
-        if (_animating) return;
-        if (_simulated.has(factor)) return;  // Already simulated
-        const info = computeTarget(factor);
-        if (!info || info.currentVal === info.targetVal) return;
-
-        const { currentVal, targetVal, step, decimals } = info;
-        const label = DRC.CONFIG.SIMULATION_EFFECTS[factor]?.label || factor;
-        _animating = true;
-
-        // Disable all simulate buttons during animation
-        document.querySelectorAll('.btn-simulate-treatment').forEach(b => b.disabled = true);
-
-        // Auto-set baseline on first simulation
-        if (_simulated.size === 0) {
-            const raw = DRC.UIController.readInputs();
-            const isMetric = DRC.UIController.getUnitToggleState();
-            const si  = DRC.RiskModel.toSI(raw, isMetric);
-            const risk = DRC.RiskModel.computeProbability(si) * 100;
-
-            // Activate comparison mode via UIController (centralized UI updates)
-            DRC.UIController.setComparisonMode(true, risk);
-
-            // Add baseline line + unlabelled baseline snapshot — only if not already set manually
-            if (!DRC.TimelineChart.hasBaseline()) {
-                DRC.TimelineChart.setBaseline(risk);
-            }
-            if (DRC.TimelineChart.getLastSnapshot() === null) {
-                DRC.TimelineChart.addSnapshot(risk, si, null);
-            }
+    const animateTo = (factor, currentVal, targetVal, decimals, onFinish) => {
+        if (currentVal === targetVal) {
+            onFinish();
+            return;
         }
+        _animating = true;
+        document.querySelectorAll('.btn-simulate-treatment, .btn-undo-treatment').forEach(b => b.disabled = true);
 
-        // Animate
         let frame = 0;
         const tick = () => {
             frame++;
@@ -119,10 +99,82 @@ DRC.TreatmentSimulator = (() => {
                 _animationTimeoutId = setTimeout(tick, CFG.ANIMATION_DURATION / CFG.ANIMATION_STEPS);
             } else {
                 _animationTimeoutId = null;
-                onComplete(factor, label);
+                _animating = false;
+                onFinish();
             }
         };
         tick();
+    };
+
+    /**
+     * Run treatment simulation for one factor.
+     * @param {string} factor — Risk factor key (e.g. 'fastGlu', 'sbp').
+     */
+    const simulate = (factor) => {
+        if (_animating) return;
+        if (_simulated.has(factor)) return;
+        const info = computeTarget(factor);
+        if (!info || info.currentVal === info.targetVal) return;
+
+        const { currentVal, targetVal, decimals } = info;
+        const origVal = currentVal;
+
+        // Store BEFORE animation so getOriginalValues() can return the pre-simulation
+        // value during animation — this keeps renderRisk() (main risk) stable while
+        // renderChosenRisk() shows the animated reduction in real-time.
+        _simulated.set(factor, origVal);
+
+        animateTo(factor, currentVal, targetVal, decimals, () => {
+            onSimulationComplete(factor);
+        });
+    };
+
+    /**
+     * Compute the isolated risk reduction attributable to a single simulated factor.
+     * Computes: risk_without_this_treatment - risk_with_all_treatments.
+     * Positive result = this treatment reduced the risk.
+     * @param {string} factor — Simulated factor key.
+     * @returns {number} Risk reduction in percentage points.
+     */
+    const getIndividualReduction = (factor) => {
+        if (!_simulated.has(factor)) return 0;
+        const origVal = _simulated.get(factor);
+        const isMetric = DRC.UIController.getUnitToggleState();
+        const currentInputs = DRC.UIController.readInputs();
+        const activeModel = DRC.App?.getActiveModel?.();
+
+        const siWith = DRC.RiskModel.toSI(currentInputs, isMetric);
+        const riskWith = DRC.RiskModel.computeProbability(siWith, activeModel) * 100;
+
+        const inputsWithout = { ...currentInputs, [factor]: origVal };
+        const siWithout = DRC.RiskModel.toSI(inputsWithout, isMetric);
+        const riskWithout = DRC.RiskModel.computeProbability(siWithout, activeModel) * 100;
+
+        return riskWithout - riskWith;
+    };
+
+    /**
+     * Reverse a previously-simulated treatment: animate the slider back
+     * to its pre-simulation value and remove the factor from the
+     * simulated set.
+     * @param {string} factor — Risk factor key
+     */
+    const unsimulate = (factor) => {
+        if (_animating) return;
+        if (!_simulated.has(factor)) return;
+
+        const origVal = _simulated.get(factor);
+        const { input, slider } = DRC.UIController.getSliderElements(factor);
+        if (!input || !slider) return;
+
+        const currentVal = parseFloat(input.value);
+        const step = parseFloat(slider.step) || 1;
+        const decimals = step >= 1 ? 0 : Math.max(0, -Math.floor(Math.log10(step)));
+
+        animateTo(factor, currentVal, origVal, decimals, () => {
+            _simulated.delete(factor);
+            onSimulationComplete(factor);
+        });
     };
 
     /** Cancel any running animation and cleanup. */
@@ -132,71 +184,81 @@ DRC.TreatmentSimulator = (() => {
             _animationTimeoutId = null;
         }
         _animating = false;
-        document.querySelectorAll('.btn-simulate-treatment').forEach(b => b.disabled = false);
+        document.querySelectorAll('.btn-simulate-treatment, .btn-undo-treatment').forEach(b => b.disabled = false);
     };
 
-    /** Finalize simulation: take snapshot, flash row, re-enable buttons. */
-    const onComplete = (factor, label) => {
-        const isMetric = DRC.UIController.getUnitToggleState();
-        const raw  = DRC.UIController.readInputs();
-        const si   = DRC.RiskModel.toSI(raw, isMetric);
-        const risk = DRC.RiskModel.computeProbability(si) * 100;
-        DRC.TimelineChart.addSnapshot(risk, si, label);
+    /**
+     * Re-run a simulation: instantly restores the slider to its pre-simulation
+     * value, then re-animates to the treatment target. Useful when the user
+     * wants to refresh the effect against a changed baseline.
+     * @param {string} factor — Risk factor key
+     */
+    const resimulate = (factor) => {
+        if (_animating) return;
+        if (!_simulated.has(factor)) return;
 
-        // Flash completion animation (1200ms for visual feedback)
+        const origVal = _simulated.get(factor);
+        const { input, slider } = DRC.UIController.getSliderElements(factor);
+        if (!input || !slider) return;
+
+        const step = parseFloat(slider.step) || 1;
+
+        // Instantly restore to pre-simulation value and clear the simulated state
+        input.value = origVal;
+        slider.value = origVal;
+        DRC.UIController.updateSliderFill(factor);
+        _simulated.delete(factor);
+        DRC.App.trigger('risk:recalculate');
+
+        // Re-run simulation from the restored baseline
+        simulate(factor);
+    };
+
+    /**
+     * Post-simulation/unsimulation UI updates: flash row, recompute risk.
+     * Card states (reduction pill, button) are handled by renderTreatmentOverview
+     * which is triggered via risk:recalculate.
+     * @param {string} factor
+     */
+    const onSimulationComplete = (factor) => {
+        // Flash completion animation for feedback
         const row = document.querySelector(`.treatment-overview-row[data-field="${factor}"]`);
         if (row) {
             row.classList.add('sim-complete');
             setTimeout(() => row.classList.remove('sim-complete'), CFG.ANIMATION_FLASH_MS);
         }
 
-        _animating = false;
-        _simulated.add(factor);
-
-        // Re-enable indicated simulate buttons and update already-simulated ones
-        document.querySelectorAll('.btn-simulate-treatment').forEach(b => {
-            const simFactor = b.getAttribute('data-sim-factor');
-            if (_simulated.has(simFactor)) {
-                b.disabled = true;
-                b.innerHTML = '<i data-lucide="check-circle" class="lucide-icon"></i> Already Simulated';
-                b.classList.add('simulated');
-            } else {
-                const rowEl = b.closest('.treatment-overview-row');
-                b.disabled = !(rowEl?.classList.contains('indicated'));
-            }
-        });
-
-        // Initialize Lucide icons for updated buttons
+        // Trigger recalculation — renderTreatmentOverview re-renders all card states
+        DRC.App.trigger('risk:recalculate');
         DRC.UIHelpers.refreshIcons();
-
-        // Auto-open timeline if hidden
-        const area = document.getElementById('timeline-expandable');
-        if (area && !area.classList.contains('open')) {
-            area.classList.add('open');
-            document.getElementById('timelineToggleBtn')?.classList.add('active');
-        }
     };
-
-    // Listen for language changes to update already-simulated button text
-    window.addEventListener('drc:language-changed-complete', () => {
-        document.querySelectorAll('.btn-simulate-treatment').forEach(b => {
-            const simFactor = b.getAttribute('data-sim-factor');
-            if (_simulated.has(simFactor)) {
-                const alreadyText = DRC.I18n?.t('buttons.alreadySimulated', 'Already Simulated') || 'Already Simulated';
-                b.replaceChildren();
-                const icon = document.createElement('i');
-                icon.setAttribute('data-lucide', 'check-circle');
-                icon.className = 'lucide-icon';
-                b.appendChild(icon);
-                b.appendChild(document.createTextNode(' ' + alreadyText));
-            }
-        });
-        DRC.UIHelpers?.refreshIcons();
-    });
 
     return {
         simulate,
+        unsimulate,
+        resimulate,
         resetSimulated: () => { cancel(); _simulated.clear(); },
-        cancel
+        cancel,
+        /**
+         * Return a plain object of {factor: originalValue} for factors
+         * that have been simulated (used by App to compute the
+         * pre-simulation "Your Risk" value).
+         */
+        getOriginalValues: () => {
+            const obj = {};
+            _simulated.forEach((val, key) => { obj[key] = val; });
+            return obj;
+        },
+        /**
+         * Return an array of factor keys that are currently simulated.
+         * Used by the UI to render the "Chosen Treatments" list.
+         */
+        getSimulatedFactors: () => Array.from(_simulated.keys()),
+        /**
+         * Compute isolated risk reduction for a single simulated factor.
+         * @param {string} factor — Simulated factor key.
+         * @returns {number} Risk reduction in percentage points (positive = reduced).
+         */
+        getIndividualReduction
     };
 })();

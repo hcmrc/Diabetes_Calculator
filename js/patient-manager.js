@@ -729,6 +729,12 @@ DRC.PatientManager = (() => {
             return;
         }
 
+        // Validate file extension (security check beyond HTML accept attribute)
+        if (!/\.(xlsx|xls|drc)$/i.test(file.name)) {
+            alert(t('patientManager.invalidExtension', 'Invalid file type. Please upload an .xlsx, .xls, or .drc file.'));
+            return;
+        }
+
         // Check if file is encrypted .drc file
         const isDrcFile = file.name.toLowerCase().endsWith('.drc');
 

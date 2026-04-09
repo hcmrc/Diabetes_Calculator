@@ -73,11 +73,6 @@
             <button id="resetBtn" type="button" class="btn-reset" aria-label="Reset all values">
                 <i data-lucide="rotate-ccw" class="lucide-icon"></i>
             </button>
-            <!-- Timeline Toggle Button -->
-            <button id="timelineToggleBtn" type="button" class="btn-timeline-toggle" aria-label="Toggle Risk Timeline">
-                <i data-lucide="line-chart" class="lucide-icon"></i>
-                <span class="btn-timeline-label" data-i18n="nav.riskTimeline">Risk Timeline</span>
-            </button>
             <!-- Patient Management Button -->
             <button id="patientMenuBtn" type="button" class="btn-patient-menu" aria-label="Manage profiles">
                 <i data-lucide="user" class="lucide-icon"></i>
@@ -225,67 +220,11 @@
     </div>
 </aside>
 
-<!-- ===================== HERO: RISK SCORE ===================== -->
-<section class="hero-section" id="risk-score-card">
-    <div class="hero-inner">
-        <p class="hero-label" data-i18n="hero.title">9-Year Diabetes Risk</p>
-        <div class="hero-value" aria-live="polite">
-            <span id="risk-percentage" class="risk-number">0.0</span><span class="risk-unit">%</span>
-        </div>
-        <div class="hero-risk-bar">
-            <div class="risk-bar-track">
-                <div class="risk-bar-marker" id="risk-bar-marker"></div>
-            </div>
-        </div>
-        <button id="expandHeroBtn" type="button" class="btn-expand-hero" aria-expanded="false">
-            <i data-lucide="info" class="lucide-icon"></i>
-            <span id="expandHeroLabel" data-i18n="hero.expandLabel">What does that mean?</span>
-            <i data-lucide="chevron-down" class="lucide-icon expand-hero-chevron"></i>
-        </button>
-        <div id="hero-expandable" class="hero-expandable">
-            <div id="icon-array" class="icon-array-container"></div>
-            <p class="icon-array-label" id="icon-array-label"></p>
-            <p class="hero-subtitle" data-i18n="hero.subtitle">Based on the ARIC Study logistic regression model (Schmidt et al. 2005)</p>
-        </div>
-    </div>
-</section>
-
-<!-- ===================== EXPANDABLE TIMELINE ===================== -->
-<div class="timeline-expandable-area" id="timeline-expandable">
-    <div class="timeline-expandable-inner">
-        <div class="timeline-expandable-header">
-            <div class="timeline-expandable-title">
-                <i data-lucide="line-chart" class="lucide-icon"></i>
-                <h3 data-i18n="timeline.title">Risk Timeline</h3>
-                <span class="timeline-hint" data-i18n="timeline.hint">Simulate treatments to track risk changes over time</span>
-            </div>
-            <div class="timeline-expandable-actions">
-                <button id="compareScenarioBtn" type="button" class="btn-compare-scenario-section" aria-label="Set baseline for comparison" data-i18n="buttons.setBaseline">
-                    <i data-lucide="flag" class="lucide-icon"></i> Set Baseline
-                </button>
-                <button id="snapshotBtn" type="button" class="btn-snapshot" data-i18n="timeline.snapshot">
-                    <i data-lucide="plus-circle" class="lucide-icon"></i> Snapshot
-                </button>
-            </div>
-        </div>
-        <div id="scenario-comparison" class="scenario-comparison-panel-new" style="display:none;"></div>
-        <div class="timeline-body">
-            <div class="timeline-chart" id="timeline-chart">
-                <p class="timeline-empty">Set a baseline and add snapshots to track your risk over scenarios.</p>
-            </div>
-            <div class="timeline-legend" id="timeline-legend" style="display:none;"></div>
-        </div>
-    </div>
-</div>
-
 <!-- ===================== THREE-COLUMN MAIN GRID ===================== -->
 <main class="main-grid">
 
     <!-- ========== LEFT COLUMN: Risk Factor Inputs ========== -->
     <section class="col-panel col-left" id="panel-input" aria-label="Risk Factor Inputs">
-        <div class="col-step-label">
-            <span>Your Data</span>
-        </div>
         <div class="panel-header-bar">
             <i data-lucide="sliders-horizontal" class="lucide-icon"></i>
             <h2 data-i18n="sections.demographic">Patient Data</h2>
@@ -320,7 +259,7 @@
                         </label>
                     </div>
                     <div class="slider-wrapper">
-                        <input type="range" id="age-slider" min="20" max="80" value="50" step="1" class="slider">
+                        <input type="range" id="age-slider" min="20" max="80" value="50" step="1" class="slider" aria-label="Age slider">
                         <div class="slider-track-bg" id="age-track"><div class="slider-fill" id="age-fill"></div></div>
                     </div>
                     <div class="slider-labels slider-labels-numeric"><span>20</span><span>50</span><span>80</span></div>
@@ -338,7 +277,7 @@
                     </div>
                     <div class="toggle-group">
                         <span class="toggle-option" data-i18n="units.other">Other</span>
-                        <label class="toggle-switch"><input type="checkbox" id="race-toggle"><span class="toggle-slider"></span></label>
+                        <label class="toggle-switch"><input type="checkbox" id="race-toggle" aria-label="Toggle ethnicity"><span class="toggle-slider"></span></label>
                         <span class="toggle-option" data-i18n="units.black">Black</span>
                     </div>
                 </div>
@@ -350,7 +289,7 @@
                     </div>
                     <div class="toggle-group">
                         <span class="toggle-option" data-i18n="units.no">No</span>
-                        <label class="toggle-switch"><input type="checkbox" id="parentHist-toggle"><span class="toggle-slider"></span></label>
+                        <label class="toggle-switch"><input type="checkbox" id="parentHist-toggle" aria-label="Toggle parental diabetes history"><span class="toggle-slider"></span></label>
                         <span class="toggle-option" data-i18n="units.yes">Yes</span>
                     </div>
                 </div>
@@ -362,7 +301,7 @@
                     </div>
                     <div class="toggle-group">
                         <span class="toggle-option" data-i18n="units.female">Female</span>
-                        <label class="toggle-switch"><input type="checkbox" id="sex-toggle" checked><span class="toggle-slider"></span></label>
+                        <label class="toggle-switch"><input type="checkbox" id="sex-toggle" checked aria-label="Toggle sex"><span class="toggle-slider"></span></label>
                         <span class="toggle-option" data-i18n="units.male">Male</span>
                     </div>
                 </div>
@@ -373,7 +312,7 @@
                         <label for="height-slider"><i data-lucide="move-vertical" class="lucide-icon ig-icon"></i> <span data-i18n="factors.height">Height</span> <span class="unit-label" id="height-unit">(in)</span></label>
                     </div>
                     <div class="slider-wrapper">
-                        <input type="range" id="height-slider" min="48" max="84" value="66" step="1" class="slider">
+                        <input type="range" id="height-slider" min="48" max="84" value="66" step="1" class="slider" aria-label="Height slider">
                         <div class="slider-track-bg"><div class="slider-fill" id="height-fill"></div></div>
                     </div>
                     <div class="slider-labels slider-labels-numeric"><span id="height-min">48</span><span id="height-mid">66</span><span id="height-max">84</span></div>
@@ -407,7 +346,7 @@
                     <label for="fastGlu-slider"><i data-lucide="droplet" class="lucide-icon ig-icon"></i> <span data-i18n="factors.fastGlu">Fasting Glucose</span> <span class="unit-label" id="fastGlu-unit">(mg/dL)</span></label>
                 </div>
                 <div class="slider-wrapper">
-                    <input type="range" id="fastGlu-slider" min="50" max="300" value="95" step="1" class="slider">
+                    <input type="range" id="fastGlu-slider" min="50" max="300" value="95" step="1" class="slider" aria-label="Fasting glucose slider">
                     <div class="slider-track-bg segmented" id="fastGlu-track">
                         <div class="slider-segment safe" style="flex:50"></div>
                         <div class="slider-segment alert" style="flex:25"></div>
@@ -428,13 +367,13 @@
                     <label for="waist-slider"><i data-lucide="ruler" class="lucide-icon ig-icon"></i> <span data-i18n="factors.waist">Waist</span> <span class="unit-label" id="waist-unit">(in)</span></label>
                 </div>
                 <div class="slider-wrapper">
-                    <input type="range" id="waist-slider" min="26" max="60" value="36" step="1" class="slider">
+                    <input type="range" id="waist-slider" min="26" max="60" value="36" step="1" class="slider" aria-label="Waist circumference slider">
                     <div class="slider-track-bg segmented" id="waist-track">
                         <div class="slider-segment safe" style="flex:14"></div>
                         <div class="slider-segment danger" style="flex:20"></div>
                     </div>
                 </div>
-                <div class="slider-labels" id="waist-labels"><span style="flex:14;text-align:left">26</span><span style="flex:0;white-space:nowrap">40</span><span style="flex:20;text-align:right">60</span></div>
+                <div class="slider-labels" id="waist-labels"><span style="flex:14;text-align:left">26</span><span style="flex:0;white-space:nowrap">43</span><span style="flex:20;text-align:right">60</span></div>
                 <div class="factor-value-row">
                     <input type="number" id="waist-value" value="36" min="26" max="60" step="1" class="value-input" aria-label="Waist circumference">
                     <span class="value-unit-label" id="waist-value-unit">in</span>
@@ -448,7 +387,7 @@
                     <label for="sbp-slider"><i data-lucide="heart-pulse" class="lucide-icon ig-icon"></i> <span data-i18n="factors.sbp">Blood Pressure</span> <span class="unit-label">(mmHg)</span></label>
                 </div>
                 <div class="slider-wrapper">
-                    <input type="range" id="sbp-slider" min="80" max="220" value="120" step="1" class="slider">
+                    <input type="range" id="sbp-slider" min="80" max="220" value="120" step="1" class="slider" aria-label="Systolic blood pressure slider">
                     <div class="slider-track-bg segmented" id="sbp-track">
                         <div class="slider-segment safe" style="flex:40"></div>
                         <div class="slider-segment alert" style="flex:10"></div>
@@ -469,7 +408,7 @@
                     <label for="cholHDL-slider"><i data-lucide="droplets" class="lucide-icon ig-icon"></i> <span data-i18n="factors.cholHDL">HDL Cholesterol</span> <span class="unit-label" id="cholHDL-unit">(mg/dL)</span></label>
                 </div>
                 <div class="slider-wrapper">
-                    <input type="range" id="cholHDL-slider" min="20" max="100" value="50" step="1" class="slider">
+                    <input type="range" id="cholHDL-slider" min="20" max="100" value="50" step="1" class="slider" aria-label="HDL cholesterol slider">
                     <div class="slider-track-bg segmented" id="cholHDL-track">
                         <div class="slider-segment danger" style="flex:20"></div>
                         <div class="slider-segment alert" style="flex:21"></div>
@@ -490,7 +429,7 @@
                     <label for="cholTri-slider"><i data-lucide="flask-conical" class="lucide-icon ig-icon"></i> <span data-i18n="factors.cholTri">Blood Fats (Triglycerides)</span> <span class="unit-label" id="cholTri-unit">(mg/dL)</span></label>
                 </div>
                 <div class="slider-wrapper">
-                    <input type="range" id="cholTri-slider" min="50" max="500" value="150" step="1" class="slider">
+                    <input type="range" id="cholTri-slider" min="50" max="500" value="150" step="1" class="slider" aria-label="Triglycerides slider">
                     <div class="slider-track-bg segmented" id="cholTri-track">
                         <div class="slider-segment safe" style="flex:100"></div>
                         <div class="slider-segment alert" style="flex:50"></div>
@@ -509,47 +448,53 @@
         </div>
     </section>
 
-    <!-- ========== CENTER COLUMN: Model Visualization ========== -->
-    <section class="col-panel col-center" id="panel-model" aria-label="Model Visualization">
-        <div class="col-step-label">
-            <span data-i18n="panels.riskAnalysis">Risk Analysis</span>
-        </div>
-        <div class="panel-header-bar">
-            <i data-lucide="bar-chart-3" class="lucide-icon"></i>
-            <h2 data-i18n="panels.riskFactors">Risk Factors</h2>
+    <!-- ========== CENTER COLUMN: Risk Analysis ========== -->
+    <section class="col-panel col-center" id="panel-model" aria-label="Risk Analysis">
+        <div class="panel-header-bar" id="risk-score-card">
+            <i data-lucide="activity" class="lucide-icon"></i>
+            <h2 data-i18n="panels.riskAnalysisTitle">9-Year Diabetes Risk</h2>
             <button class="panel-collapse-btn" data-panel="panel-model" aria-label="Collapse section" aria-expanded="true">
                 <i data-lucide="chevron-up" class="lucide-icon"></i>
             </button>
         </div>
-        <p class="panel-subtitle" data-i18n="panels.riskFactorsSubtitle">Which factors influence risk by how much compared to the average</p>
+        <p class="panel-subtitle" data-i18n="panels.riskAnalysisSubtitle">Your diabetes risk and the factors behind it</p>
         <div class="panel-body">
 
-            <!-- Model Tabs Navigation -->
-            <div class="model-tabs">
-                <button class="model-tab active" data-tab="contributions" data-i18n="panels.contributions">Contributions</button>
-                <button class="model-tab" data-tab="causality" data-i18n="panels.connections">Connections</button>
+            <!-- Risk Field 1: Your Risk -->
+            <div class="risk-field" id="your-risk-field">
+                <div class="risk-field-summary risk-field-summary--centered">
+                    <span class="risk-field-title risk-field-title--two-line" data-i18n="hero.yourRisk">Your Risk</span>
+                    <span class="risk-field-value risk-field-value--centered" aria-live="polite">
+                        <span class="risk-value-main">
+                            <span id="risk-percentage" class="risk-number">0.0</span><span class="risk-unit">%</span>
+                        </span>
+                    </span>
+                </div>
+                <div class="risk-field-body">
+                    <button id="expandHeroBtn" type="button" class="btn-expand-hero" aria-expanded="false">
+                        <i data-lucide="info" class="lucide-icon"></i>
+                        <span id="expandHeroLabel" data-i18n="hero.expandLabel">What does that mean?</span>
+                        <i data-lucide="chevron-down" class="lucide-icon expand-hero-chevron"></i>
+                    </button>
+                    <div id="hero-expandable" class="hero-expandable">
+                        <div id="icon-array" class="icon-array-container"></div>
+                        <p class="icon-array-label" id="icon-array-label"></p>
+                        <p class="hero-subtitle" data-i18n="hero.subtitle">Based on the ARIC Study logistic regression model (Schmidt et al. 2005)</p>
+                    </div>
+                </div>
             </div>
 
-            <!-- Tab Content: Contributions -->
-            <div class="model-tab-content active" id="tab-contributions">
-                <div class="contribution-chart" id="contribution-chart" role="img" aria-label="Risk factor contribution chart"></div>
-            </div>
+            <!-- Contributing Factors Title -->
+            <h3 class="contributing-factors-title" data-i18n="panels.contributingFactors">Contributing Factors</h3>
 
-            <!-- Tab Content: Causality -->
-            <div class="model-tab-content" id="tab-causality">
-                <h3 data-i18n="panels.connectionsTitle">How Your Risk Factors Connect</h3>
-                <p class="card-desc" data-i18n="panels.connectionsDesc">Type 2 diabetes is characterized by insulin resistance and insulin deficiency, among others caused by beta-cell dysfunction. Risk factors can be the cause or caused by this.</p>
-                <div id="causality-chain" class="causality-chain-container"></div>
-            </div>
+            <!-- Contribution Chart -->
+            <div class="contribution-chart" id="contribution-chart" role="img" aria-label="Risk factor contribution chart"></div>
 
         </div>
     </section>
 
     <!-- ========== RIGHT COLUMN: Treatment Recommendations ========== -->
     <section class="col-panel col-right" id="panel-treatment" aria-label="Treatment Recommendations">
-        <div class="col-step-label">
-            <span data-i18n="panels.takeAction">Take Action</span>
-        </div>
         <div class="panel-header-bar">
             <i data-lucide="stethoscope" class="lucide-icon"></i>
             <h2 data-i18n="panels.whatCanIDo">What Can I Do?</h2>
@@ -559,6 +504,20 @@
         </div>
         <p class="panel-subtitle" data-i18n="panels.takeActionSubtitle">Evidence-based steps to reduce your risk</p>
         <div class="panel-body">
+            <!-- Simulation Results: shown when at least one treatment is simulated -->
+            <div id="simulation-results" style="display:none">
+                <div class="sim-risk-card">
+                    <span class="sim-risk-label">Your Risk with<br>Chosen Treatment</span>
+                    <div class="risk-field-value risk-field-value--centered" aria-live="polite">
+                        <div class="risk-value-main">
+                            <span id="chosen-risk-percentage" class="risk-number">0.0</span><span id="chosen-risk-unit" class="risk-unit">%</span>
+                        </div>
+                    </div>
+                    <!-- keep orig-risk-display for JS but hidden — still updated by renderChosenRisk -->
+                    <span id="orig-risk-display" style="display:none">0.0</span>
+                </div>
+                <div id="treatment-reduction-badge" class="treatment-reduction-badge" style="display:none"></div>
+            </div>
             <div class="treatment-overview" id="treatment-overview" role="region" aria-live="polite" aria-label="Treatment overview with expandable recommendations sorted by risk contribution">
                 <!-- Populated by ui-controller.js -->
             </div>
@@ -578,7 +537,6 @@
 <script src="js/ui-helpers.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/ui-controller.js"></script>
-<script src="js/timeline-chart.js"></script>
 <script src="js/app.js"></script>
 <script src="js/crypto-service.js"></script>
 <script src="js/patient-manager.js"></script>
@@ -822,12 +780,12 @@
                 <!-- Checkboxes -->
                 <div class="checkbox-group">
                     <label class="checkbox-option">
-                        <input type="checkbox" id="encRememberSession">
+                        <input type="checkbox" id="encRememberSession" aria-label="Remember password for this session">
                         <span class="checkbox-custom"></span>
                         <span>Remember password for this session</span>
                     </label>
                     <label class="checkbox-option">
-                        <input type="checkbox" id="encSetDefault">
+                        <input type="checkbox" id="encSetDefault" aria-label="Set as default for all exports">
                         <span class="checkbox-custom"></span>
                         <span>Set as default for all exports</span>
                     </label>
