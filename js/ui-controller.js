@@ -216,8 +216,16 @@ DRC.UIController = (() => {
 
     /** Display the risk percentage with preattentive color glow. */
     const renderRisk = (pct) => {
-        setText('risk-percentage', pct.toFixed(1));
-        const { color, level } = getRiskLevel(pct);
+        // Handle edge cases: NaN, Infinity, negative values
+        if (!isFinite(pct) || pct < 0) {
+            console.warn('UIController: Invalid risk percentage:', pct);
+            setText('risk-percentage', '---');
+            return;
+        }
+        // Clamp to valid range [0, 100]
+        const safePct = Math.min(Math.max(pct, 0), 100);
+        setText('risk-percentage', safePct.toFixed(1));
+        const { color, level } = getRiskLevel(safePct);
 
         // Color the percentage text
         const riskEl = el('risk-percentage');
@@ -234,7 +242,7 @@ DRC.UIController = (() => {
         // Update risk bar marker
         const marker = el('risk-bar-marker');
         if (marker) {
-            marker.style.left = `${Math.min(pct, 100)}%`;
+            marker.style.left = `${Math.min(safePct, 100)}%`;
             marker.style.borderColor = color;
         }
     };
@@ -1035,7 +1043,8 @@ DRC.UIController = (() => {
     const renderWhatIfBadge = (field, delta) => {
         const badge = el(`what-if-${field}`);
         if (!badge) return;
-        if (Math.abs(delta) < 0.01) {
+        // Handle edge cases: NaN, Infinity
+        if (!isFinite(delta) || Math.abs(delta) < 0.01) {
             badge.className = 'what-if-badge';
             badge.textContent = '';
             return;
@@ -1054,8 +1063,17 @@ DRC.UIController = (() => {
         const label     = el('icon-array-label');
         if (!container) return;
 
-        const affected = Math.round(riskPct);
-        container.innerHTML = '';
+        // Handle edge cases: NaN, Infinity
+        if (!isFinite(riskPct)) {
+            // Clear container safely
+            while (container.firstChild) container.removeChild(container.firstChild);
+            if (label) label.textContent = t('iconArray.error', 'Unable to calculate risk visualization');
+            return;
+        }
+
+        const affected = Math.min(Math.max(Math.round(riskPct), 0), 100);
+        // Clear container safely (remove all children)
+        while (container.firstChild) container.removeChild(container.firstChild);
         for (let i = 0; i < 100; i++) {
             const icon = document.createElement('div');
             icon.className = `icon-array-item${i < affected ? ' affected' : ''}`;
@@ -1074,8 +1092,15 @@ DRC.UIController = (() => {
      * @param {number} [originalPct] — Pre-simulation risk percentage for reduction display.
      */
     const renderChosenRisk = (pct, originalPct) => {
-        setText('chosen-risk-percentage', pct.toFixed(1));
-        const { color } = getRiskLevel(pct);
+        // Handle edge cases: NaN, Infinity
+        if (!isFinite(pct)) {
+            setText('chosen-risk-percentage', '---');
+            return;
+        }
+        // Clamp to valid range
+        const safePct = Math.min(Math.max(pct, 0), 100);
+        setText('chosen-risk-percentage', safePct.toFixed(1));
+        const { color } = getRiskLevel(safePct);
         const chosenEl = el('chosen-risk-percentage');
         if (chosenEl) chosenEl.style.color = color;
 
@@ -1095,7 +1120,7 @@ DRC.UIController = (() => {
         // Update the risk bar marker position and color
         const marker = el('chosen-risk-bar-marker');
         if (marker) {
-            marker.style.left = `${Math.min(pct, 100)}%`;
+            marker.style.left = `${Math.min(safePct, 100)}%`;
             marker.style.borderColor = color;
         }
 

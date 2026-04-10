@@ -9,6 +9,7 @@ memory/
 # Claude AI project instructions
 CLAUDE.md
 .impeccable.md
+.Claude
 
 # Documentation and prompts (internal)
 docs/

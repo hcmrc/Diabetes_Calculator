@@ -167,6 +167,40 @@
     }
 
     /**
+     * Validate file for OCR processing.
+     * @param {File} file - The file to validate.
+     * @returns {File|null} The file if valid, null otherwise.
+     */
+    function validateFile(file) {
+        // Check file exists
+        if (!file) return null;
+
+        // Max file size: 10MB for images, 20MB for PDFs
+        const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+        const MAX_PDF_SIZE = 20 * 1024 * 1024; // 20MB
+        const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+        const maxSize = isPDF ? MAX_PDF_SIZE : MAX_IMAGE_SIZE;
+
+        if (file.size > maxSize) {
+            const sizeMB = Math.round(file.size / (1024 * 1024));
+            const maxMB = Math.round(maxSize / (1024 * 1024));
+            showError(`File "${file.name}" is too large (${sizeMB}MB). Maximum size is ${maxMB}MB.`);
+            return null;
+        }
+
+        // Validate file type
+        const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/bmp', 'image/webp', 'image/tiff'];
+        const isValidType = isPDF || allowedImageTypes.includes(file.type);
+
+        if (!isValidType) {
+            showError(`File "${file.name}" has unsupported type (${file.type || 'unknown'}). Please upload an image (JPG, PNG, GIF, BMP, WebP, TIFF) or PDF.`);
+            return null;
+        }
+
+        return file;
+    }
+
+    /**
      * Verarbeitet eine Datei
      */
     async function processFile(file) {
@@ -637,7 +671,9 @@
             elements.dropzone.addEventListener('drop', (e) => {
                 e.preventDefault();
                 elements.dropzone.classList.remove('drag-over');
-                const files = Array.from(e.dataTransfer.files);
+                const files = Array.from(e.dataTransfer.files)
+                    .map(validateFile)
+                    .filter(f => f !== null);
                 if (files.length > 0) {
                     if (files.length === 1) {
                         processFile(files[0]);
@@ -651,7 +687,9 @@
         // File Input (for file upload)
         if (elements.fileInput) {
             elements.fileInput.addEventListener('change', (e) => {
-                const files = Array.from(e.target.files);
+                const files = Array.from(e.target.files)
+                    .map(validateFile)
+                    .filter(f => f !== null);
                 if (files.length > 0) {
                     if (files.length === 1) {
                         processFile(files[0]);
@@ -667,7 +705,7 @@
         // Camera Input (for camera capture)
         if (elements.cameraInput) {
             elements.cameraInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
+                const file = validateFile(e.target.files[0]);
                 if (file) processFile(file);
                 // Reset input so same photo can be taken again
                 e.target.value = '';

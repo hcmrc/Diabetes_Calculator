@@ -550,11 +550,34 @@ DRC.PatientManager = (() => {
         renderList();
     };
 
+    /**
+     * Sanitize patient name to prevent XSS and normalize input.
+     * @param {string} name - Raw name input.
+     * @returns {string|null} Sanitized name or null if invalid.
+     */
+    const _sanitizePatientName = (name) => {
+        if (!name || typeof name !== 'string') return null;
+        // Trim whitespace and normalize
+        let sanitized = name.trim();
+        // Limit length (HTML maxlength should enforce, but double-check)
+        if (sanitized.length === 0 || sanitized.length > 60) return null;
+        // Remove control characters and potentially dangerous content
+        // Allow: letters, numbers, spaces, common punctuation, international chars
+        // Block: < > " ' & and control characters
+        sanitized = sanitized
+            .replace(/[<>"'&]/g, '')
+            .replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+        // Final trim after sanitization
+        sanitized = sanitized.trim();
+        return sanitized.length > 0 ? sanitized : null;
+    };
+
     const addPatient = (name) => {
-        if (!name?.trim()) return null;
+        const sanitizedName = _sanitizePatientName(name);
+        if (!sanitizedName) return null;
         const data = captureCurrentValues();
         const patient = {
-            id: generateId(), name: name.trim(), data,
+            id: generateId(), name: sanitizedName, data,
             riskPct: data._riskPct, savedAt: new Date().toISOString()
         };
         patients.push(patient);
@@ -580,10 +603,11 @@ DRC.PatientManager = (() => {
     };
 
     const renamePatient = (id, newName) => {
-        if (!newName?.trim()) return false;
+        const sanitizedName = _sanitizePatientName(newName);
+        if (!sanitizedName) return false;
         const patient = patients.find(p => p.id === id);
         if (!patient) return false;
-        patient.name = newName.trim();
+        patient.name = sanitizedName;
         _persistAndRender();
         updateNavLabel();
         return true;

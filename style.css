@@ -1727,7 +1727,7 @@ body.ocr-modal-open .col-step-label {
     border: none;
     border-radius: 10px;
     cursor: pointer;
-    transition: all 0.25s ease;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
     letter-spacing: -0.01em;
     width: 100%;
     justify-content: center;
@@ -2050,7 +2050,7 @@ body.ocr-modal-open .col-step-label {
     border: 1px solid transparent;
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
     text-align: center;
     white-space: nowrap;
 }
@@ -2875,7 +2875,7 @@ body.ocr-modal-open .col-step-label {
     border: none;
     border-radius: 10px;
     cursor: pointer;
-    transition: all 0.25s ease;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease, opacity 0.25s ease;
     letter-spacing: -0.01em;
 }
 
@@ -3382,7 +3382,7 @@ body.ocr-modal-open .col-step-label {
     font-weight: 600;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
 }
 
 .btn-restart-setup:hover {
@@ -4255,7 +4255,7 @@ body.ocr-modal-open .col-step-label {
     border: 1px solid var(--border);
     border-radius: var(--radius);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
 }
 
 .radio-option:hover {
@@ -4455,7 +4455,7 @@ body.ocr-modal-open .col-step-label {
     border: 1px solid var(--primary-glow);
     border-radius: 16px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
 }
 
 .quick-option-btn:hover {
@@ -4553,7 +4553,7 @@ body.ocr-modal-open .col-step-label {
     font-weight: 600;
     border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
     border: none;
 }
 
@@ -4736,7 +4736,7 @@ body.ocr-modal-open .col-step-label {
     border: 2px dashed var(--border);
     border-radius: var(--radius-lg);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
 }
 
 .ocr-dropzone:hover,
@@ -4789,7 +4789,7 @@ body.ocr-modal-open .col-step-label {
     font-weight: 500;
     min-height: 48px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
 }
 
 .ocr-camera-btn:hover {
@@ -4890,7 +4890,7 @@ body.ocr-modal-open .col-step-label {
     gap: var(--space-3);
     padding: var(--space-3);
     border-radius: var(--radius);
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
 }
 
 .ocr-status-step.active {
@@ -4978,7 +4978,7 @@ body.ocr-modal-open .col-step-label {
     background: var(--bg-elevated);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
 }
 
 .ocr-result-item.high {
@@ -5302,7 +5302,7 @@ body.ocr-modal-open .col-step-label {
         font-weight: 600;
         min-height: 120px;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
     }
 
     .ocr-camera-btn:hover,
@@ -5665,22 +5665,20 @@ body.ocr-modal-open .col-step-label {
     }
 }
 
-/* Blur inactive sections during tutorial.
+/* Blur inactive sections during tutorial - Optimized for performance.
    NOTE: .main-grid must NOT be listed here — it is the parent of .col-panel elements.
-   A CSS filter on a parent creates a new stacking context: all children are blurred
-   as part of the parent's painted layer, and a child's filter:none cannot undo it.
-   Blurring only the individual panels (.col-panel) lets tutorial-highlight correctly
-   unblur the active panel via filter:none !important. */
+   Using contain: layout paint to optimize compositing and reduce GPU overhead. */
 body.tutorial-active .col-panel,
 body.tutorial-active nav.top-nav,
 body.tutorial-active #settingsPanel,
 body.tutorial-active #patientDrawer,
 body.tutorial-active #patientOverlay,
 body.tutorial-active .modal-overlay:not(#tutorialOverlay):not(#tutorialNav):not(.tutorial-card) {
-    filter: blur(3px);
-    opacity: 0.35;
-    transition: filter 0.25s ease, opacity 0.25s ease;
+    filter: blur(2px);
+    opacity: 0.4;
+    transition: filter 0.2s ease, opacity 0.2s ease;
     pointer-events: none !important;
+    contain: layout paint;
 }
 
 /* Active (highlighted) section: no blur, but NO interactions during tutorial */
@@ -5689,8 +5687,22 @@ body.tutorial-active .tutorial-highlight {
     opacity: 1 !important;
     position: relative;
     z-index: 8000;
-    transition: filter 0.25s ease, opacity 0.25s ease;
+    transition: opacity 0.2s ease;
     pointer-events: none;
+    contain: layout;
+}
+
+/* Respect reduced motion preference for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    body.tutorial-active .col-panel,
+    body.tutorial-active nav.top-nav,
+    body.tutorial-active #settingsPanel,
+    body.tutorial-active #patientDrawer,
+    body.tutorial-active #patientOverlay,
+    body.tutorial-active .modal-overlay:not(#tutorialOverlay):not(#tutorialNav):not(.tutorial-card) {
+        filter: none;
+        opacity: 0.6;
+    }
 }
 
 /* Ensure panel headers and ALL headings remain clearly visible during tutorial */
@@ -5885,18 +5897,27 @@ body.tutorial-active {
    LANDING PAGE
    ============================================================================ */
 
-/* Landing Page Overlay */
+/* Landing Page Overlay - Optimized blur for better performance */
 .landing-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    will-change: backdrop-filter;
     z-index: 10000;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: var(--space-5);
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+    .landing-overlay {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
 }
 
 .landing-overlay[hidden] {
@@ -5958,7 +5979,7 @@ body.tutorial-active {
     height: 8px;
     border-radius: var(--radius-full);
     background: var(--border-strong);
-    transition: all 0.25s ease;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease, opacity 0.25s ease;
 }
 
 .progress-dot.active {
@@ -5984,7 +6005,7 @@ body.tutorial-active {
     font-weight: 500;
     cursor: pointer;
     border-radius: var(--radius-sm);
-    transition: all 0.15s ease;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, opacity 0.15s ease;
 }
 
 .restart-btn:hover {
@@ -6166,7 +6187,7 @@ body.tutorial-active {
     border-radius: var(--radius);
     border: none;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
     min-width: 200px;
     background: var(--primary);
     color: white;
@@ -6195,7 +6216,7 @@ body.tutorial-active {
     font-weight: 600;
     color: var(--text-primary);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
     width: 100%;
     max-width: 280px;
 }
@@ -6220,7 +6241,7 @@ body.tutorial-active {
     font-weight: 500;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, opacity 0.15s ease;
 }
 
 .landing-restart-link:hover {
@@ -6287,7 +6308,7 @@ body.tutorial-active {
     border-radius: var(--radius);
     padding: var(--space-5);
     cursor: pointer;
-    transition: all 0.25s ease;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease, opacity 0.25s ease;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -6317,7 +6338,7 @@ body.tutorial-active {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    transition: all 0.25s ease;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease, opacity 0.25s ease;
 }
 
 .landing-card .card-icon .lucide-icon {
@@ -6360,7 +6381,7 @@ body.tutorial-active {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.25s ease;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease, opacity 0.25s ease;
 }
 
 .landing-card.selected .check-indicator {
@@ -6392,7 +6413,7 @@ body.tutorial-active {
     border-radius: var(--radius);
     border: none;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
 }
 
 .btn-lg {
@@ -6434,7 +6455,7 @@ body.tutorial-active {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    transition: all 0.25s ease;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease, opacity 0.25s ease;
 }
 
 .landing-card-icon .lucide-icon {
@@ -6613,7 +6634,7 @@ body.tutorial-active {
     align-items: center;
     justify-content: space-between;
     cursor: pointer;
-    transition: all 0.25s ease;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease, opacity 0.25s ease;
 }
 
 .landing-tutorial-toggle:hover {
@@ -6667,7 +6688,7 @@ body.tutorial-active {
     background: var(--border-strong);
     border-radius: 14px;
     position: relative;
-    transition: all 0.25s ease;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease, opacity 0.25s ease;
     flex-shrink: 0;
 }
 
@@ -7068,5 +7089,396 @@ body.tutorial-active {
     .col-panel .panel-body,
     .col-panel .panel-subtitle {
         transition: none;
+    }
+}
+
+
+/* ============================================
+   HARDENING: TEXT OVERFLOW & RESILIENCE
+   ============================================ */
+
+/* Input labels - prevent overflow with long translations */
+.input-label-row label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Factor value rows - prevent overflow */
+.factor-value-row {
+    min-width: 0;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+/* Value inputs - allow shrinking */
+.value-input {
+    min-width: 60px;
+    max-width: 100%;
+}
+
+/* Toggle options - prevent overflow */
+.toggle-option {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Section summary - allow wrapping for long translations */
+.section-summary {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    hyphens: auto;
+}
+
+/* Patient name in drawer - already has ellipsis, add title attribute support */
+.pd-patient-name {
+    cursor: default;
+}
+
+/* Settings option labels - prevent overflow */
+.settings-option-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 120px;
+}
+
+/* Settings model label - prevent overflow */
+.settings-model-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 140px;
+}
+
+/* Treatment titles - prevent overflow */
+.chosen-treatment-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* What-if badges - prevent overflow */
+.what-if-badge {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Nav brand - prevent overflow */
+.nav-brand {
+    min-width: 0;
+}
+
+.nav-brand span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Contribution chart labels - prevent overflow */
+.contrib-label-full,
+.contrib-label-short {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ============================================
+   HARDENING: INPUT VALIDATION STATES
+   ============================================ */
+
+/* Invalid input state */
+.value-input:invalid,
+.pd-input:invalid {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 2px var(--danger-light);
+}
+
+/* Input focus-visible for keyboard navigation */
+.value-input:focus-visible,
+.pd-input:focus-visible,
+.slider:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* Disabled input state */
+.value-input:disabled,
+.slider:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ============================================
+   HARDENING: ERROR STATES & MESSAGES
+   ============================================ */
+
+/* Error message container */
+.error-message {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--danger-light);
+    border: 1px solid var(--danger-border);
+    border-radius: var(--radius);
+    color: var(--danger);
+    font-size: var(--text-sm);
+    margin: 8px 0;
+}
+
+.error-message .lucide-icon {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+}
+
+/* Warning message container */
+.warning-message {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--alert-light);
+    border: 1px solid var(--alert-border);
+    border-radius: var(--radius);
+    color: var(--alert);
+    font-size: var(--text-sm);
+    margin: 8px 0;
+}
+
+/* Success message container */
+.success-message {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--safe-light);
+    border: 1px solid var(--safe-border);
+    border-radius: var(--radius);
+    color: var(--safe);
+    font-size: var(--text-sm);
+    margin: 8px 0;
+}
+
+/* ============================================
+   HARDENING: LOADING STATES
+   ============================================ */
+
+/* Loading spinner */
+.loading-spinner {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Skeleton loading */
+.skeleton {
+    background: linear-gradient(90deg, var(--bg-elevated) 25%, var(--border) 50%, var(--bg-elevated) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: var(--radius-sm);
+}
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Button loading state */
+.btn-loading {
+    position: relative;
+    color: transparent !important;
+    pointer-events: none;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+/* ============================================
+   HARDENING: EMPTY STATES
+   ============================================ */
+
+/* Empty state container */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 24px;
+    text-align: center;
+    color: var(--text-tertiary);
+}
+
+.empty-state-icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 16px;
+    color: var(--text-tertiary);
+    opacity: 0.5;
+}
+
+.empty-state-title {
+    font-size: var(--text-md);
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.empty-state-text {
+    font-size: var(--text-sm);
+    line-height: 1.5;
+    max-width: 280px;
+}
+
+/* ============================================
+   HARDENING: ACCESSIBILITY IMPROVEMENTS
+   ============================================ */
+
+/* Visually hidden but accessible */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Focus visible styles */
+*:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* Skip link for keyboard users */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--primary);
+    color: white;
+    padding: 8px 16px;
+    z-index: 1000;
+    transition: top 0.3s;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .slider-track-bg,
+    .toggle-slider,
+    .btn-primary,
+    .btn-secondary {
+        border: 1px solid currentColor;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .loading-spinner,
+    .skeleton,
+    .btn-loading::after {
+        animation: none;
+    }
+
+    .skeleton {
+        background: var(--border);
+    }
+}
+
+/* ============================================
+   HARDENING: RTL SUPPORT (INTERNATIONALIZATION)
+   ============================================ */
+
+/* RTL layout support */
+[dir="rtl"] .input-label-row label {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .factor-value-row {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .toggle-group {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .toggle-option:first-child {
+    text-align: left;
+}
+
+[dir="rtl"] .toggle-option:last-child {
+    text-align: right;
+}
+
+/* ============================================
+   HARDENING: TEXT SCALING SUPPORT
+   ============================================ */
+
+/* Support for browser zoom up to 200% */
+@media (max-width: 800px) and (min-resolution: 1.5dppx) {
+    :root {
+        --text-hero: 2rem;
+        --text-2xl: 1.5rem;
+    }
+}
+
+/* Ensure touch targets remain accessible */
+@media (pointer: coarse) {
+    .btn-primary,
+    .btn-secondary,
+    .btn-reset {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    /* Expand toggle touch target without changing visual size */
+    .toggle-switch {
+        position: relative;
+    }
+
+    .toggle-switch::after {
+        content: "";
+        position: absolute;
+        inset: -11px -3px;
+    }
+
+    /* Value inputs: only slightly taller, not bloated */
+    .value-input {
+        min-height: 36px;
     }
 }
