@@ -14,6 +14,7 @@
 
     let _pendingFactor = null;
     let _modalResolve = null;
+    let _sessionDismissed = false;
 
     function hasActiveProfile() {
         const patientData = DRC.PatientManager?.getActivePatientData?.();
@@ -109,6 +110,7 @@
 
         if (hasActiveProfile()) return true;
         if (!checkForUnsavedData()) return true;
+        if (_sessionDismissed) return true;
 
         const choice = await showModal();
 
@@ -116,6 +118,7 @@
             openPatientDrawer();
             return 'pending';
         } else if (choice === 'continue') {
+            _sessionDismissed = true;
             return true;
         }
         return false;
@@ -163,6 +166,7 @@
 
         if (DRC.App?.on) {
             DRC.App.on('patient:saved', () => {
+                _sessionDismissed = false;
                 if (_pendingFactor && hasActiveProfile()) {
                     const factor = _pendingFactor;
                     _pendingFactor = null;
