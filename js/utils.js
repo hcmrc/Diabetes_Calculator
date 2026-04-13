@@ -93,13 +93,64 @@
         };
     };
 
+    /**
+     * Create a focus trap for a container element.
+     * Keeps Tab/Shift+Tab cycling within the container's focusable elements.
+     * @param {HTMLElement} container - The container to trap focus within
+     * @returns {Object} Focus trap with activate() and deactivate() methods
+     */
+    const createFocusTrap = (container) => {
+        const focusableSelectors = 'button:not(:disabled), [href], input:not(:disabled):not([type="hidden"]), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"]):not(:disabled)';
+
+        const getFocusable = () => {
+            const all = container.querySelectorAll(focusableSelectors);
+            // Filter to visible elements only
+            return Array.from(all).filter(el => el.offsetParent !== null);
+        };
+
+        const handleKeydown = (e) => {
+            if (e.key !== 'Tab') return;
+            const focusable = getFocusable();
+            if (focusable.length === 0) return;
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (e.shiftKey) {
+                if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+            } else {
+                if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+            }
+        };
+
+        const handleFocusin = (e) => {
+            if (!container.contains(e.target)) {
+                const first = container.querySelector(focusableSelectors);
+                if (first) first.focus();
+            }
+        };
+
+        return {
+            activate() {
+                container.addEventListener('keydown', handleKeydown);
+                document.addEventListener('focusin', handleFocusin);
+                // Move focus to first focusable element
+                const first = container.querySelector(focusableSelectors);
+                if (first) first.focus();
+            },
+            deactivate() {
+                container.removeEventListener('keydown', handleKeydown);
+                document.removeEventListener('focusin', handleFocusin);
+            }
+        };
+    };
+
     // Export utilities under DRC.Utils
     DRC.Utils = {
         createTranslator,
         debounce,
         createElement,
         escapeHtml,
-        createElementCache
+        createElementCache,
+        createFocusTrap
     };
 
 })();

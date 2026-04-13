@@ -68,10 +68,14 @@ DRC.UIController = (() => {
             element.textContent = options.text;
         }
 
-        // Set inline styles
+        // Set inline styles (CSS custom properties use setProperty)
         if (options.style) {
             Object.entries(options.style).forEach(([key, value]) => {
-                element.style[key] = value;
+                if (key.startsWith('--')) {
+                    element.style.setProperty(key, value);
+                } else {
+                    element.style[key] = value;
+                }
             });
         }
 
@@ -105,7 +109,7 @@ DRC.UIController = (() => {
 
     // ─── Slider management ──────────────────────────────────────────────
 
-    /** Update the colored fill width of a single slider track. */
+    /** Update the colored fill (via scaleX transform) of a single slider track. */
     const updateSliderFill = (field) => {
         const slider = el(`${field}-slider`);
         const fill   = el(`${field}-fill`);
@@ -114,7 +118,7 @@ DRC.UIController = (() => {
         const pct = range > 0
             ? ((parseFloat(slider.value) - parseFloat(slider.min)) / range) * 100
             : 0;
-        fill.style.width = `${pct}%`;
+        fill.style.transform = `scaleX(${pct / 100})`;
     };
 
     /** Update all slider fills at once. */
@@ -266,13 +270,32 @@ DRC.UIController = (() => {
         }
 
         if (!_rowClickHandlerAttached) {
+            const toggleContribRow = (row) => {
+                const wasOpen = row.classList.contains('expanded');
+                container.querySelectorAll('.contrib-row.expanded').forEach(r => {
+                    r.classList.remove('expanded');
+                    r.setAttribute('aria-expanded', 'false');
+                });
+                if (!wasOpen) {
+                    row.classList.add('expanded');
+                    row.setAttribute('aria-expanded', 'true');
+                }
+            };
+
             container.addEventListener('click', (e) => {
                 const row = e.target.closest('.contrib-row[data-field]');
                 if (!row) return;
-                const wasOpen = row.classList.contains('expanded');
-                container.querySelectorAll('.contrib-row.expanded').forEach(r => r.classList.remove('expanded'));
-                if (!wasOpen) row.classList.add('expanded');
+                toggleContribRow(row);
             });
+
+            container.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                const row = e.target.closest('.contrib-row[data-field]');
+                if (!row) return;
+                e.preventDefault();
+                toggleContribRow(row);
+            });
+
             _rowClickHandlerAttached = true;
         }
     };
@@ -422,7 +445,12 @@ DRC.UIController = (() => {
 
         const row = createSafeElement('div', {
             className: 'contrib-row',
-            attrs: { 'data-field': key }
+            attrs: {
+                'data-field': key,
+                tabindex: '0',
+                role: 'button',
+                'aria-expanded': 'false'
+            }
         });
 
         // Build inner row
@@ -439,7 +467,7 @@ DRC.UIController = (() => {
         if (!isPositive) {
             const barFill = createSafeElement('div', {
                 className: 'contrib-bar-fill bar-negative',
-                style: { width: barWidth + '%' }
+                style: { transform: `scaleX(${barWidth / 100})` }
             });
             barLeft.appendChild(barFill);
         }
@@ -450,7 +478,7 @@ DRC.UIController = (() => {
         if (isPositive) {
             const barFill = createSafeElement('div', {
                 className: 'contrib-bar-fill bar-positive',
-                style: { width: barWidth + '%' }
+                style: { transform: `scaleX(${barWidth / 100})` }
             });
             barRight.appendChild(barFill);
         }
@@ -516,7 +544,7 @@ DRC.UIController = (() => {
     const renderContributionChart = (summaryData) => {
         const container = el('contribution-chart');
         if (!container) return;
-        container.innerHTML = '';
+        container.replaceChildren();
 
         const { contributions } = summaryData;
         const activeModel = DRC.App?.getActiveModel?.();
@@ -736,7 +764,12 @@ DRC.UIController = (() => {
         // Label row — always clickable (expand/collapse)
         const labelRow = createSafeElement('div', {
             className: 'tov-label-row tov-clickable',
-            attrs: { 'data-toggle-factor': factor }
+            attrs: {
+                'data-toggle-factor': factor,
+                tabindex: '0',
+                role: 'button',
+                'aria-expanded': isIndicated ? 'true' : 'false'
+            }
         });
         const titleText = t(`treatments.${factor}.title`, treatment.title);
         const titleSpan = createSafeElement('span', {
@@ -784,7 +817,7 @@ DRC.UIController = (() => {
         const barContainer = createSafeElement('div', { className: 'tov-bar-container' });
         const bar = createSafeElement('div', {
             className: ['tov-bar', isAboveAverage ? 'bar-indicated' : 'bar-normal'],
-            style: { width: barWidth + '%' }
+            style: { transform: `scaleX(${barWidth / 100})` }
         });
         barContainer.appendChild(bar);
 
@@ -880,8 +913,11 @@ DRC.UIController = (() => {
             if (clickable) {
                 const row = clickable.closest('.treatment-overview-row');
                 if (row) {
-                    row.querySelector('.tov-details')?.classList.toggle('expanded');
+                    const details = row.querySelector('.tov-details');
+                    details?.classList.toggle('expanded');
                     row.querySelector('.tov-chevron')?.classList.toggle('collapsed');
+                    const isExpanded = details?.classList.contains('expanded');
+                    clickable.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
                 }
                 return;
             }
@@ -906,6 +942,21 @@ DRC.UIController = (() => {
                 if (simFactor && DRC.TreatmentSimulator?.unsimulate) {
                     DRC.TreatmentSimulator.unsimulate(simFactor);
                 }
+            }
+        });
+
+        container.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            const clickable = e.target.closest('.tov-clickable');
+            if (!clickable) return;
+            e.preventDefault();
+            const row = clickable.closest('.treatment-overview-row');
+            if (row) {
+                const details = row.querySelector('.tov-details');
+                details?.classList.toggle('expanded');
+                row.querySelector('.tov-chevron')?.classList.toggle('collapsed');
+                const isExpanded = details?.classList.contains('expanded');
+                clickable.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
             }
         });
 
@@ -962,7 +1013,7 @@ DRC.UIController = (() => {
     const renderTreatmentOverview = ({ elevatedFactors, waistIsHigh }, contributions = {}, marginalContributions = {}) => {
         const container = el('treatment-overview');
         if (!container) return;
-        container.innerHTML = '';
+        container.replaceChildren();
 
         // Check if risk-factors-only filter is active
         const contribContainer = el('contribution-chart');
@@ -1034,7 +1085,7 @@ DRC.UIController = (() => {
     /** Legacy no-op kept for API compatibility. */
     const renderTreatmentRecommendations = () => {
         const c = el('dynamic-treatments');
-        if (c) c.innerHTML = '';
+        if (c) c.replaceChildren();
     };
 
     // ─── Rendering: What-if badges ──────────────────────────────────────
@@ -1194,28 +1245,28 @@ DRC.UIController = (() => {
         // Build safe segment
         const safeSegment = createSafeElement('div', {
             className: 'slider-segment safe',
-            style: { flex: String(safeFlex) }
+            style: { '--flex': String(safeFlex) }
         });
         track.appendChild(safeSegment);
 
         // Build danger segment
         const dangerSegment = createSafeElement('div', {
             className: 'slider-segment danger',
-            style: { flex: String(dangerFlex) }
+            style: { '--flex': String(dangerFlex) }
         });
         track.appendChild(dangerSegment);
 
         // Build labels
         const minLabel = createSafeElement('span', {
-            style: { flex: String(safeFlex), textAlign: 'left' },
+            style: { '--flex': String(safeFlex), textAlign: 'left' },
             text: String(min)
         });
         const thresholdLabel = createSafeElement('span', {
-            style: { flex: '0', whiteSpace: 'nowrap' },
+            style: { '--flex': '0', whiteSpace: 'nowrap' },
             text: String(threshold)
         });
         const maxLabel = createSafeElement('span', {
-            style: { flex: String(dangerFlex), textAlign: 'right' },
+            style: { '--flex': String(dangerFlex), textAlign: 'right' },
             text: String(max)
         });
         labels.appendChild(minLabel);

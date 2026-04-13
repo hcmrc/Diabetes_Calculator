@@ -23,7 +23,8 @@ DRC.DarkMode = (() => {
         if (savedPreference === THEME_DARK || savedPreference === THEME_LIGHT) {
             currentTheme = savedPreference;
         } else {
-            currentTheme = THEME_LIGHT; // Default to light mode
+            // No saved preference — follow system preference
+            currentTheme = systemPreference;
         }
 
         applyTheme(currentTheme);

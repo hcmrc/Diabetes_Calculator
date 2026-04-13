@@ -240,6 +240,11 @@ DRC.TreatmentSimulator = (() => {
         resetSimulated: () => { cancel(); _simulated.clear(); },
         cancel,
         /**
+         * Whether an animation is currently in progress.
+         * Used by App to skip heavy DOM rebuilds during animation ticks.
+         */
+        isAnimating: () => _animating,
+        /**
          * Return a plain object of {factor: originalValue} for factors
          * that have been simulated (used by App to compute the
          * pre-simulation "Your Risk" value).

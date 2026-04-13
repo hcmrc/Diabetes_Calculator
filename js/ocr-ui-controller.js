@@ -16,6 +16,8 @@
 
     // State
     let currentResult = null;
+    let _focusTrap = null;
+    let _previousFocusElement = null;
     let currentResults = [];  // For multiple files
     let isProcessing = false;
     let currentFileIndex = 0;
@@ -84,6 +86,11 @@
 
             // Hide step indicator in main app
             document.body.classList.add('ocr-modal-open');
+
+            // Focus trap: store previous focus and activate
+            _previousFocusElement = document.activeElement;
+            _focusTrap = DRC.Utils.createFocusTrap(elements.modal);
+            _focusTrap.activate();
         }
         showStep('upload');
     }
@@ -95,6 +102,10 @@
         if (!elements.modal) return;
         elements.modal.classList.remove('open');
         elements.modal.setAttribute('aria-hidden', 'true');
+
+        // Focus trap: deactivate and restore focus
+        if (_focusTrap) { _focusTrap.deactivate(); _focusTrap = null; }
+        if (_previousFocusElement) { _previousFocusElement.focus(); _previousFocusElement = null; }
 
         // Show step indicator again
         document.body.classList.remove('ocr-modal-open');
@@ -125,7 +136,16 @@
             error: 'Processing Error'
         };
         if (elements.modalTitle) {
-            elements.modalTitle.innerHTML = `<i data-lucide="${stepName === 'error' ? 'alert-circle' : 'scan-line'}" class="lucide-icon"></i> ${titles[stepName]}`;
+            // Clear existing content safely
+            elements.modalTitle.textContent = '';
+            // Create icon element safely
+            const iconName = stepName === 'error' ? 'alert-circle' : 'scan-line';
+            const iconEl = document.createElement('i');
+            iconEl.setAttribute('data-lucide', iconName);
+            iconEl.className = 'lucide-icon';
+            elements.modalTitle.appendChild(iconEl);
+            // Add text safely
+            elements.modalTitle.appendChild(document.createTextNode(' ' + titles[stepName]));
             DRC.UIHelpers.refreshIcons();
         }
     }
@@ -136,7 +156,7 @@
     function resetState() {
         currentResult = null;
         isProcessing = false;
-        if (elements.resultsGrid) elements.resultsGrid.innerHTML = '';
+        if (elements.resultsGrid) elements.resultsGrid.textContent = '';
         updateProgress(0);
     }
 
@@ -382,39 +402,74 @@
         let needsReview = 0;
         let notFound = 0;
 
-        let html = '';
+        // Clear grid safely before building DOM nodes
+        elements.resultsGrid.textContent = '';
 
-        // Patient name section (separate, at the top)
+        // --- Patient name section (separate, at the top) ---
         const patientName = values.patientName;
-        let profileName = DRC.Utils.escapeHtml(patientName || 'Unknown Profile');
+        const profileName = patientName || 'Unknown Profile';
+        const patientConfidenceClass = patientName ? 'high' : 'none';
 
-        html += `
-            <div class="ocr-result-item ${patientName ? 'high' : 'none'}" data-field="patientName">
-                <div class="ocr-result-header">
-                    <span class="ocr-result-field-name">Profile Name</span>
-                    <span class="ocr-result-confidence ${patientName ? 'high' : 'none'}">
-                        <i data-lucide="user" class="lucide-icon"></i>
-                    </span>
-                </div>
-                <div class="ocr-result-value-row">
-                    <div class="ocr-result-value-box">
-                        <input type="text" class="ocr-result-input ${patientName ? 'high' : 'none'}"
-                            value="${profileName}" data-field="patientName"
-                            id="ocrProfileNameInput"
-                            aria-label="Profile Name"
-                            placeholder="Profile name"
-                        />
-                    </div>
-                    <label class="ocr-result-include">
-                        <input type="checkbox" checked disabled
-                            aria-label="Profile will be created automatically"
-                        />
-                        <span>Auto-create profile</span>
-                    </label>
-                </div>
-            </div>
-        `;
+        const patientItem = document.createElement('div');
+        patientItem.className = 'ocr-result-item ' + patientConfidenceClass;
+        patientItem.dataset.field = 'patientName';
 
+        // Header row
+        const patientHeader = document.createElement('div');
+        patientHeader.className = 'ocr-result-header';
+
+        const patientFieldName = document.createElement('span');
+        patientFieldName.className = 'ocr-result-field-name';
+        patientFieldName.textContent = 'Profile Name';
+
+        const patientConfBadge = document.createElement('span');
+        patientConfBadge.className = 'ocr-result-confidence ' + patientConfidenceClass;
+        const patientIcon = document.createElement('i');
+        patientIcon.setAttribute('data-lucide', 'user');
+        patientIcon.className = 'lucide-icon';
+        patientConfBadge.appendChild(patientIcon);
+
+        patientHeader.appendChild(patientFieldName);
+        patientHeader.appendChild(patientConfBadge);
+
+        // Value row
+        const patientValueRow = document.createElement('div');
+        patientValueRow.className = 'ocr-result-value-row';
+
+        const patientValueBox = document.createElement('div');
+        patientValueBox.className = 'ocr-result-value-box';
+
+        const profileInput = document.createElement('input');
+        profileInput.type = 'text';
+        profileInput.className = 'ocr-result-input ' + patientConfidenceClass;
+        profileInput.value = profileName;  // .value is safe — no escaping needed
+        profileInput.dataset.field = 'patientName';
+        profileInput.id = 'ocrProfileNameInput';
+        profileInput.setAttribute('aria-label', 'Profile Name');
+        profileInput.placeholder = 'Profile name';
+
+        patientValueBox.appendChild(profileInput);
+
+        const patientIncludeLabel = document.createElement('label');
+        patientIncludeLabel.className = 'ocr-result-include';
+        const patientIncludeCheckbox = document.createElement('input');
+        patientIncludeCheckbox.type = 'checkbox';
+        patientIncludeCheckbox.checked = true;
+        patientIncludeCheckbox.disabled = true;
+        patientIncludeCheckbox.setAttribute('aria-label', 'Profile will be created automatically');
+        const patientIncludeSpan = document.createElement('span');
+        patientIncludeSpan.textContent = 'Auto-create profile';
+        patientIncludeLabel.appendChild(patientIncludeCheckbox);
+        patientIncludeLabel.appendChild(patientIncludeSpan);
+
+        patientValueRow.appendChild(patientValueBox);
+        patientValueRow.appendChild(patientIncludeLabel);
+
+        patientItem.appendChild(patientHeader);
+        patientItem.appendChild(patientValueRow);
+        elements.resultsGrid.appendChild(patientItem);
+
+        // --- Per-field result items ---
         allFields.forEach(field => {
             const value = values[field];
             const conf = confidence[field] || 0;
@@ -434,74 +489,123 @@
             const displayUnit = field === 'sex' ? '' : (unit || DRC.LabReportParser.getFieldUnit(field, isMetric));
             const fieldLabel = DRC.LabReportParser.getFieldLabel(field);
 
-            // Generate input HTML - special handling for sex field
-            let inputHtml = '';
+            // Build result item container
+            const item = document.createElement('div');
+            item.className = 'ocr-result-item ' + confidenceClass;
+            item.dataset.field = field;
+
+            // Header row
+            const header = document.createElement('div');
+            header.className = 'ocr-result-header';
+
+            const fieldNameSpan = document.createElement('span');
+            fieldNameSpan.className = 'ocr-result-field-name';
+            fieldNameSpan.textContent = fieldLabel;  // textContent is safe
+
+            const confSpan = document.createElement('span');
+            confSpan.className = 'ocr-result-confidence ' + confidenceClass;
+            confSpan.title = confidenceLabel;
+
+            const confIcon = document.createElement('i');
+            confIcon.setAttribute('data-lucide', confidenceIcon);
+            confIcon.className = 'lucide-icon';
+            confSpan.appendChild(confIcon);
+            confSpan.appendChild(document.createTextNode(conf > 0 ? conf + '%' : 'N/A'));
+
+            header.appendChild(fieldNameSpan);
+            header.appendChild(confSpan);
+
+            // Value row
+            const valueRow = document.createElement('div');
+            valueRow.className = 'ocr-result-value-row';
+
+            const valueBox = document.createElement('div');
+            valueBox.className = 'ocr-result-value-box';
+
+            // Build input element — special handling for sex field
             if (field === 'sex') {
-                // Sex field: use select when not detected, readonly input when detected
                 if (value === undefined) {
                     // Not detected: show dropdown with placeholder
-                    inputHtml = `
-                        <select class="ocr-result-input ${confidenceClass}"
-                            data-field="${field}"
-                            aria-label="${fieldLabel} value">
-                            <option value="">-</option>
-                            <option value="0">Female</option>
-                            <option value="1">Male</option>
-                        </select>
-                    `;
+                    const select = document.createElement('select');
+                    select.className = 'ocr-result-input ' + confidenceClass;
+                    select.dataset.field = field;
+                    select.setAttribute('aria-label', fieldLabel + ' value');
+
+                    const placeholderOpt = document.createElement('option');
+                    placeholderOpt.value = '';
+                    placeholderOpt.textContent = '-';
+                    const femaleOpt = document.createElement('option');
+                    femaleOpt.value = '0';
+                    femaleOpt.textContent = 'Female';
+                    const maleOpt = document.createElement('option');
+                    maleOpt.value = '1';
+                    maleOpt.textContent = 'Male';
+
+                    select.appendChild(placeholderOpt);
+                    select.appendChild(femaleOpt);
+                    select.appendChild(maleOpt);
+                    valueBox.appendChild(select);
                 } else {
                     // Detected: show read-only input with detected value
                     const displayValue = value === 1 ? 'Male' : value === 0 ? 'Female' : '';
-                    inputHtml = `
-                        <input type="text" class="ocr-result-input ${confidenceClass}"
-                            value="${displayValue}" data-field="${field}"
-                            aria-label="${fieldLabel} value"
-                            readonly
-                        />
-                    `;
+                    const sexInput = document.createElement('input');
+                    sexInput.type = 'text';
+                    sexInput.className = 'ocr-result-input ' + confidenceClass;
+                    sexInput.value = displayValue;  // .value is safe
+                    sexInput.dataset.field = field;
+                    sexInput.setAttribute('aria-label', fieldLabel + ' value');
+                    sexInput.readOnly = true;
+                    valueBox.appendChild(sexInput);
                 }
             } else {
                 // Standard input for other fields
-                const inputType = field === 'patientName' ? 'text' : 'number';
-                const inputReadonly = field === 'patientName' ? 'readonly' : '';
-                const inputStep = field === 'patientName' ? '' : 'step="0.1"';
-                const displayValue = value !== undefined ? DRC.Utils.escapeHtml(String(value)) : '';
-                inputHtml = `
-                    <input type="${inputType}" class="ocr-result-input ${confidenceClass}"
-                        value="${displayValue}" data-field="${field}"
-                        aria-label="${fieldLabel} value" ${inputStep}
-                        ${inputReadonly}
-                        placeholder="${value === undefined ? 'Enter value' : ''}"
-                    />
-                `;
+                const input = document.createElement('input');
+                input.type = field === 'patientName' ? 'text' : 'number';
+                input.className = 'ocr-result-input ' + confidenceClass;
+                input.value = value !== undefined ? String(value) : '';  // .value is safe — no escaping needed
+                input.dataset.field = field;
+                input.setAttribute('aria-label', fieldLabel + ' value');
+                if (field !== 'patientName') {
+                    input.step = '0.1';
+                }
+                if (field === 'patientName') {
+                    input.readOnly = true;
+                }
+                if (value === undefined) {
+                    input.placeholder = 'Enter value';
+                }
+                valueBox.appendChild(input);
             }
 
-            html += `
-                <div class="ocr-result-item ${confidenceClass}" data-field="${field}">
-                    <div class="ocr-result-header">
-                        <span class="ocr-result-field-name">${fieldLabel}</span>
-                        <span class="ocr-result-confidence ${confidenceClass}" title="${confidenceLabel}">
-                            <i data-lucide="${confidenceIcon}" class="lucide-icon"></i>
-                            ${conf > 0 ? conf + '%' : 'N/A'}
-                        </span>
-                    </div>
-                    <div class="ocr-result-value-row">
-                        <div class="ocr-result-value-box">
-                            ${inputHtml}
-                            <span class="ocr-result-unit">${displayUnit}</span>
-                        </div>
-                        <label class="ocr-result-include">
-                            <input type="checkbox" ${value !== undefined ? 'checked' : ''}
-                                data-field="${field}" aria-label="Include ${fieldLabel}"
-                            />
-                            <span>Include</span>
-                        </label>
-                    </div>
-                </div>
-            `;
-        });
+            // Unit span
+            const unitSpan = document.createElement('span');
+            unitSpan.className = 'ocr-result-unit';
+            unitSpan.textContent = displayUnit;  // textContent is safe
+            valueBox.appendChild(unitSpan);
 
-        elements.resultsGrid.innerHTML = html;
+            // Include checkbox
+            const includeLabel = document.createElement('label');
+            includeLabel.className = 'ocr-result-include';
+
+            const includeCheckbox = document.createElement('input');
+            includeCheckbox.type = 'checkbox';
+            includeCheckbox.checked = value !== undefined;
+            includeCheckbox.dataset.field = field;
+            includeCheckbox.setAttribute('aria-label', 'Include ' + fieldLabel);
+
+            const includeSpan = document.createElement('span');
+            includeSpan.textContent = 'Include';
+
+            includeLabel.appendChild(includeCheckbox);
+            includeLabel.appendChild(includeSpan);
+
+            valueRow.appendChild(valueBox);
+            valueRow.appendChild(includeLabel);
+
+            item.appendChild(header);
+            item.appendChild(valueRow);
+            elements.resultsGrid.appendChild(item);
+        });
 
         // Update stats
         if (elements.statDetected) elements.statDetected.textContent = detected;
@@ -608,6 +712,7 @@
                 if (field === 'sex') {
                     // Sex ist ein Toggle
                     input.checked = value === 1;
+                    input.setAttribute('aria-checked', String(value === 1));
                 } else {
                     input.value = value;
                 }

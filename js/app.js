@@ -32,6 +32,9 @@ DRC.App = (() => {
 
     let _highlightedField = null;
 
+    /** requestAnimationFrame ID for throttling slider input events. */
+    let _rafId = null;
+
     // Cache for field elements (performance optimization)
     const fieldElementCache = new Map();
 
@@ -133,9 +136,17 @@ DRC.App = (() => {
      * @param {Object} [model] - Active model definition from CONFIG.MODELS
      */
     const _renderAllViews = (riskPctOriginal, riskPctCurrent, logOddsContributions, marginalSummary, treatStatus, siVals, model) => {
+        const isAnimating = DRC.TreatmentSimulator?.isAnimating?.() || false;
+
+        // During treatment animation, skip heavy DOM rebuilds — only update
+        // the lightweight risk displays. The full pipeline runs once after
+        // the animation completes (via onSimulationComplete → risk:recalculate).
         UI().renderRisk(riskPctOriginal);
         UI().renderChosenRisk(riskPctCurrent, riskPctOriginal);
         UI().renderChosenTreatmentsList(DRC.TreatmentSimulator?.getSimulatedFactors?.() || []);
+
+        if (isAnimating) return;
+
         UI().updateNonModSummary();
         UI().updateModSummary();
         UI().renderIconArray(riskPctOriginal);
@@ -163,7 +174,10 @@ DRC.App = (() => {
         if (slider && input) input.value = slider.value;
         UI().updateSliderFill(field);
         state.activeField = field;
-        calculate();
+        // Throttle calculate() to once per animation frame to avoid running
+        // the full calculation pipeline on every ~60Hz input event.
+        if (_rafId) cancelAnimationFrame(_rafId);
+        _rafId = requestAnimationFrame(() => { calculate(); _rafId = null; });
     };
 
     const onSliderStart = (field) => {
@@ -204,7 +218,9 @@ DRC.App = (() => {
 
     const onToggleUnits = () => {
         const prev = state.isMetric;
-        state.isMetric = document.getElementById('unit-toggle').checked;
+        const unitToggle = document.getElementById('unit-toggle');
+        state.isMetric = unitToggle.checked;
+        unitToggle.setAttribute('aria-checked', String(unitToggle.checked));
         if (prev === state.isMetric) return;
 
         // ── Rounding-drift prevention ──────────────────────────────────
@@ -289,7 +305,9 @@ DRC.App = (() => {
             DRC.PatientManager.applyValues(patientData);
         } else {
             // No active patient: fall back to CONFIG defaults (US units)
-            document.getElementById('unit-toggle').checked = false;
+            const unitToggle = document.getElementById('unit-toggle');
+            unitToggle.checked = false;
+            unitToggle.setAttribute('aria-checked', 'false');
             state.isMetric = false;
             UI().updateUnitLabels(false);
             UI().updateSliderRanges('us');
@@ -303,8 +321,11 @@ DRC.App = (() => {
             setField('cholTri', D.cholTri.us);
 
             document.getElementById('sex-toggle').checked        = true; // Default: Male
+            document.getElementById('sex-toggle').setAttribute('aria-checked', 'true');
             document.getElementById('race-toggle').checked      = D.race;
+            document.getElementById('race-toggle').setAttribute('aria-checked', String(D.race));
             document.getElementById('parentHist-toggle').checked = D.parentHist;
+            document.getElementById('parentHist-toggle').setAttribute('aria-checked', String(D.parentHist));
         }
 
         CFG.SLIDER_FIELDS.forEach(f => {
@@ -346,13 +367,17 @@ DRC.App = (() => {
         // Toggle inputs
         ['race-toggle', 'parentHist-toggle'].forEach(id => {
             const el = document.getElementById(id);
-            if (el) el.addEventListener('change', calculate);
+            if (el) el.addEventListener('change', () => {
+                el.setAttribute('aria-checked', String(el.checked));
+                calculate();
+            });
         });
 
         // Sex toggle — also updates waist slider segments
         const sexToggle = document.getElementById('sex-toggle');
         if (sexToggle) sexToggle.addEventListener('change', () => {
             const isMale = sexToggle.checked;
+            sexToggle.setAttribute('aria-checked', String(isMale));
             UI().updateWaistSegments(isMale, state.isMetric);
             calculate();
         });

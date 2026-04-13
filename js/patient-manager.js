@@ -157,7 +157,10 @@ DRC.PatientManager = (() => {
                 const toggleId = f === 'sex' ? 'sex-toggle' : (f === 'race' ? 'race-toggle' : 'parentHist-toggle');
                 const toggle = document.getElementById(toggleId);
                 // Legacy profiles without sex field -> default to Male (1)
-                if (toggle) toggle.checked = f === 'sex' ? (data[f] ?? 1) : !!data[f];
+                if (toggle) {
+                    toggle.checked = f === 'sex' ? (data[f] ?? 1) : !!data[f];
+                    toggle.setAttribute('aria-checked', String(toggle.checked));
+                }
             } else {
                 // Convert value if the saved unit system differs from the current display unit
                 let val = data[f] ?? 0;
@@ -210,11 +213,26 @@ DRC.PatientManager = (() => {
 
     let _encryptionResolve = null;
     let _passwordPromptResolve = null;
+    let _encryptionFocusTrap = null;
+    let _encryptionPreviousFocus = null;
+    let _passwordPromptFocusTrap = null;
+    let _passwordPromptPreviousFocus = null;
 
     /** Initialize encryption modal event listeners. */
     const initEncryptionModal = () => {
         const modal = document.getElementById('encryptionModal');
         if (!modal) return;
+
+        // Escape key closes modal
+        modal.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                _hideEncryptionModal();
+                if (_encryptionResolve) {
+                    _encryptionResolve({ cancelled: true, useEncryption: false, password: '' });
+                    _encryptionResolve = null;
+                }
+            }
+        });
 
         // Radio button changes - show/hide password section
         const optionNone = document.getElementById('encOptionNone');
@@ -326,6 +344,9 @@ DRC.PatientManager = (() => {
             modal.style.display = 'none';
             modal.classList.remove('open');
         }
+        // Focus trap: deactivate and restore focus
+        if (_encryptionFocusTrap) { _encryptionFocusTrap.deactivate(); _encryptionFocusTrap = null; }
+        if (_encryptionPreviousFocus) { _encryptionPreviousFocus.focus(); _encryptionPreviousFocus = null; }
         // Clear password input
         const passwordInput = document.getElementById('encPasswordInput');
         if (passwordInput) passwordInput.value = '';
@@ -423,6 +444,11 @@ DRC.PatientManager = (() => {
                 // Force reflow for animation
                 void modal.offsetWidth;
                 modal.classList.add('open');
+
+                // Focus trap: store previous focus and activate
+                _encryptionPreviousFocus = document.activeElement;
+                _encryptionFocusTrap = DRC.Utils.createFocusTrap(modal);
+                _encryptionFocusTrap.activate();
             }
         });
     };
@@ -431,6 +457,17 @@ DRC.PatientManager = (() => {
     const initPasswordPromptModal = () => {
         const modal = document.getElementById('passwordPromptModal');
         if (!modal) return;
+
+        // Escape key closes modal
+        modal.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                _hidePasswordPromptModal();
+                if (_passwordPromptResolve) {
+                    _passwordPromptResolve(null);
+                    _passwordPromptResolve = null;
+                }
+            }
+        });
 
         // Password visibility toggle
         const passwordInput = document.getElementById('pwdPromptInput');
@@ -498,6 +535,9 @@ DRC.PatientManager = (() => {
             modal.style.display = 'none';
             modal.classList.remove('open');
         }
+        // Focus trap: deactivate and restore focus
+        if (_passwordPromptFocusTrap) { _passwordPromptFocusTrap.deactivate(); _passwordPromptFocusTrap = null; }
+        if (_passwordPromptPreviousFocus) { _passwordPromptPreviousFocus.focus(); _passwordPromptPreviousFocus = null; }
         const passwordInput = document.getElementById('pwdPromptInput');
         if (passwordInput) passwordInput.value = '';
         const errorEl = document.getElementById('pwdPromptError');
@@ -538,6 +578,11 @@ DRC.PatientManager = (() => {
                 modal.style.display = 'flex';
                 void modal.offsetWidth;
                 modal.classList.add('open');
+
+                // Focus trap: store previous focus and activate
+                _passwordPromptPreviousFocus = document.activeElement;
+                _passwordPromptFocusTrap = DRC.Utils.createFocusTrap(modal);
+                _passwordPromptFocusTrap.activate();
             }
         });
     };

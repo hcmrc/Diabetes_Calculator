@@ -15,6 +15,8 @@
     let _pendingFactor = null;
     let _modalResolve = null;
     let _sessionDismissed = false;
+    let _focusTrap = null;
+    let _previousFocus = null;
 
     function hasActiveProfile() {
         const patientData = DRC.PatientManager?.getActivePatientData?.();
@@ -59,6 +61,9 @@
             modal.style.display = 'none';
         }
         document.body.style.overflow = '';
+        // Deactivate focus trap and restore focus
+        if (_focusTrap) { _focusTrap.deactivate(); _focusTrap = null; }
+        if (_previousFocus) { _previousFocus.focus(); _previousFocus = null; }
         _modalResolve = null;
     }
 
@@ -76,6 +81,11 @@
             modal.classList.add('open');
             modal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
+
+            // Activate focus trap
+            _previousFocus = document.activeElement;
+            _focusTrap = DRC.Utils?.createFocusTrap?.(modal);
+            if (_focusTrap) _focusTrap.activate();
 
             if (DRC.UIHelpers?.refreshIcons) {
                 DRC.UIHelpers.refreshIcons();

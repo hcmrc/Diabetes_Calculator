@@ -52,6 +52,8 @@ DRC.LandingPage = (() => {
         showSetupAgain: true
     };
     let _isVisible = false;
+    let _focusTrap = null;
+    let _previousFocusElement = null;
     let _pendingFile = null;        // First file selected in import step (not JSON-serializable)
     let _pendingFiles = null;       // All selected files when multiple were chosen
     let _pendingImportType = null;  // Which card was clicked before file dialog
@@ -86,6 +88,7 @@ DRC.LandingPage = (() => {
                 'landing.welcome.title': 'Diabetes Risk Calculator',
                 'landing.welcome.subtitle': 'Understand your 9-year diabetes risk based on the ARIC Study',
                 'landing.welcome.getStarted': 'Get Started',
+                'landing.welcome.skipSetup': 'Skip Setup',
                 'landing.language.title': 'Choose Your Language',
                 'landing.language.subtitle': 'Select your preferred language',
                 'landing.model.title': 'Choose Prediction Model',
@@ -391,7 +394,7 @@ DRC.LandingPage = (() => {
     const _updateProgressDots = () => {
         if (!_progressDots) return;
 
-        _progressDots.innerHTML = '';
+        _progressDots.replaceChildren();
         for (let i = 1; i <= TOTAL_STEPS; i++) {
             const dot = document.createElement('div');
             dot.className = 'progress-dot';
@@ -549,13 +552,27 @@ DRC.LandingPage = (() => {
         subtitle.textContent = _t('landing.welcome.subtitle');
         container.appendChild(subtitle);
 
+        // Button container
+        const btnContainer = document.createElement('div');
+        btnContainer.className = 'landing-welcome-buttons';
+
         // Get Started button
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'btn btn-primary btn-lg landing-get-started';
         btn.textContent = _t('landing.welcome.getStarted');
         btn.dataset.action = 'get-started';
-        container.appendChild(btn);
+        btnContainer.appendChild(btn);
+
+        // Skip Setup button
+        const skipBtn = document.createElement('button');
+        skipBtn.type = 'button';
+        skipBtn.className = 'landing-skip-setup-btn';
+        skipBtn.textContent = _t('landing.welcome.skipSetup');
+        skipBtn.dataset.action = 'skip-setup';
+        btnContainer.appendChild(skipBtn);
+
+        container.appendChild(btnContainer);
 
         return container;
     };
@@ -920,7 +937,7 @@ DRC.LandingPage = (() => {
     const _renderStep = () => {
         if (!_content) return;
 
-        _content.innerHTML = '';
+        _content.replaceChildren();
 
         let stepContent;
         switch (_currentStep) {
@@ -965,6 +982,10 @@ DRC.LandingPage = (() => {
         switch (action) {
             case 'get-started':
                 _nextStep();
+                break;
+
+            case 'skip-setup':
+                _skipSetup();
                 break;
 
             case 'select-language':
@@ -1136,6 +1157,34 @@ DRC.LandingPage = (() => {
     };
 
     /**
+     * Skip the entire setup and use defaults
+     */
+    const _skipSetup = () => {
+        _state.completed = true;
+        _state.skipOnboarding = true;
+        _saveState();
+
+        // Apply language (keep current/default)
+        if (_state.language && typeof DRC !== 'undefined' && DRC.I18n && DRC.I18n.setLanguage) {
+            DRC.I18n.setLanguage(_state.language);
+        }
+
+        // Apply default model
+        const mappedModel = MODEL_MAPPING[_state.model] || _state.model;
+        if (mappedModel && typeof DRC !== 'undefined' && DRC.App && DRC.App.switchModel) {
+            DRC.App.switchModel(mappedModel);
+        }
+
+        // Hide overlay
+        hide();
+
+        // Trigger event for other modules
+        if (typeof DRC !== 'undefined' && DRC.App && DRC.App.trigger) {
+            DRC.App.trigger('landing:completed', _state);
+        }
+    };
+
+    /**
      * Apply settings and finish onboarding
      */
     const _finish = () => {
@@ -1281,13 +1330,10 @@ DRC.LandingPage = (() => {
             _updateProgressDots();
             _updateStepCounter();
 
-            // Focus management
-            setTimeout(() => {
-                const firstFocusable = _overlay.querySelector('button, [tabindex]:not([tabindex="-1"])');
-                if (firstFocusable) {
-                    firstFocusable.focus();
-                }
-            }, 100);
+            // Focus trap: store previous focus and activate
+            _previousFocusElement = document.activeElement;
+            _focusTrap = DRC.Utils.createFocusTrap(_overlay);
+            _focusTrap.activate();
         }
     };
 
@@ -1299,6 +1345,9 @@ DRC.LandingPage = (() => {
             _overlay.hidden = true;
             _isVisible = false;
         }
+        // Focus trap: deactivate and restore focus
+        if (_focusTrap) { _focusTrap.deactivate(); _focusTrap = null; }
+        if (_previousFocusElement) { _previousFocusElement.focus(); _previousFocusElement = null; }
     };
 
     /**

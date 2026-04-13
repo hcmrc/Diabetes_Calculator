@@ -250,7 +250,7 @@ DRC.SettingsPanel = (() => {
         // Get current model from app state
         const currentModelId = (DRC.App && DRC.App._getState) ? DRC.App._getState().activeModel : CFG.DEFAULT_MODEL;
 
-        _modelDropdown.innerHTML = '';
+        _modelDropdown.replaceChildren();
 
         Object.entries(CFG.MODELS).forEach(([id, model]) => {
             const option = document.createElement('button');
@@ -388,7 +388,7 @@ DRC.SettingsPanel = (() => {
         const currentLang = DRC.I18n.getCurrentLang();
         const availableLangs = DRC.I18n.getAvailableLangs();
 
-        _langDropdown.innerHTML = '';
+        _langDropdown.replaceChildren();
 
         availableLangs.forEach(lang => {
             const option = document.createElement('button');
