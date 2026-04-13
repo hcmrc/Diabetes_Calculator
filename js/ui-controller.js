@@ -283,6 +283,26 @@ DRC.UIController = (() => {
             };
 
             container.addEventListener('click', (e) => {
+                // Causality chain button click — handle BEFORE row toggle
+                const chainBtn = e.target.closest('.btn-show-causality');
+                if (chainBtn) {
+                    e.stopPropagation();
+                    const factor = chainBtn.getAttribute('data-chain-factor');
+                    const chainContainer = chainBtn.parentElement.querySelector(
+                        `.causality-chain-inline[data-chain-for="${factor}"]`
+                    );
+                    if (!chainContainer) return;
+                    const isVisible = chainContainer.classList.contains('visible');
+                    if (isVisible) {
+                        chainContainer.classList.remove('visible');
+                        chainContainer.innerHTML = '';
+                    } else {
+                        renderCausalityChainInline(factor, chainContainer);
+                        if (window.lucide?.createIcons) window.lucide.createIcons();
+                    }
+                    return;
+                }
+
                 const row = e.target.closest('.contrib-row[data-field]');
                 if (!row) return;
                 toggleContribRow(row);
@@ -506,11 +526,67 @@ DRC.UIController = (() => {
         const detailText = createSafeElement('p', { className: 'contrib-detail-text', text: infoText });
         detailDiv.appendChild(detailText);
 
+        // Causality chain button (only for factors with a defined chain)
+        if (CFG.CAUSALITY_CHAINS && CFG.CAUSALITY_CHAINS[key]) {
+            const chainBtn = createSafeElement('button', {
+                className: 'btn-show-causality',
+                attrs: { 'data-chain-factor': key, type: 'button' }
+            });
+            const chainIcon = createSafeElement('i', {
+                className: 'lucide-icon',
+                attrs: { 'data-lucide': 'route' }
+            });
+            chainBtn.appendChild(chainIcon);
+            chainBtn.appendChild(document.createTextNode(' ' + t('buttons.showCausalChain', 'Show Risk Pathway')));
+            detailDiv.appendChild(chainBtn);
+
+            // Chain container (hidden until button click)
+            const chainContainer = createSafeElement('div', {
+                className: 'causality-chain-inline',
+                attrs: { 'data-chain-for': key }
+            });
+            detailDiv.appendChild(chainContainer);
+        }
+
         // Assemble full row
         row.appendChild(rowInner);
         row.appendChild(detailDiv);
 
         return row;
+    };
+
+    /**
+     * Render a causality chain inline within a contribution row detail.
+     * EID KBB: Externalises the pathophysiological pathway (Abstract Function
+     * level of the Abstraction Hierarchy) for a specific risk factor.
+     * @param {string} factor - Factor key (e.g. 'waist', 'fastGlu')
+     * @param {HTMLElement} container - The .causality-chain-inline element
+     */
+    const renderCausalityChainInline = (factor, container) => {
+        const chain = CFG.CAUSALITY_CHAINS[factor];
+        if (!chain || !container) return;
+        container.innerHTML = '';
+
+        const nodesRow = createSafeElement('div', { className: 'chain-nodes-row' });
+
+        chain.nodes.forEach((nodeKey, idx) => {
+            const nodeEl = createSafeElement('div', {
+                className: ['chain-node', idx === chain.riskNode ? 'risk-node' : ''],
+                text: t(nodeKey, nodeKey.split('.').pop())
+            });
+            nodesRow.appendChild(nodeEl);
+
+            if (idx < chain.nodes.length - 1) {
+                const arrow = createSafeElement('div', {
+                    className: 'chain-arrow',
+                    text: '\u2192'
+                });
+                nodesRow.appendChild(arrow);
+            }
+        });
+
+        container.appendChild(nodesRow);
+        container.classList.add('visible');
     };
 
     /**

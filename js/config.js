@@ -208,6 +208,22 @@ DRC.CONFIG = Object.freeze({
         waist:   { us: -2.81, si: -7.13,  label: 'Weight Management' }
     },
 
+    /**
+     * Causality chains: pathophysiological pathways from risk factor to diabetes.
+     * Each chain maps a factor key to an array of i18n node keys representing
+     * the causal pathway, plus the index of the primary risk node.
+     *
+     * EID mapping: Knowledge-Based Behavior — externalises the causal structure
+     * of the work domain (Abstraction Hierarchy, Abstract Function level).
+     */
+    CAUSALITY_CHAINS: {
+        waist:   { riskNode: 0, nodes: ['causality.abdominalFat', 'causality.insulinResistance', 'causality.betaCellDysfunction', 'causality.diabetesRisk'] },
+        fastGlu: { riskNode: 2, nodes: ['causality.insulinResistance', 'causality.gluconeogenesis', 'causality.fastingGlucose', 'causality.betaCellExhaustion', 'causality.diabetesRisk'] },
+        cholHDL: { riskNode: 0, nodes: ['causality.hdlCholesterol', 'causality.pancreaticProtection', 'causality.betaCellDamage', 'causality.diabetesRisk'] },
+        sbp:     { riskNode: 0, nodes: ['causality.bloodPressure', 'causality.insulinResistanceInc', 'causality.betaCellDysfunction', 'causality.diabetesRisk'] },
+        cholTri: { riskNode: 3, nodes: ['causality.insulinResistance', 'causality.lipolysis', 'causality.freeFattyAcids', 'causality.triglycerides'] }
+    },
+
     /** Default slider values for the reset function. */
     DEFAULTS: {
         age: 50, sbp: 120,
