@@ -66,10 +66,20 @@
     --text-hero:      3rem;      /* 48px – hero percentage display          */
 
     /* Line Heights */
+    --leading-none:   1;        /* Single-line elements, icons             */
     --leading-tight:   1.2;      /* Headings, compact numeric displays      */
-    --leading-snug:    1.4;      /* Labels, UI elements                     */
+    --leading-snug:    1.3;      /* Dense labels, compact text              */
+    --leading-default: 1.4;      /* Labels, UI elements (was --leading-snug)*/
     --leading-normal:  1.5;      /* General interface text                  */
+    --leading-comfort: 1.6;      /* Comfortable reading                    */
     --leading-relaxed: 1.65;     /* Body copy, descriptions                 */
+
+    /* Font Weights */
+    --weight-regular:  400;      /* Body text                               */
+    --weight-medium:   500;      /* Emphasized labels, secondary headings   */
+    --weight-semibold: 600;      /* Primary labels, button text              */
+    --weight-bold:     700;      /* Headings, strong emphasis                */
+    --weight-extrabold:800;      /* Hero displays                            */
 
     /* Backgrounds */
     --bg-page:        #f2f4f8;
@@ -85,14 +95,18 @@
     --shadow-glow:    0 0 0 3px rgba(58, 58, 60, 0.12);
 
     /* Radii - Standardized */
+    --radius-xs:      4px;     /* Minimal radius — tags, tiny elements */
     --radius-sm:      6px;     /* Small elements, buttons */
+    --radius-md:      8px;     /* Medium elements — tabs, dropdowns */
     --radius:         10px;    /* Default cards */
+    --radius-12:      12px;    /* Cards, dropdowns */
     --radius-lg:      16px;    /* Large cards, panels */
     --radius-xl:      24px;    /* Modals, large containers */
+    --radius-pill:    999px;   /* Pill/chip shapes */
     --radius-full:    50%;     /* Circular elements */
 
     /* Layout */
-    --content-padding: 20px;
+    --content-padding: var(--space-5);
     --grid-gap:       20px;
 
     /* Transitions - Smooth, not bouncy */
@@ -135,6 +149,27 @@
     --bg-active:       rgba(0, 0, 0, 0.12);    /* active/pressed state background */
     --bg-nav:          rgba(255, 255, 255, 0.98); /* navigation bar background */
     --accent-gold:     #ffc832;                   /* active dark-mode toggle gold */
+    --accent-gold-glow: rgba(255, 200, 50, 0.15); /* gold glow background */
+
+    /* Component Shadows - Specialized */
+    --shadow-thumb:        0 1px 4px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.04);
+    --shadow-thumb-hover:  0 2px 8px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.06);
+    --shadow-thumb-focus:  0 1px 4px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(58, 58, 60, 0.25);
+    --shadow-toggle-knob:  0 1px 3px rgba(0, 0, 0, 0.15);
+    --shadow-hover:       0 2px 8px rgba(0, 0, 0, 0.10);
+    --shadow-marker:      0 1px 4px rgba(0, 0, 0, 0.14);
+    --shadow-dropdown:    0 8px 30px rgba(0, 0, 0, 0.12);
+    --shadow-tutorial:    0 4px 24px rgba(0, 0, 0, 0.18);
+    --shadow-drawer:      -4px 0 24px rgba(0, 0, 0, 0.12);
+    --shadow-safe:        0 8px 32px rgba(48, 161, 78, 0.30);
+
+    /* Overlays */
+    --overlay-bg:        rgba(0, 0, 0, 0.20);
+    --overlay-modal:     rgba(0, 0, 0, 0.50);
+    --overlay-landing:   rgba(0, 0, 0, 0.55);
+
+    /* Tinted backgrounds */
+    --danger-tint:       rgba(196, 61, 53, 0.08);
 }
 
 /* Utility: Visually Hidden - keeps element in DOM for camera capture but hides visually */
@@ -166,6 +201,7 @@
 
 html {
     scroll-behavior: smooth;
+    scroll-padding-top: 56px; /* top-nav min-height (48px) + border + breathing room */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -174,7 +210,7 @@ body {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
     background: var(--bg-page);
     color: var(--text-primary);
-    line-height: 1.65;
+    line-height: var(--leading-relaxed);
     font-size: var(--text-sm);
     letter-spacing: -0.01em;
     min-height: 100vh;
@@ -207,9 +243,9 @@ body {
 .nav-brand {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
     font-size: var(--text-base);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     letter-spacing: -0.025em;
     color: var(--text-primary);
     margin: 0; /* Reset h1 default */
@@ -224,7 +260,7 @@ body {
 .nav-actions {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: var(--space-3);
 }
 
 /* Unit toggle in nav */
@@ -239,13 +275,13 @@ body {
 
 .toggle-label-nav {
     font-size: var(--text-xs);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     color: var(--text-tertiary);
     transition: color 0.2s;
 }
 
 .toggle-label-nav:first-child {
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-primary);
 }
 
@@ -280,8 +316,8 @@ body {
     bottom: 2px;
     background: var(--bg-card);
     transition: transform 0.3s var(--ease-smooth);
-    border-radius: 50%;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-toggle-knob);
 }
 
 .toggle-switch-nav input:checked + .toggle-track-nav {
@@ -299,7 +335,7 @@ body {
     width: 32px;
     height: 32px;
     border: none;
-    border-radius: 50%;
+    border-radius: var(--radius-full);
     background: var(--bg-subtle);
     color: var(--text-secondary);
     cursor: pointer;
@@ -323,16 +359,16 @@ body {
 
 .risk-number {
     font-size: var(--text-hero);
-    font-weight: 800;
+    font-weight: var(--weight-extrabold);
     letter-spacing: -0.04em;
-    line-height: 1;
+    line-height: var(--leading-none);
     transition: color 0.4s var(--ease-smooth);
     color: var(--safe);
 }
 
 .risk-unit {
     font-size: var(--text-lg);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     transition: color 0.4s var(--ease-smooth);
     color: var(--safe);
     margin-left: 2px;
@@ -347,7 +383,7 @@ body {
 .risk-bar-track {
     position: relative;
     height: 7px;
-    border-radius: 4px;
+    border-radius: var(--radius-xs);
     background: linear-gradient(90deg,
         var(--safe)    0%,
         var(--alert)  33%,
@@ -364,10 +400,10 @@ body {
     transform: translate(-50%, -50%);
     width: 12px;
     height: 12px;
-    border-radius: 50%;
+    border-radius: var(--radius-full);
     background: var(--bg-card);
     border: 2px solid var(--safe);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+    box-shadow: var(--shadow-marker);
     transition: left 0.5s var(--ease-out), border-color 0.4s var(--ease-smooth);
     z-index: 2;
 }
@@ -377,7 +413,7 @@ body {
     justify-content: space-between;
     margin-top: 5px;
     font-size: var(--text-2xs);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     letter-spacing: 0.01em;
     color: var(--text-secondary);
 }
@@ -385,17 +421,17 @@ body {
 .hero-subtitle {
     font-size: var(--text-xs);
     color: var(--text-tertiary);
-    margin-top: 4px;
+    margin-top: var(--space-1);
 }
 
 /* Icon Array (Pictograph) */
 .icon-array-container {
     display: grid;
     grid-template-columns: repeat(10, 1fr);
-    gap: 4px;
+    gap: var(--space-1);
     margin: 12px auto;
     width: fit-content;
-    padding: 16px;
+    padding: var(--space-4);
     background: var(--bg-elevated);
     border-radius: var(--radius);
 }
@@ -406,7 +442,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
+    border-radius: var(--radius-full);
     background: var(--bg-neutral);
     transition: background 0.3s var(--ease-smooth), transform 0.2s var(--ease-smooth);
     cursor: default;
@@ -426,7 +462,7 @@ body {
     color: var(--text-secondary);
     margin: 8px 0 12px;
     text-align: center;
-    font-weight: 500;
+    font-weight: var(--weight-medium);
 }
 
 /* What does that mean — styled like treatment-reduction-badge but borderless and white bg */
@@ -439,7 +475,7 @@ body {
     width: 100%;
     padding: 8px 14px;
     font-size: var(--text-ui);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-secondary);
     background: var(--bg-card);
     border: none;
@@ -502,7 +538,7 @@ body {
     justify-content: space-between;
     padding: 8px 18px;
     font-size: var(--text-xs);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     text-transform: none;
     letter-spacing: 0.01em;
     color: var(--text-tertiary);
@@ -582,10 +618,11 @@ body.ocr-modal-open .col-step-label {
 .panel-header-bar {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
     padding: 12px 20px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid var(--border);
     background: transparent;
+    scroll-margin-top: 56px;
 }
 
 .panel-header-bar .lucide-icon {
@@ -596,7 +633,7 @@ body.ocr-modal-open .col-step-label {
 
 .panel-header-bar h2 {
     font-size: var(--text-base);
-    font-weight: 700;
+    font-weight: var(--weight-bold);
     letter-spacing: -0.02em;
     color: var(--text-primary);
     margin: 0;
@@ -685,7 +722,7 @@ body.ocr-modal-open .col-step-label {
     color: var(--text-tertiary);
     margin: 5px 0 5px 0;
     padding: 0 16px;
-    font-weight: 400;
+    font-weight: var(--weight-regular);
 }
 
 
@@ -712,13 +749,13 @@ body.ocr-modal-open .col-step-label {
     align-items: center;
     gap: 6px;
     font-size: var(--text-xs);
-    font-weight: 700;
+    font-weight: var(--weight-bold);
     letter-spacing: 0.03em;
     color: var(--text-tertiary);
     padding: 8px 0 6px;
-    margin-top: 4px;
+    margin-top: var(--space-1);
     border-bottom: 1px solid var(--border);
-    margin-bottom: 8px;
+    margin-bottom: var(--space-2);
 }
 
 .input-section-label .lucide-icon {
@@ -728,7 +765,7 @@ body.ocr-modal-open .col-step-label {
 .input-section-label.modifiable {
     color: var(--text-tertiary);
     border-bottom-color: var(--border);
-    margin-top: 12px;
+    margin-top: var(--space-3);
 }
 
 
@@ -738,7 +775,7 @@ body.ocr-modal-open .col-step-label {
 
 .input-group {
     padding: 10px 4px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    border-bottom: 1px solid var(--bg-subtle);
 }
 
 .input-group:last-child {
@@ -767,7 +804,7 @@ body.ocr-modal-open .col-step-label {
     align-items: center;
     gap: 5px;
     font-size: var(--text-xs);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     letter-spacing: 0.01em;
     color: var(--text-primary);
     cursor: pointer;
@@ -782,7 +819,7 @@ body.ocr-modal-open .col-step-label {
 .ig-icon.icon-safe   { color: var(--safe); }
 
 .unit-label {
-    font-weight: 400;
+    font-weight: var(--weight-regular);
     color: var(--text-tertiary);
     font-size: var(--text-xs);
 }
@@ -820,16 +857,16 @@ body.ocr-modal-open .col-step-label {
     appearance: none;
     width: 24px;
     height: 24px;
-    border-radius: 50%;
+    border-radius: var(--radius-full);
     background: var(--bg-card);
     cursor: pointer;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.04);
+    box-shadow: var(--shadow-thumb);
     border: none;
     transition: box-shadow 0.15s var(--ease-smooth), transform 0.15s var(--ease-smooth);
 }
 
 .slider::-webkit-slider-thumb:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--shadow-thumb-hover);
     transform: scale(1.03);
 }
 
@@ -840,10 +877,10 @@ body.ocr-modal-open .col-step-label {
 .slider::-moz-range-thumb {
     width: 24px;
     height: 24px;
-    border-radius: 50%;
+    border-radius: var(--radius-full);
     background: var(--bg-card);
     cursor: pointer;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.04);
+    box-shadow: var(--shadow-thumb);
     border: none;
 }
 
@@ -853,7 +890,7 @@ body.ocr-modal-open .col-step-label {
     left: 14px;
     right: 14px;
     height: 6px;
-    border-radius: 3px;
+    border-radius: var(--radius-xs);
     background: var(--border);
     overflow: clip;
     pointer-events: none;
@@ -879,7 +916,7 @@ body.ocr-modal-open .col-step-label {
 .slider-fill {
     height: 100%;
     background: var(--blue);
-    border-radius: 3px;
+    border-radius: var(--radius-xs);
     transition: transform 0.1s var(--ease-smooth);
     transform-origin: left;
     transform: scaleX(0);
@@ -900,7 +937,7 @@ body.ocr-modal-open .col-step-label {
     display: flex;
     margin-top: 2px;
     font-size: var(--text-xs);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     color: var(--text-tertiary);
 }
 
@@ -930,7 +967,7 @@ body.ocr-modal-open .col-step-label {
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
     font-size: var(--text-xs);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     text-align: center;
     background: var(--bg-elevated);
     transition: border-color 0.2s, box-shadow 0.2s;
@@ -946,7 +983,7 @@ body.ocr-modal-open .col-step-label {
 .value-unit-label {
     font-size: var(--text-xs);
     color: var(--text-tertiary);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
 }
 
 
@@ -957,12 +994,12 @@ body.ocr-modal-open .col-step-label {
 .toggle-group {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
 }
 
 .toggle-option {
     font-size: var(--text-ui);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     color: var(--text-secondary);
     min-width: 50px;
 }
@@ -996,7 +1033,7 @@ body.ocr-modal-open .col-step-label {
     inset: 0;
     background: var(--border-strong);
     transition: background 0.3s;
-    border-radius: 24px;
+    border-radius: var(--radius-xl);
 }
 
 .toggle-slider::before {
@@ -1008,8 +1045,8 @@ body.ocr-modal-open .col-step-label {
     bottom: 2px;
     background: var(--bg-card);
     transition: transform 0.3s var(--ease-smooth);
-    border-radius: 50%;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-toggle-knob);
 }
 
 .toggle-switch input:checked + .toggle-slider {
@@ -1033,9 +1070,9 @@ body.ocr-modal-open .col-step-label {
 .what-if-badge {
     display: inline-block;
     font-size: var(--text-xs);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     padding: 1px 6px;
-    border-radius: 5px;
+    border-radius: var(--radius-sm);
     margin-left: auto;
     min-width: 0;
     opacity: 0;
@@ -1099,14 +1136,14 @@ body.ocr-modal-open .col-step-label {
     padding: 8px 12px;
     border-radius: var(--radius-sm);
     font-size: var(--text-xs);
-    font-weight: 400;
+    font-weight: var(--weight-regular);
     white-space: normal;
     max-width: 200px;
     width: 200px;
     text-align: left;
     box-shadow: var(--shadow);
     z-index: var(--z-fixed);
-    line-height: 1.4;
+    line-height: var(--leading-default);
     pointer-events: none;
 }
 
@@ -1132,7 +1169,7 @@ body.ocr-modal-open .col-step-label {
     background: transparent;    /* statt var(--bg-elevated) */
     border-radius: 0;           /* statt var(--radius) */
     padding: 0 0 16px 0;        /* statt 16px */
-    margin-bottom: 16px;
+    margin-bottom: var(--space-4);
     border: none;               /* statt 1px solid var(--border) */
     border-bottom: 1px solid var(--border);
 }
@@ -1144,16 +1181,16 @@ body.ocr-modal-open .col-step-label {
 
 .center-card h3 {
     font-size: var(--text-sm);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-primary);
-    margin-bottom: 4px;
+    margin-bottom: var(--space-1);
 }
 
 .center-card .card-desc {
     font-size: var(--text-xs);
     color: var(--text-tertiary);
-    line-height: 1.4;
-    margin-bottom: 12px;
+    line-height: var(--leading-default);
+    margin-bottom: var(--space-3);
 }
 
 /* Contribution chart */
@@ -1188,12 +1225,12 @@ body.ocr-modal-open .col-step-label {
 .contrib-header {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
     margin-bottom: 6px;
     padding: 6px 4px;
-    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    border-top: 1px solid var(--border);
     font-size: var(--text-xs);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     overflow: visible;
 }
 
@@ -1216,7 +1253,7 @@ body.ocr-modal-open .col-step-label {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    gap: 4px;
+    gap: var(--space-1);
     overflow: visible;
 }
 
@@ -1224,14 +1261,14 @@ body.ocr-modal-open .col-step-label {
     text-align: left;
     color: var(--text-secondary);
     white-space: normal;
-    line-height: 1.2;
+    line-height: var(--leading-tight);
     transform: translateX(-35px);
 }
 
 @media (max-width: 768px) {
     .contrib-header {
         padding: 6px 0;
-        gap: 4px;
+        gap: var(--space-1);
     }
 
     .contrib-header-left {
@@ -1301,7 +1338,7 @@ body.ocr-modal-open .col-step-label {
     text-align: right;
     color: var(--text-secondary);
     white-space: normal;
-    line-height: 1.2;
+    line-height: var(--leading-tight);
     transform: translateX(35px);
 }
 
@@ -1335,7 +1372,7 @@ body.ocr-modal-open .col-step-label {
 }
 
 .contrib-row:hover {
-    background: rgba(0, 0, 0, 0.025);
+    background: var(--bg-subtle);
 }
 
 .contrib-row:focus-visible {
@@ -1351,7 +1388,7 @@ body.ocr-modal-open .col-step-label {
 .contrib-row-inner {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
     padding: 9px 4px;
 }
 
@@ -1362,7 +1399,7 @@ body.ocr-modal-open .col-step-label {
 
 .contrib-row-label {
     font-size: var(--text-xs);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     color: var(--text-secondary);
 }
 
@@ -1402,7 +1439,7 @@ body.ocr-modal-open .col-step-label {
 .contrib-bar-fill {
     height: 16px;
     width: 100%;
-    border-radius: 5px;
+    border-radius: var(--radius-sm);
     transition: transform 0.4s var(--ease-out);
     transform-origin: left;
     transform: scaleX(0);
@@ -1437,8 +1474,8 @@ body.ocr-modal-open .col-step-label {
 
 .contrib-value-pct {
     font-size: var(--text-xs);
-    font-weight: 700;
-    line-height: 1.2;
+    font-weight: var(--weight-bold);
+    line-height: var(--leading-tight);
 }
 
 .value-positive .contrib-value-pct {
@@ -1469,7 +1506,7 @@ body.ocr-modal-open .col-step-label {
 .contrib-detail-pct {
     display: block;
     font-size: var(--text-sm);
-    font-weight: 700;
+    font-weight: var(--weight-bold);
     letter-spacing: -0.02em;
     margin-bottom: 5px;
     text-align: center;
@@ -1486,7 +1523,7 @@ body.ocr-modal-open .col-step-label {
 .contrib-detail-text {
     font-size: var(--text-xs);
     color: var(--text-secondary);
-    line-height: 1.65;
+    line-height: var(--leading-relaxed);
     margin: 0;
 }
 
@@ -1504,14 +1541,14 @@ body.ocr-modal-open .col-step-label {
 #dynamic-treatments {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: var(--space-3);
 }
 
 .treatment-ok {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 16px;
+    gap: var(--space-3);
+    padding: var(--space-4);
     background: var(--safe-light);
     border-radius: var(--radius);
 }
@@ -1526,7 +1563,7 @@ body.ocr-modal-open .col-step-label {
     font-size: var(--text-ui);
     color: var(--text-secondary);
     margin: 0;
-    line-height: 1.4;
+    line-height: var(--leading-default);
 }
 
 /* ============================================
@@ -1566,7 +1603,7 @@ body.ocr-modal-open .col-step-label {
 .factor-header {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
     margin-bottom: 10px;
 }
 
@@ -1580,7 +1617,7 @@ body.ocr-modal-open .col-step-label {
 
 .factor-header h5 {
     font-size: var(--text-sm);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-primary);
     margin: 0;
 }
@@ -1599,7 +1636,7 @@ body.ocr-modal-open .col-step-label {
     background: var(--bg-card);
     border-radius: var(--radius-sm);
     font-size: var(--text-xs);
-    line-height: 1.45;
+    line-height: var(--leading-default);
     border: 1px solid var(--border);
 }
 
@@ -1636,19 +1673,16 @@ body.ocr-modal-open .col-step-label {
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: var(--bg-card);
-    margin-bottom: 12px;
+    margin-bottom: var(--space-3);
     overflow: clip;
+    box-shadow: var(--shadow-sm);
     transition: box-shadow 0.2s var(--ease-smooth);
-}
-
-.risk-field {
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
 }
 
 .risk-field-summary {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: var(--space-3);
     padding: 14px 18px;
 }
 
@@ -1665,7 +1699,7 @@ body.ocr-modal-open .col-step-label {
 .risk-field-title {
     flex: 1;
     font-size: var(--text-ui);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-secondary);
     letter-spacing: 0.04em;
 }
@@ -1674,7 +1708,7 @@ body.ocr-modal-open .col-step-label {
 .risk-field-title--two-line {
     flex: unset;
     text-align: center;
-    line-height: 1.4;
+    line-height: var(--leading-default);
 }
 
 /* ─── Risk Value Group: number + context stacked ─── */
@@ -1695,28 +1729,28 @@ body.ocr-modal-open .col-step-label {
     display: inline-flex;
     align-items: baseline;
     gap: 1px;
-    line-height: 1;
+    line-height: var(--leading-none);
 }
 
 .risk-field-value .risk-number {
     font-size: var(--text-2xl);
-    font-weight: 600;
-    line-height: 1;
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-none);
     letter-spacing: -0.02em;
 }
 
 .risk-field-value .risk-unit {
     font-size: var(--text-md);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     color: var(--text-tertiary);
 }
 
 .risk-value-context {
     font-size: var(--text-2xs);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     letter-spacing: 0.04em;
     color: var(--text-secondary);
-    line-height: 1;
+    line-height: var(--leading-none);
 }
 
 
@@ -1735,7 +1769,7 @@ body.ocr-modal-open .col-step-label {
 .chosen-treatments-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--space-2);
     width: 100%;
 }
 
@@ -1768,7 +1802,7 @@ body.ocr-modal-open .col-step-label {
 .chosen-treatment-title {
     flex: 1;
     font-size: var(--text-sm);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     color: var(--text-primary);
 }
 
@@ -1778,11 +1812,11 @@ body.ocr-modal-open .col-step-label {
     gap: 6px;
     padding: 10px 16px;
     font-size: var(--text-ui);
-    font-weight: 700;
+    font-weight: var(--weight-bold);
     color: var(--text-on-primary);
     background: var(--primary);
     border: none;
-    border-radius: 10px;
+    border-radius: var(--radius);
     cursor: pointer;
     transition: transform 0.25s var(--ease-smooth), box-shadow 0.25s var(--ease-smooth), background-color 0.25s var(--ease-smooth);
     letter-spacing: -0.01em;
@@ -1793,7 +1827,7 @@ body.ocr-modal-open .col-step-label {
 
 .btn-undo-treatment:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-hover);
 }
 
 .btn-undo-treatment:active:not(:disabled) {
@@ -1818,7 +1852,7 @@ body.ocr-modal-open .col-step-label {
     border-radius: var(--radius);
     background: var(--bg-card);
     padding: 16px 16px 14px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    box-shadow: var(--shadow-sm);
 }
 
 /* ─── Simulation risk card: centered single value ─── */
@@ -1828,16 +1862,16 @@ body.ocr-modal-open .col-step-label {
     align-items: center;
     gap: 6px;
     padding: 20px 18px 18px;
-    margin-bottom: 12px;
+    margin-bottom: var(--space-3);
 }
 
 .sim-risk-label {
     font-size: var(--text-ui);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-secondary);
     letter-spacing: 0.04em;
     text-align: center;
-    line-height: 1.4;
+    line-height: var(--leading-default);
 }
 
 /* Treatment risk reduction badge (total reduction in simulation-results) */
@@ -1846,7 +1880,7 @@ body.ocr-modal-open .col-step-label {
     width: 100%;
     padding: 6px 10px;
     font-size: var(--text-ui);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-secondary);
     background: var(--bg-card);
     border: 1px solid var(--border-strong);
@@ -1858,14 +1892,14 @@ body.ocr-modal-open .col-step-label {
 /* Per-treatment reduction pill inside chosen-treatment-item */
 .chosen-treatment-reduction {
     margin-left: auto;
-    margin-right: 8px;
+    margin-right: var(--space-2);
     padding: 2px 7px;
     font-size: var(--text-xs);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--safe);
     background: var(--safe-light);
     border: 1px solid var(--safe-border);
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     white-space: nowrap;
     flex-shrink: 0;
 }
@@ -1873,7 +1907,7 @@ body.ocr-modal-open .col-step-label {
 /* ─── Contributing Factors Title ─── */
 .contributing-factors-title {
     font-size: var(--text-md);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-primary);
     margin: 20px 0 12px 0;
     padding: 0 4px;
@@ -1914,8 +1948,8 @@ body.ocr-modal-open .col-step-label {
 
 @media (max-width: 768px) {
     :root {
-        --content-padding: 12px;
-        --grid-gap: 12px;
+        --content-padding: var(--space-3);
+        --grid-gap: var(--space-3);
     }
 
     .main-grid {
@@ -1968,19 +2002,9 @@ body.ocr-modal-open .col-step-label {
    ============================================ */
 
 /* Keep normal spacing so the Risk Factors panel is not over-compressed */
-.risk-number {
-    font-size: var(--text-hero);
-}
-
-.risk-unit {
-    font-size: var(--text-lg);
-}
-
 .main-grid {
     height: auto;
     min-height: 0;
-    padding: 20px var(--content-padding) 60px;
-    align-items: start;
 }
 
 /* Panels grow naturally with content; page handles scrolling */
@@ -2000,10 +2024,6 @@ body.ocr-modal-open .col-step-label {
     min-height: 0;
 }
 
-.panel-header-bar {
-    padding: 12px 20px;
-}
-
 .col-step-label {
     padding: 6px 16px;
     font-size: var(--text-xs);
@@ -2014,7 +2034,8 @@ body.ocr-modal-open .col-step-label {
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-bottom: 4px;
+    margin-bottom: var(--space-1);
+    scroll-margin-top: 56px;
 }
 
 .section-collapse-header .section-collapse-btn {
@@ -2044,7 +2065,7 @@ body.ocr-modal-open .col-step-label {
     padding: 0;
     background: var(--bg-subtle);
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     transition: background 0.2s;
     flex-shrink: 0;
@@ -2093,9 +2114,9 @@ body.ocr-modal-open .col-step-label {
     font-size: var(--text-xs);
     color: var(--text-secondary);
     border: 1px solid var(--border);
-    margin-bottom: 8px;
-    line-height: 1.6;
-    font-weight: 500;
+    margin-bottom: var(--space-2);
+    line-height: var(--leading-comfort);
+    font-weight: var(--weight-medium);
 }
 
 .section-summary.visible {
@@ -2112,7 +2133,7 @@ body.ocr-modal-open .col-step-label {
 
 .model-tabs {
     display: flex;
-    gap: 4px;
+    gap: var(--space-1);
     padding: 0 0 12px;
     border-bottom: 1px solid var(--border);
     margin-bottom: 14px;
@@ -2122,11 +2143,11 @@ body.ocr-modal-open .col-step-label {
     flex: 1;
     padding: 8px 10px;
     font-size: var(--text-xs);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-tertiary);
     background: var(--bg-disabled);
     border: 1px solid transparent;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     transition: color 0.2s var(--ease-smooth), background-color 0.2s var(--ease-smooth), border-color 0.2s var(--ease-smooth);
     text-align: center;
@@ -2142,7 +2163,7 @@ body.ocr-modal-open .col-step-label {
     color: var(--primary);
     background: var(--primary-light);
     border-color: var(--primary-glow);
-    font-weight: 700;
+    font-weight: var(--weight-bold);
 }
 
 
@@ -2174,11 +2195,11 @@ body.ocr-modal-open .col-step-label {
 }
 
 .input-label-row {
-    margin-bottom: 4px;
+    margin-bottom: var(--space-1);
 }
 
 .factor-value-row {
-    margin-top: 4px;
+    margin-top: var(--space-1);
 }
 
 .slider-wrapper {
@@ -2230,11 +2251,11 @@ body.ocr-modal-open .col-step-label {
 }
 
 .slider:focus-visible::-webkit-slider-thumb {
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(58, 58, 60, 0.25);
+    box-shadow: var(--shadow-thumb-focus);
 }
 
 .slider:focus-visible::-moz-range-thumb {
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(58, 58, 60, 0.25);
+    box-shadow: var(--shadow-thumb-focus);
 }
 
 /* Circular buttons: circular focus ring */
@@ -2242,7 +2263,7 @@ body.ocr-modal-open .col-step-label {
 .btn-dark-mode:focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
-    border-radius: 50%;
+    border-radius: var(--radius-full);
 }
 
 /* Standard buttons */
@@ -2288,10 +2309,10 @@ body.ocr-modal-open .col-step-label {
 .treatment-overview-row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
     padding: 14px 16px;
     border-radius: var(--radius);
-    margin-bottom: 8px;
+    margin-bottom: var(--space-2);
     transition: background 0.2s var(--ease-smooth), box-shadow 0.2s var(--ease-smooth);
 }
 
@@ -2330,7 +2351,7 @@ body.ocr-modal-open .col-step-label {
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
 }
 
 .treatment-overview-row.indicated .tov-icon-col {
@@ -2377,7 +2398,7 @@ body.ocr-modal-open .col-step-label {
 
 .tov-title {
     font-size: var(--text-xs);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-primary);
     white-space: nowrap;
     overflow: clip;
@@ -2391,10 +2412,10 @@ body.ocr-modal-open .col-step-label {
     align-items: center;
     gap: 3px;
     font-size: var(--text-xs);
-    font-weight: 700;
+    font-weight: var(--weight-bold);
     letter-spacing: 0.04em;
     padding: 1px 6px;
-    border-radius: 4px;
+    border-radius: var(--radius-xs);
     white-space: nowrap;
     flex-shrink: 0;
 }
@@ -2433,14 +2454,14 @@ body.ocr-modal-open .col-step-label {
 .tov-bar-container {
     height: 5px;
     background: var(--bg-subtle);
-    border-radius: 3px;
+    border-radius: var(--radius-xs);
     overflow: clip;
 }
 
 .tov-bar {
     height: 100%;
     width: 100%;
-    border-radius: 3px;
+    border-radius: var(--radius-xs);
     transition: transform 0.4s var(--ease-out);
     transform-origin: left;
     transform: scaleX(0);
@@ -2480,7 +2501,7 @@ body.ocr-modal-open .col-step-label {
     color: var(--text-tertiary) !important;
     transition: transform 0.3s var(--ease-smooth);
     flex-shrink: 0;
-    margin-left: 4px;
+    margin-left: var(--space-1);
 }
 
 .tov-chevron.collapsed {
@@ -2499,7 +2520,7 @@ body.ocr-modal-open .col-step-label {
 .tov-details.expanded {
     grid-template-rows: 1fr;
     opacity: 1;
-    margin-top: 8px;
+    margin-top: var(--space-2);
 }
 
 .tov-details-inner {
@@ -2507,7 +2528,7 @@ body.ocr-modal-open .col-step-label {
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: var(--space-1);
     padding: 6px 0 2px;
     border-top: 1px solid var(--border);
 }
@@ -2519,7 +2540,7 @@ body.ocr-modal-open .col-step-label {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    line-height: 1.4;
+    line-height: var(--leading-default);
     overflow-wrap: break-word;
     word-break: break-word;
 }
@@ -2550,11 +2571,11 @@ body.ocr-modal-open .col-step-label {
     height: 32px;
     background: var(--bg-subtle);
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     transition: background 0.2s, transform 0.2s, color 0.2s;
     font-size: var(--text-ui);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     color: var(--text-secondary);
     white-space: nowrap;
 }
@@ -2594,7 +2615,7 @@ body.ocr-modal-open .col-step-label {
 .patient-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--overlay-bg);
     z-index: var(--z-patient-ov);
     opacity: 0;
     pointer-events: none;
@@ -2615,7 +2636,7 @@ body.ocr-modal-open .col-step-label {
     max-width: 90vw;
     height: 100vh;
     background: var(--bg-card);
-    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow-drawer);
     z-index: var(--z-dropdown);
     transform: translateX(100%);
     transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
@@ -2642,9 +2663,9 @@ body.ocr-modal-open .col-step-label {
 .pd-header h2 {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
     font-size: var(--text-md);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-primary);
     margin: 0;
 }
@@ -2660,7 +2681,7 @@ body.ocr-modal-open .col-step-label {
     width: 30px;
     height: 30px;
     border: none;
-    border-radius: 50%;
+    border-radius: var(--radius-full);
     background: var(--bg-subtle);
     color: var(--text-secondary);
     cursor: pointer;
@@ -2675,12 +2696,12 @@ body.ocr-modal-open .col-step-label {
 .pd-active-patient {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
     padding: 10px 18px;
     background: var(--blue-light);
     border-bottom: 1px solid var(--border);
     font-size: var(--text-ui);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--blue);
     flex-shrink: 0;
 }
@@ -2697,17 +2718,17 @@ body.ocr-modal-open .col-step-label {
 
 .pd-section-label {
     font-size: var(--text-xs);
-    font-weight: 700;
+    font-weight: var(--weight-bold);
     letter-spacing: 0.06em;
     color: var(--text-tertiary);
-    margin-bottom: 8px;
+    margin-bottom: var(--space-2);
 }
 
 /* Patient List */
 .pd-patient-list {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: var(--space-1);
     max-height: 300px;
     overflow-y: auto;
 }
@@ -2716,14 +2737,14 @@ body.ocr-modal-open .col-step-label {
     font-size: var(--text-xs);
     color: var(--text-tertiary);
     text-align: center;
-    padding: 12px;
+    padding: var(--space-3);
 }
 
 /* Patient Card */
 .pd-patient-card {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
     padding: 8px 10px;
     background: var(--bg-elevated);
     border: 1px solid var(--border);
@@ -2746,14 +2767,14 @@ body.ocr-modal-open .col-step-label {
 .pd-patient-avatar {
     width: 28px;
     height: 28px;
-    border-radius: 50%;
+    border-radius: var(--radius-full);
     background: var(--primary-light);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
     font-size: var(--text-xs);
-    font-weight: 700;
+    font-weight: var(--weight-bold);
     color: var(--primary);
 }
 
@@ -2764,7 +2785,7 @@ body.ocr-modal-open .col-step-label {
 
 .pd-patient-name {
     font-size: var(--text-ui);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-primary);
     white-space: nowrap;
     overflow: clip;
@@ -2774,7 +2795,7 @@ body.ocr-modal-open .col-step-label {
 .pd-patient-risk {
     font-size: var(--text-xs);
     color: var(--text-tertiary);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
 }
 
 .pd-patient-actions {
@@ -2790,7 +2811,7 @@ body.ocr-modal-open .col-step-label {
     width: 24px;
     height: 24px;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-xs);
     background: transparent;
     cursor: pointer;
     transition: background 0.2s;
@@ -2821,7 +2842,7 @@ body.ocr-modal-open .col-step-label {
 .pd-add-form {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--space-2);
 }
 
 .pd-input {
@@ -2829,7 +2850,7 @@ body.ocr-modal-open .col-step-label {
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
     font-size: var(--text-ui);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     background: var(--bg-elevated);
     color: var(--text-primary);
     transition: border-color 0.2s, box-shadow 0.2s;
@@ -2848,7 +2869,7 @@ body.ocr-modal-open .col-step-label {
     gap: 6px;
     padding: 8px 14px;
     font-size: var(--text-ui);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-on-primary);
     background: var(--primary);
     border: none;
@@ -2874,7 +2895,7 @@ body.ocr-modal-open .col-step-label {
 
 .pd-io-actions {
     display: flex;
-    gap: 8px;
+    gap: var(--space-2);
 }
 
 .pd-btn-io {
@@ -2885,7 +2906,7 @@ body.ocr-modal-open .col-step-label {
     gap: 5px;
     padding: 8px 12px;
     font-size: var(--text-xs);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-secondary);
     background: var(--bg-elevated);
     border: 1px solid var(--border-strong);
@@ -2952,11 +2973,11 @@ body.ocr-modal-open .col-step-label {
     margin-top: 10px;
     padding: 10px 16px;
     font-size: var(--text-ui);
-    font-weight: 700;
+    font-weight: var(--weight-bold);
     color: var(--text-on-primary);
     background: var(--primary);
     border: none;
-    border-radius: 10px;
+    border-radius: var(--radius);
     cursor: pointer;
     transition: transform 0.25s var(--ease-smooth), box-shadow 0.25s var(--ease-smooth), background-color 0.25s var(--ease-smooth), opacity 0.25s var(--ease-smooth);
     letter-spacing: -0.01em;
@@ -2964,7 +2985,7 @@ body.ocr-modal-open .col-step-label {
 
 .btn-simulate-treatment:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-hover);
 }
 
 .btn-simulate-treatment:active:not(:disabled) {
@@ -3009,8 +3030,8 @@ body.ocr-modal-open .col-step-label {
     width: fit-content !important;
     padding: 6px 20px;
     font-size: var(--text-xs);
-    font-weight: 600;
-    margin-left: 8px;
+    font-weight: var(--weight-semibold);
+    margin-left: var(--space-2);
 }
 
 /* Reduction pill — replaces status badge on simulated cards */
@@ -3020,7 +3041,7 @@ body.ocr-modal-open .col-step-label {
     gap: 2px;
     flex-shrink: 0;
     font-size: var(--text-xs);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-secondary);
     background: var(--bg-hover);
     border: 1px solid var(--border-strong);
@@ -3038,7 +3059,7 @@ body.ocr-modal-open .col-step-label {
 .treatment-section-divider {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
     margin: 4px 0;
     padding: 0 12px;
 }
@@ -3054,7 +3075,7 @@ body.ocr-modal-open .col-step-label {
     font-size: var(--text-xs);
     color: var(--text-secondary);
     white-space: nowrap;
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     letter-spacing: 0.04em;
 }
 
@@ -3097,7 +3118,7 @@ body.ocr-modal-open .col-step-label {
     width: 32px;
     height: 32px;
     border: none;
-    border-radius: 50%;
+    border-radius: var(--radius-full);
     background: var(--bg-subtle);
     color: var(--text-secondary);
     cursor: pointer;
@@ -3110,7 +3131,7 @@ body.ocr-modal-open .col-step-label {
 }
 
 .btn-dark-mode.active {
-    background: rgba(255, 200, 50, 0.15);
+    background: var(--accent-gold-glow);
     color: var(--accent-gold);
 }
 
@@ -3132,10 +3153,10 @@ body.ocr-modal-open .col-step-label {
     height: 32px;
     background: var(--bg-subtle);
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     font-size: var(--text-ui);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     color: var(--text-secondary);
     transition: background 0.2s, transform 0.2s, color 0.2s;
 }
@@ -3173,7 +3194,7 @@ body.ocr-modal-open .col-step-label {
 
 .btn-language .lang-code {
     font-size: var(--text-xs);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     letter-spacing: 0.02em;
 }
 
@@ -3229,7 +3250,7 @@ body.ocr-modal-open .col-step-label {
 
 .lang-option.active {
     background: var(--blue-light);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
 }
 
 .lang-option .lang-flag {
@@ -3253,13 +3274,13 @@ body.ocr-modal-open .col-step-label {
 
 /* Dark mode adjustments */
 .dark .btn-language:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--bg-hover);
     color: var(--text-primary);
 }
 
 .dark .btn-language:active,
 .dark .btn-language[aria-expanded="true"] {
-    background: rgba(255, 255, 255, 0.14);
+    background: var(--bg-pressed);
     color: var(--text-primary);
 }
 
@@ -3277,10 +3298,10 @@ body.ocr-modal-open .col-step-label {
     height: 32px;
     background: var(--bg-subtle);
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     font-size: var(--text-ui);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     color: var(--text-secondary);
     transition: background 0.2s, transform 0.2s, color 0.2s;
 }
@@ -3322,7 +3343,7 @@ body.ocr-modal-open .col-step-label {
     background: var(--bg-card);
     border-radius: 12px 0 0 12px;
     box-shadow: var(--shadow-card);
-    padding: 16px;
+    padding: var(--space-4);
     min-width: min(280px, calc(100vw - 32px));
     transform: translateX(100%);
     transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -3338,8 +3359,8 @@ body.ocr-modal-open .col-step-label {
     width: 100%;
     background: var(--bg-elevated);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    margin-top: 8px;
+    border-radius: var(--radius-md);
+    margin-top: var(--space-2);
     max-height: 50vh;
     overflow-inline: clip;
     overflow-block: auto;
@@ -3376,10 +3397,10 @@ body.ocr-modal-open .col-step-label {
     min-height: 32px;
     background: var(--bg-subtle);
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     font-size: var(--text-ui);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     color: var(--text-secondary);
     transition: background 0.2s, transform 0.2s, color 0.2s;
     text-align: left;
@@ -3410,8 +3431,8 @@ body.ocr-modal-open .col-step-label {
 
 .btn-settings-model .settings-model-label {
     font-size: var(--text-xs);
-    font-weight: 600;
-    line-height: 1.3;
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-snug);
     flex: 1;
     word-wrap: break-word;
     overflow-wrap: break-word;
@@ -3419,13 +3440,13 @@ body.ocr-modal-open .col-step-label {
 
 /* Dark mode adjustments for settings model button */
 .dark .btn-settings-model:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--bg-hover);
     color: var(--text-primary);
 }
 
 .dark .btn-settings-model:active,
 .dark .btn-settings-model[aria-expanded="true"] {
-    background: rgba(255, 255, 255, 0.14);
+    background: var(--bg-pressed);
     color: var(--text-primary);
 }
 
@@ -3441,7 +3462,7 @@ body.ocr-modal-open .col-step-label {
     border-radius: var(--radius);
     font-family: inherit;
     font-size: var(--text-sm);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-secondary);
     cursor: pointer;
     transition: transform 0.2s var(--ease-smooth), box-shadow 0.2s var(--ease-smooth), background-color 0.2s var(--ease-smooth), color 0.2s var(--ease-smooth), border-color 0.2s var(--ease-smooth), opacity 0.2s var(--ease-smooth);
@@ -3465,13 +3486,13 @@ body.ocr-modal-open .col-step-label {
 }
 
 .dark .btn-restart-setup {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--bg-subtle);
     border-color: var(--border);
     color: var(--text-secondary);
 }
 
 .dark .btn-restart-setup:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--bg-hover);
     border-color: var(--border-strong);
     color: var(--text-primary);
 }
@@ -3502,7 +3523,7 @@ body.ocr-modal-open .col-step-label {
 
 .settings-lang-option.active {
     background: var(--blue-light);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
 }
 
 .settings-lang-option .lang-flag {
@@ -3545,8 +3566,8 @@ body.ocr-modal-open .col-step-label {
     width: 100%;
     background: var(--bg-elevated);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    margin-top: 8px;
+    border-radius: var(--radius-md);
+    margin-top: var(--space-2);
     animation: slide-down 0.2s var(--ease-out);
 }
 
@@ -3595,7 +3616,7 @@ body.ocr-modal-open .col-step-label {
     justify-content: space-between;
     flex: 1;
     min-width: 0;
-    gap: 8px;
+    gap: var(--space-2);
     padding: 2px 0;
 }
 
@@ -3607,7 +3628,7 @@ body.ocr-modal-open .col-step-label {
 }
 
 .settings-model-option .model-option-name {
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     font-size: var(--text-sm);
     color: var(--text-primary);
 }
@@ -3628,9 +3649,9 @@ body.ocr-modal-open .col-step-label {
     display: inline-flex;
     align-items: center;
     padding: 3px 8px;
-    border-radius: 4px;
+    border-radius: var(--radius-xs);
     font-size: var(--text-xs);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     letter-spacing: 0.5px;
     background: var(--bg-hover);
     color: var(--text-secondary);
@@ -3659,7 +3680,7 @@ body.ocr-modal-open .col-step-label {
 }
 
 .dark .settings-model-option .model-option-badge {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--bg-subtle);
     color: var(--text-secondary);
 }
 
@@ -3685,36 +3706,36 @@ body.ocr-modal-open .col-step-label {
 }
 
 .dark .model-option-badge.badge-gray {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--bg-subtle);
     color: var(--text-secondary);
 }
 
 .dark .model-option-badge.badge-yellow {
-    background: rgba(212, 148, 44, 0.15);
-    color: #e5a84a;
+    background: var(--alert-light-dark);
+    color: var(--alert-dark);
 }
 
 .dark .model-option-badge.badge-green {
-    background: rgba(48, 161, 78, 0.15);
-    color: #4db868;
+    background: var(--safe-light-dark);
+    color: var(--safe-dark);
 }
 
 .settings-panel-inner {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: var(--space-4);
 }
 
 .settings-option {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: var(--space-3);
 }
 
 .settings-option-label {
     font-size: var(--text-ui);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     color: var(--text-secondary);
 }
 
@@ -3726,7 +3747,7 @@ body.ocr-modal-open .col-step-label {
     width: 32px;
     height: 32px;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     background: var(--bg-subtle);
     color: var(--text-secondary);
     cursor: pointer;
@@ -3740,7 +3761,7 @@ body.ocr-modal-open .col-step-label {
 }
 
 .btn-settings-darkmode.active {
-    background: rgba(255, 200, 50, 0.15);
+    background: var(--accent-gold-glow);
     color: var(--accent-gold);
 }
 
@@ -3751,19 +3772,19 @@ body.ocr-modal-open .col-step-label {
 
 /* Settings panel unit toggle */
 .settings-unit-toggle {
-    gap: 8px;
+    gap: var(--space-2);
 }
 
 .settings-unit-toggle .toggle-label-nav {
     font-size: var(--text-xs);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
 }
 
 /* Settings overlay */
 .settings-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--overlay-bg);
     z-index: var(--z-settings-ov);
     opacity: 0;
     visibility: hidden;
@@ -3777,23 +3798,23 @@ body.ocr-modal-open .col-step-label {
 
 /* Dark mode adjustments */
 .dark .btn-settings:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--bg-hover);
     color: var(--text-primary);
 }
 
 .dark .btn-settings:active,
 .dark .btn-settings[aria-expanded="true"] {
-    background: rgba(255, 255, 255, 0.14);
+    background: var(--bg-pressed);
     color: var(--text-primary);
 }
 
 .dark .settings-panel {
     background: var(--bg-card);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    box-shadow: var(--shadow-dropdown);
 }
 
 .dark .btn-settings-darkmode:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--bg-hover);
     color: var(--text-primary);
 }
 
@@ -3857,6 +3878,32 @@ body.ocr-modal-open .col-step-label {
     --bg-active:       rgba(255, 255, 255, 0.12);
     --bg-nav:          rgba(26, 26, 31, 0.95);
     --accent-gold:     #ffc832;
+    --accent-gold-glow: rgba(255, 200, 50, 0.15);
+
+    /* Component Shadows - Dark mode (deeper for visibility) */
+    --shadow-thumb:        0 1px 4px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    --shadow-thumb-hover:  0 2px 8px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.15);
+    --shadow-thumb-focus:  0 1px 4px rgba(0, 0, 0, 0.4), 0 0 0 3px rgba(255, 255, 255, 0.25);
+    --shadow-toggle-knob:  0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-hover:       0 2px 8px rgba(0, 0, 0, 0.25);
+    --shadow-marker:      0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-dropdown:    0 8px 30px rgba(0, 0, 0, 0.30);
+    --shadow-tutorial:    0 4px 24px rgba(0, 0, 0, 0.30);
+    --shadow-drawer:      -4px 0 24px rgba(0, 0, 0, 0.30);
+    --shadow-safe:        0 8px 32px rgba(48, 161, 78, 0.20);
+    --shadow-glow:        0 0 0 3px rgba(255, 255, 255, 0.20);
+
+    /* Overlays - darker in dark mode */
+    --overlay-bg:        rgba(0, 0, 0, 0.50);
+    --overlay-modal:     rgba(0, 0, 0, 0.60);
+    --overlay-landing:   rgba(0, 0, 0, 0.70);
+
+    /* Tinted backgrounds */
+    --danger-tint:       rgba(196, 61, 53, 0.12);
+
+    /* Dark-mode status text colors */
+    --alert-dark:        #e5a84a;
+    --safe-dark:         #4db868;
 
     /* Dark-mode status backgrounds */
     --danger-light-dark: rgba(181, 74, 66, 0.15);
@@ -3902,6 +3949,32 @@ body.ocr-modal-open .col-step-label {
         --bg-active:       rgba(255, 255, 255, 0.12);
         --bg-nav:          rgba(26, 26, 31, 0.95);
         --accent-gold:     #ffc832;
+        --accent-gold-glow: rgba(255, 200, 50, 0.15);
+
+        /* Component Shadows - Dark mode */
+        --shadow-thumb:        0 1px 4px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+        --shadow-thumb-hover:  0 2px 8px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.15);
+        --shadow-thumb-focus:  0 1px 4px rgba(0, 0, 0, 0.4), 0 0 0 3px rgba(255, 255, 255, 0.25);
+        --shadow-toggle-knob:  0 1px 3px rgba(0, 0, 0, 0.3);
+        --shadow-hover:       0 2px 8px rgba(0, 0, 0, 0.25);
+        --shadow-marker:      0 2px 8px rgba(0, 0, 0, 0.4);
+        --shadow-dropdown:    0 8px 30px rgba(0, 0, 0, 0.30);
+        --shadow-tutorial:    0 4px 24px rgba(0, 0, 0, 0.30);
+        --shadow-drawer:      -4px 0 24px rgba(0, 0, 0, 0.30);
+        --shadow-safe:        0 8px 32px rgba(48, 161, 78, 0.20);
+        --shadow-glow:        0 0 0 3px rgba(255, 255, 255, 0.20);
+
+        /* Overlays - darker in dark mode */
+        --overlay-bg:        rgba(0, 0, 0, 0.50);
+        --overlay-modal:     rgba(0, 0, 0, 0.60);
+        --overlay-landing:   rgba(0, 0, 0, 0.70);
+
+        /* Tinted backgrounds */
+        --danger-tint:       rgba(196, 61, 53, 0.12);
+
+        /* Dark-mode text colors */
+        --alert-dark:        #e5a84a;
+        --safe-dark:         #4db868;
 
         /* Dark-mode status backgrounds */
         --danger-light-dark: rgba(181, 74, 66, 0.15);
@@ -3919,7 +3992,7 @@ body.ocr-modal-open .col-step-label {
 
 /* Unit toggle in dark mode */
 .dark .unit-toggle-nav {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--bg-subtle);
 }
 
 .dark .toggle-label-nav:first-child {
@@ -3928,18 +4001,18 @@ body.ocr-modal-open .col-step-label {
 
 /* Reset button */
 .dark .btn-reset:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--bg-hover);
 }
 
 /* Dark mode toggle button */
 .dark .btn-dark-mode:hover {
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--bg-active);
 }
 
 /* Risk bar marker */
 .dark .risk-bar-marker {
     background: var(--bg-card);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    box-shadow: var(--shadow-marker);
 }
 
 /* Icon array */
@@ -3948,7 +4021,7 @@ body.ocr-modal-open .col-step-label {
 }
 
 .dark .icon-array-item {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--bg-subtle);
 }
 
 .dark .icon-array-item.affected {
@@ -3995,29 +4068,29 @@ body.ocr-modal-open .col-step-label {
 
 /* Input groups */
 .dark .input-group {
-    border-bottom-color: rgba(255, 255, 255, 0.04);
+    border-bottom-color: var(--bg-subtle);
 }
 
 .dark .input-group-highlight {
-    background: rgba(255, 255, 255, 0.07);
-    border-color: rgba(255, 255, 255, 0.15);
+    background: var(--bg-subtle);
+    border-color: var(--primary-glow);
 }
 
 /* Sliders */
 .dark .slider::-webkit-slider-thumb {
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    box-shadow: var(--shadow-thumb);
 }
 
 .dark .slider::-webkit-slider-thumb:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.15);
+    box-shadow: var(--shadow-thumb-hover);
 }
 
 .dark .slider::-moz-range-thumb {
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    box-shadow: var(--shadow-thumb);
 }
 
 .dark .slider-track-bg {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--border);
 }
 
 /* Value input */
@@ -4029,16 +4102,16 @@ body.ocr-modal-open .col-step-label {
 
 .dark .value-input:focus {
     border-color: var(--blue);
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 0 2px var(--primary-glow);
 }
 
 /* Toggle switches */
 .dark .toggle-slider {
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--primary-glow);
 }
 
 .dark .toggle-slider::before {
-    background: #f5f5f7;
+    background: var(--text-primary);
 }
 
 .dark .toggle-switch input:checked + .toggle-slider {
@@ -4047,7 +4120,7 @@ body.ocr-modal-open .col-step-label {
 
 /* Contribution chart */
 .dark .contrib-header {
-    border-top-color: rgba(255, 255, 255, 0.06);
+    border-top-color: var(--border);
 }
 
 /* Model tabs */
@@ -4056,13 +4129,13 @@ body.ocr-modal-open .col-step-label {
 }
 
 .dark .model-tab:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--bg-subtle);
     color: var(--text-primary);
 }
 
 .dark .model-tab.active {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.25);
+    background: var(--primary-glow);
+    border-color: var(--bg-neutral);
     color: var(--text-primary);
 }
 
@@ -4072,35 +4145,35 @@ body.ocr-modal-open .col-step-label {
 }
 
 .dark .treatment-overview-row.indicated {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--bg-subtle);
 }
 
 .dark .treatment-overview-row.elevated {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--bg-subtle);
 }
 
 .dark .treatment-overview-row.normal {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--bg-subtle);
 }
 
 .dark .treatment-overview-row:hover,
 .dark .treatment-overview-row.indicated:hover,
 .dark .treatment-overview-row.elevated:hover,
 .dark .treatment-overview-row.normal:hover {
-    background: rgba(255, 255, 255, 0.09);
+    background: var(--bg-hover);
 }
 
 .dark .treatment-overview-row .tov-icon-col,
 .dark .treatment-overview-row.indicated .tov-icon-col,
 .dark .treatment-overview-row.elevated .tov-icon-col,
 .dark .treatment-overview-row.normal .tov-icon-col {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--bg-subtle);
 }
 
 .dark .tov-status.status-indicated,
 .dark .tov-status.status-elevated,
 .dark .tov-status.status-normal {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--bg-subtle);
 }
 
 .dark .tov-details .therapy-mini {
@@ -4109,12 +4182,12 @@ body.ocr-modal-open .col-step-label {
 
 /* Patient drawer */
 .dark .patient-overlay {
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--overlay-modal);
 }
 
 .dark .patient-drawer {
     background: var(--bg-card);
-    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--shadow-drawer);
 }
 
 .dark .pd-header {
@@ -4123,7 +4196,7 @@ body.ocr-modal-open .col-step-label {
 }
 
 .dark .pd-close-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--bg-hover);
 }
 
 .dark .pd-input {
@@ -4138,7 +4211,7 @@ body.ocr-modal-open .col-step-label {
 }
 
 .dark .pd-btn-io:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--bg-hover);
     border-color: var(--border-strong);
 }
 
@@ -4154,7 +4227,7 @@ body.ocr-modal-open .col-step-label {
 
 /* Contribution chart dark mode */
 .dark .contrib-row:hover {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--bg-disabled);
 }
 
 .dark .contrib-row.expanded {
@@ -4162,12 +4235,12 @@ body.ocr-modal-open .col-step-label {
 }
 
 .dark .contrib-row-detail {
-    border-top-color: rgba(255, 255, 255, 0.06);
+    border-top-color: var(--border);
 }
 
 /* Section collapse */
 .dark .section-collapse-btn:hover {
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--bg-active);
 }
 
 .dark .section-summary {
@@ -4184,7 +4257,7 @@ body.ocr-modal-open .col-step-label {
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--overlay-modal);
     z-index: var(--z-modal);
     opacity: 0;
     pointer-events: none;
@@ -4192,7 +4265,7 @@ body.ocr-modal-open .col-step-label {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: var(--space-5);
     /* Performance: removed backdrop-filter blur - use darker background instead */
 }
 
@@ -4205,7 +4278,7 @@ body.ocr-modal-open .col-step-label {
 .modal-content {
     background: var(--bg-card);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-card), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-card), 0 0 0 1px var(--border);
     width: 100%;
     max-width: 420px;
     max-height: 90vh;
@@ -4232,7 +4305,7 @@ body.ocr-modal-open .col-step-label {
     align-items: center;
     gap: 10px;
     font-size: var(--text-base);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-primary);
     margin: 0;
 }
@@ -4250,7 +4323,7 @@ body.ocr-modal-open .col-step-label {
     width: 32px;
     height: 32px;
     border: none;
-    border-radius: 50%;
+    border-radius: var(--radius-full);
     background: var(--bg-subtle);
     color: var(--text-secondary);
     cursor: pointer;
@@ -4269,14 +4342,14 @@ body.ocr-modal-open .col-step-label {
 
 /* Modal Body */
 .modal-body {
-    padding: 20px;
+    padding: var(--space-5);
 }
 
 .modal-description {
     font-size: var(--text-ui);
     color: var(--text-secondary);
-    margin-bottom: 16px;
-    line-height: 1.5;
+    margin-bottom: var(--space-4);
+    line-height: var(--leading-normal);
 }
 
 /* Radio Options */
@@ -4284,13 +4357,13 @@ body.ocr-modal-open .col-step-label {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    margin-bottom: 4px;
+    margin-bottom: var(--space-1);
 }
 
 .radio-option {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
+    gap: var(--space-3);
     padding: 14px 16px;
     background: var(--bg-elevated);
     border: 1px solid var(--border);
@@ -4325,7 +4398,7 @@ body.ocr-modal-open .col-step-label {
 .radio-custom {
     width: 20px;
     height: 20px;
-    border-radius: 50%;
+    border-radius: var(--radius-full);
     border: 2px solid var(--border-strong);
     display: flex;
     align-items: center;
@@ -4345,7 +4418,7 @@ body.ocr-modal-open .col-step-label {
     width: 8px;
     height: 8px;
     background: var(--text-on-primary);
-    border-radius: 50%;
+    border-radius: var(--radius-full);
     transform: scale(0);
     transition: transform 0.2s var(--ease-smooth);
 }
@@ -4357,7 +4430,7 @@ body.ocr-modal-open .col-step-label {
 .radio-label {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
+    gap: var(--space-3);
     flex: 1;
 }
 
@@ -4377,7 +4450,7 @@ body.ocr-modal-open .col-step-label {
 
 .radio-label strong {
     font-size: var(--text-sm);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-primary);
 }
 
@@ -4392,27 +4465,22 @@ body.ocr-modal-open .col-step-label {
 
 /* Password Section */
 .password-section {
-    margin-top: 16px;
-    padding-top: 16px;
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
     border-top: 1px solid var(--border);
     animation: fadeIn 0.25s var(--ease-smooth);
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-8px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
 .password-input-wrapper {
     position: relative;
-    margin-bottom: 8px;
+    margin-bottom: var(--space-2);
 }
 
 .password-input {
     width: 100%;
     padding: 12px 44px 12px 14px;
     font-size: var(--text-sm);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     color: var(--text-primary);
     background: var(--bg-elevated);
     border: 1px solid var(--border-strong);
@@ -4465,7 +4533,7 @@ body.ocr-modal-open .col-step-label {
     gap: 6px;
     font-size: var(--text-xs);
     color: var(--danger);
-    margin-bottom: 12px;
+    margin-bottom: var(--space-3);
 }
 
 .password-error .lucide-icon {
@@ -4479,14 +4547,14 @@ body.ocr-modal-open .col-step-label {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 12px;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
 }
 
 .quick-options-label {
     font-size: var(--text-xs);
     color: var(--text-tertiary);
-    margin-right: 4px;
+    margin-right: var(--space-1);
 }
 
 .quick-option-btn {
@@ -4495,11 +4563,11 @@ body.ocr-modal-open .col-step-label {
     gap: 5px;
     padding: 6px 12px;
     font-size: var(--text-xs);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     color: var(--blue);
     background: var(--blue-light);
     border: 1px solid var(--primary-glow);
-    border-radius: 16px;
+    border-radius: var(--radius-lg);
     cursor: pointer;
     transition: transform 0.2s var(--ease-smooth), box-shadow 0.2s var(--ease-smooth), background-color 0.2s var(--ease-smooth), color 0.2s var(--ease-smooth), border-color 0.2s var(--ease-smooth), opacity 0.2s var(--ease-smooth);
 }
@@ -4546,7 +4614,7 @@ body.ocr-modal-open .col-step-label {
 .checkbox-custom {
     width: 18px;
     height: 18px;
-    border-radius: 5px;
+    border-radius: var(--radius-sm);
     border: 2px solid var(--border-strong);
     display: flex;
     align-items: center;
@@ -4584,7 +4652,7 @@ body.ocr-modal-open .col-step-label {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 12px;
+    gap: var(--space-3);
     padding: 16px 20px 20px;
     border-top: 1px solid var(--border);
 }
@@ -4596,7 +4664,7 @@ body.ocr-modal-open .col-step-label {
     gap: 6px;
     padding: 10px 18px;
     font-size: var(--text-ui);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     border-radius: var(--radius-sm);
     cursor: pointer;
     transition: transform 0.2s var(--ease-smooth), box-shadow 0.2s var(--ease-smooth), background-color 0.2s var(--ease-smooth), color 0.2s var(--ease-smooth), border-color 0.2s var(--ease-smooth), opacity 0.2s var(--ease-smooth);
@@ -4635,7 +4703,7 @@ body.ocr-modal-open .col-step-label {
 /* Responsive Modals */
 @media (max-width: 480px) {
     .modal-overlay {
-        padding: 12px;
+        padding: var(--space-3);
     }
 
     .modal-content {
@@ -4647,7 +4715,7 @@ body.ocr-modal-open .col-step-label {
     }
 
     .modal-body {
-        padding: 16px;
+        padding: var(--space-4);
     }
 
     .modal-footer {
@@ -4675,7 +4743,7 @@ body.ocr-modal-open .col-step-label {
 
 .dark .modal-content {
     background: var(--bg-card);
-    box-shadow: var(--shadow-card), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    box-shadow: var(--shadow-card), 0 0 0 1px var(--border);
 }
 
 .dark .modal-close-btn {
@@ -4683,7 +4751,7 @@ body.ocr-modal-open .col-step-label {
 }
 
 .dark .modal-close-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--bg-hover);
     color: var(--text-primary);
 }
 
@@ -4798,7 +4866,7 @@ body.ocr-modal-open .col-step-label {
 
 .ocr-dropzone-primary {
     font-size: var(--text-base);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-primary);
 }
 
@@ -4826,7 +4894,7 @@ body.ocr-modal-open .col-step-label {
     border-radius: var(--radius);
     color: var(--text-primary);
     font-size: var(--text-md);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     min-height: 48px;
     cursor: pointer;
     transition: transform 0.2s var(--ease-smooth), box-shadow 0.2s var(--ease-smooth), background-color 0.2s var(--ease-smooth), color 0.2s var(--ease-smooth), border-color 0.2s var(--ease-smooth), opacity 0.2s var(--ease-smooth);
@@ -4858,7 +4926,7 @@ body.ocr-modal-open .col-step-label {
 }
 
 .dark .ocr-privacy-notice {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--bg-subtle);
     color: var(--text-secondary);
 }
 
@@ -4912,7 +4980,7 @@ body.ocr-modal-open .col-step-label {
     left: 50%;
     transform: translate(-50%, -50%);
     font-size: var(--text-xl);
-    font-weight: 700;
+    font-weight: var(--weight-bold);
     color: var(--text-primary);
 }
 
@@ -4970,7 +5038,7 @@ body.ocr-modal-open .col-step-label {
 
 .ocr-status-step.active .ocr-step-label {
     color: var(--blue);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
 }
 
 /* Cancel Button */
@@ -4992,7 +5060,7 @@ body.ocr-modal-open .col-step-label {
 /* OCR Review */
 .ocr-review-title {
     font-size: var(--text-lg);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-primary);
     margin-bottom: var(--space-2);
 }
@@ -5049,7 +5117,7 @@ body.ocr-modal-open .col-step-label {
 
 .ocr-result-field-name {
     font-size: var(--text-sm);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     color: var(--text-primary);
 }
 
@@ -5219,7 +5287,7 @@ body.ocr-modal-open .col-step-label {
 
 .ocr-error-title {
     font-size: var(--text-lg);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-primary);
     margin-bottom: var(--space-2);
 }
@@ -5240,7 +5308,7 @@ body.ocr-modal-open .col-step-label {
 
 .ocr-error-suggestions h4 {
     font-size: var(--text-sm);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-primary);
     margin-bottom: var(--space-3);
 }
@@ -5282,12 +5350,12 @@ body.ocr-modal-open .col-step-label {
     width: 64px;
     height: 64px;
     background: linear-gradient(135deg, var(--orange), var(--orange-end));
-    border-radius: 50%;
+    border-radius: var(--radius-full);
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto 20px;
-    box-shadow: 0 2px 8px rgba(212, 101, 58, 0.15);
+    box-shadow: 0 2px 8px var(--orange);
     animation: profile-warn-icon-pulse 3s ease-in-out infinite;
     will-change: transform;
 }
@@ -5339,7 +5407,7 @@ body.ocr-modal-open .col-step-label {
         border-radius: var(--radius-lg);
         color: var(--text-primary);
         font-size: var(--text-sm);
-        font-weight: 600;
+        font-weight: var(--weight-semibold);
         min-height: 120px;
         cursor: pointer;
         transition: transform 0.2s var(--ease-smooth), box-shadow 0.2s var(--ease-smooth), background-color 0.2s var(--ease-smooth), color 0.2s var(--ease-smooth), border-color 0.2s var(--ease-smooth), opacity 0.2s var(--ease-smooth);
@@ -5442,8 +5510,8 @@ body.ocr-modal-open .col-step-label {
     max-height: 50vh;
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    border-radius: var(--radius-12);
+    box-shadow: var(--shadow-dropdown);
     z-index: var(--z-fixed);
     overflow-inline: clip;
     overflow-block: auto;
@@ -5475,7 +5543,7 @@ body.ocr-modal-open .col-step-label {
     gap: 2px;
 }
 .model-option-name {
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     font-size: var(--text-sm);
     color: var(--text-primary);
     display: flex;
@@ -5497,13 +5565,13 @@ body.ocr-modal-open .col-step-label {
 }
 .model-accuracy-badge {
     font-size: var(--text-xs);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     padding: 2px 8px;
-    border-radius: 10px;
+    border-radius: var(--radius);
     white-space: nowrap;
 }
 .model-accuracy-badge[data-accuracy="basis"] {
-    background: rgba(142,142,147,0.12);
+    background: var(--bg-active);
     color: var(--text-tertiary);
 }
 .model-accuracy-badge[data-accuracy="gut"] {
@@ -5518,7 +5586,7 @@ body.ocr-modal-open .col-step-label {
 .model-info {
     font-size: var(--text-xs);
     color: var(--text-secondary);
-    margin-top: 4px;
+    margin-top: var(--space-1);
     text-align: center;
 }
 /* Hidden fields when model doesn't need them */
@@ -5529,29 +5597,29 @@ body.ocr-modal-open .col-step-label {
 
 /* Dark mode for patient menu button */
 .dark .btn-patient-menu:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--bg-hover);
     color: var(--text-primary);
 }
 .dark .btn-patient-menu:active,
 .dark .btn-patient-menu.open {
-    background: rgba(255, 255, 255, 0.14);
+    background: var(--bg-pressed);
     color: var(--text-primary);
 }
 
 /* Dark mode for tutorial button */
 .dark .btn-tutorial:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--bg-hover);
     color: var(--text-primary);
 }
 .dark .btn-tutorial:active {
-    background: rgba(255, 255, 255, 0.14);
+    background: var(--bg-pressed);
     color: var(--text-primary);
 }
 
 .dark .model-switcher-dropdown {
     background: var(--bg-card);
     border-color: var(--border);
-    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    box-shadow: var(--shadow-dropdown);
 }
 .dark .model-option:hover {
     background: var(--primary-light);
@@ -5608,12 +5676,12 @@ body.ocr-modal-open .col-step-label {
     height: 32px;
     padding: 0 10px;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     background: var(--bg-subtle);
     color: var(--text-secondary);
     font-family: inherit;
     font-size: var(--text-ui);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     cursor: pointer;
     transition: background 0.2s, color 0.2s, transform 0.2s;
     white-space: nowrap;
@@ -5663,6 +5731,12 @@ body.tutorial-active .modal-overlay:not(#tutorialOverlay):not(#tutorialNav):not(
     contain: layout paint;
 }
 
+/* Override sticky positioning during tutorial so nav scrolls with body
+   and doesn't overlap highlighted sections (e.g. "Patient Data" header) */
+body.tutorial-active nav.top-nav {
+    position: relative;
+}
+
 /* Active (highlighted) section: full visibility, but NO interactions during tutorial */
 body.tutorial-active .tutorial-highlight {
     opacity: 1 !important;
@@ -5693,11 +5767,12 @@ body.tutorial-active .tutorial-highlight h2,
 body.tutorial-active .tutorial-highlight h3 {
     filter: none !important;
     opacity: 1 !important;
+    color: var(--text-primary) !important;
+    text-shadow: none !important;
 }
 
 body.tutorial-active .tutorial-highlight .panel-header-bar h2,
-body.tutorial-active .tutorial-highlight h2,
-body.tutorial-active .tutorial-highlight h3 {
+body.tutorial-active .tutorial-highlight h2 {
     color: var(--text-primary) !important;
     text-shadow: none !important;
 }
@@ -5738,7 +5813,7 @@ body.tutorial-active {
     background: var(--bg-card);
     border: 1px solid var(--border-strong);
     border-radius: var(--radius);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+    box-shadow: var(--shadow-tutorial);
     pointer-events: none;
     transition: opacity 0.2s var(--ease-smooth);
 }
@@ -5751,14 +5826,14 @@ body.tutorial-active {
 
 .tutorial-card-title {
     font-size: var(--text-sm);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-primary);
     margin-bottom: 6px;
 }
 
 .tutorial-card-text {
     font-size: var(--text-xs);
-    line-height: 1.5;
+    line-height: var(--leading-normal);
     color: var(--text-secondary);
     margin: 0;
 }
@@ -5772,19 +5847,19 @@ body.tutorial-active {
     z-index: var(--z-tut-nav);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
     padding: 8px 12px;
     background: var(--bg-card);
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-lg);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+    box-shadow: var(--shadow-tutorial);
     white-space: nowrap;
     overflow: visible;
 }
 
 .tutorial-step-label {
     font-size: var(--text-xs);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     color: var(--text-secondary);
     padding: 0 8px;
 }
@@ -5792,7 +5867,7 @@ body.tutorial-active {
 .tutorial-nav-btn {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--space-1);
     padding: 6px 12px;
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
@@ -5800,7 +5875,7 @@ body.tutorial-active {
     color: var(--text-primary);
     font-family: inherit;
     font-size: var(--text-sm);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     cursor: pointer;
     transition: background 0.15s var(--ease-smooth);
 }
@@ -5831,7 +5906,7 @@ body.tutorial-active {
 }
 
 .tutorial-nav-close:hover {
-    background: rgba(196, 61, 53, 0.08);
+    background: var(--danger-tint);
     color: var(--danger);
 }
 
@@ -5844,24 +5919,24 @@ body.tutorial-active {
 /* Dark mode */
 .dark .tutorial-card {
     background: var(--bg-elevated);
-    border-color: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
+    border-color: var(--bg-active);
+    box-shadow: var(--shadow-tutorial);
 }
 
 .dark .tutorial-nav-bar {
     background: var(--bg-elevated);
-    border-color: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
+    border-color: var(--bg-active);
+    box-shadow: var(--shadow-tutorial);
 }
 
 .dark .tutorial-nav-btn {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: var(--bg-subtle);
+    border-color: var(--border);
     color: var(--text-primary);
 }
 
 .dark .tutorial-nav-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--bg-hover);
 }
 
 /* ============================================================================
@@ -5872,7 +5947,7 @@ body.tutorial-active {
 .landing-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.55);
+    background: var(--overlay-landing);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     z-index: var(--z-landing);
@@ -5903,8 +5978,7 @@ body.tutorial-active {
     box-shadow: var(--shadow-card);
     display: flex;
     flex-direction: column;
-    overflow-inline: clip;
-    overflow-block: auto;
+    overflow: clip;
     animation: landingSlideUp 0.4s ease-out;
 }
 
@@ -5923,6 +5997,7 @@ body.tutorial-active {
 .landing-header {
     padding: var(--space-6) var(--space-7) var(--space-4);
     border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
 }
 
 .landing-header-top {
@@ -5934,7 +6009,7 @@ body.tutorial-active {
 
 .step-counter {
     font-size: var(--text-xs);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-tertiary);
     letter-spacing: 0.5px;
 }
@@ -5957,7 +6032,7 @@ body.tutorial-active {
 .progress-dot.active {
     background: var(--primary);
     width: 24px;
-    border-radius: 4px;
+    border-radius: var(--radius-xs);
 }
 
 .progress-dot.completed {
@@ -5974,7 +6049,7 @@ body.tutorial-active {
     color: var(--text-tertiary);
     font-family: inherit;
     font-size: var(--text-xs);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     cursor: pointer;
     border-radius: var(--radius-sm);
     transition: transform 0.15s var(--ease-smooth), box-shadow 0.15s var(--ease-smooth), background-color 0.15s var(--ease-smooth), opacity 0.15s var(--ease-smooth);
@@ -6008,7 +6083,7 @@ body.tutorial-active {
 
 .landing-content::-webkit-scrollbar-thumb {
     background: var(--border-strong);
-    border-radius: 3px;
+    border-radius: var(--radius-xs);
 }
 
 .landing-content::-webkit-scrollbar-thumb:hover {
@@ -6039,17 +6114,18 @@ body.tutorial-active {
 /* Landing Step Title */
 .landing-step-title {
     font-size: var(--text-xl);
-    font-weight: 700;
+    font-weight: var(--weight-bold);
     color: var(--text-primary);
     margin-bottom: var(--space-2);
-    line-height: 1.3;
+    line-height: var(--leading-snug);
+    scroll-margin-top: var(--space-3);
 }
 
 .landing-step-subtitle {
     font-size: var(--text-base);
     color: var(--text-secondary);
     margin-bottom: var(--space-4);
-    line-height: 1.5;
+    line-height: var(--leading-normal);
 }
 
 /* Welcome Step */
@@ -6067,7 +6143,7 @@ body.tutorial-active {
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 8px 32px rgba(48, 161, 78, 0.3);
+    box-shadow: var(--shadow-safe);
 }
 
 .landing-welcome-icon .lucide-icon {
@@ -6078,10 +6154,10 @@ body.tutorial-active {
 
 .landing-welcome-title {
     font-size: var(--text-hero);
-    font-weight: 700;
+    font-weight: var(--weight-bold);
     color: var(--text-primary);
     margin-bottom: var(--space-3);
-    line-height: 1.2;
+    line-height: var(--leading-tight);
 }
 
 .landing-welcome-subtitle {
@@ -6089,7 +6165,7 @@ body.tutorial-active {
     color: var(--text-secondary);
     max-width: 400px;
     margin: 0 auto var(--space-8);
-    line-height: 1.5;
+    line-height: var(--leading-normal);
 }
 
 .landing-welcome .btn-large {
@@ -6125,17 +6201,17 @@ body.tutorial-active {
 
 .summary-value {
     font-size: var(--text-sm);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-primary);
 }
 
 /* Alias classes for JS compatibility */
 .landing-title {
     font-size: var(--text-hero);
-    font-weight: 700;
+    font-weight: var(--weight-bold);
     color: var(--text-primary);
     margin-bottom: var(--space-3);
-    line-height: 1.2;
+    line-height: var(--leading-tight);
 }
 
 .landing-subtitle {
@@ -6143,7 +6219,7 @@ body.tutorial-active {
     color: var(--text-secondary);
     max-width: 400px;
     margin: 0 auto var(--space-8);
-    line-height: 1.5;
+    line-height: var(--leading-normal);
 }
 
 /* Get Started button — extends .btn-primary with larger size (CTA) */
@@ -6155,7 +6231,7 @@ body.tutorial-active {
     padding: var(--space-4) var(--space-7);
     font-family: inherit;
     font-size: var(--text-lg);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     border-radius: var(--radius);
     border: none;
     cursor: pointer;
@@ -6189,7 +6265,7 @@ body.tutorial-active {
     padding: var(--space-2) var(--space-5);
     font-family: inherit;
     font-size: var(--text-sm);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     border-radius: var(--radius);
     border: 1px solid var(--border);
     background: transparent;
@@ -6223,7 +6299,7 @@ body.tutorial-active {
     padding: var(--space-3) var(--space-5);
     font-family: inherit;
     font-size: var(--text-base);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-primary);
     cursor: pointer;
     transition: transform 0.2s var(--ease-smooth), box-shadow 0.2s var(--ease-smooth), background-color 0.2s var(--ease-smooth), color 0.2s var(--ease-smooth), border-color 0.2s var(--ease-smooth), opacity 0.2s var(--ease-smooth);
@@ -6248,7 +6324,7 @@ body.tutorial-active {
     padding: var(--space-2) var(--space-5);
     font-family: inherit;
     font-size: var(--text-sm);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
     color: var(--text-secondary);
     cursor: pointer;
     transition: transform 0.15s var(--ease-smooth), box-shadow 0.15s var(--ease-smooth), background-color 0.15s var(--ease-smooth), opacity 0.15s var(--ease-smooth);
@@ -6271,7 +6347,7 @@ body.tutorial-active {
     border-radius: var(--radius);
     color: var(--safe);
     font-size: var(--text-sm);
-    font-weight: 500;
+    font-weight: var(--weight-medium);
 }
 
 .landing-import-confirmation i {
@@ -6363,7 +6439,7 @@ body.tutorial-active {
 
 .landing-card .card-title {
     font-size: var(--text-base);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-primary);
     margin-bottom: var(--space-1);
 }
@@ -6376,7 +6452,7 @@ body.tutorial-active {
 .landing-card .card-description {
     font-size: var(--text-sm);
     color: var(--text-secondary);
-    line-height: 1.4;
+    line-height: var(--leading-default);
 }
 
 /* Check Indicator */
@@ -6419,7 +6495,7 @@ body.tutorial-active {
     padding: var(--space-3) var(--space-5);
     font-family: inherit;
     font-size: var(--text-base);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     border-radius: var(--radius);
     border: none;
     cursor: pointer;
@@ -6441,7 +6517,7 @@ body.tutorial-active {
 .btn-primary:hover {
     background: var(--primary-hover);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px var(--shadow-color, rgba(58, 58, 60, 0.25));
+    box-shadow: 0 4px 12px var(--primary-glow);
 }
 
 .btn-secondary {
@@ -6530,12 +6606,12 @@ body.tutorial-active {
 
 .model-card .model-name {
     font-size: var(--text-base);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
 }
 
 .model-card .accuracy-badge {
     font-size: var(--text-xs);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     padding: var(--space-1) var(--space-2);
     border-radius: var(--radius-sm);
 }
@@ -6558,7 +6634,7 @@ body.tutorial-active {
 .model-card .model-description {
     font-size: var(--text-sm);
     color: var(--text-secondary);
-    line-height: 1.5;
+    line-height: var(--leading-normal);
     margin-bottom: var(--space-3);
 }
 
@@ -6681,7 +6757,7 @@ body.tutorial-active {
 
 .landing-tutorial-toggle .toggle-text h4 {
     font-size: var(--text-base);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     margin-bottom: var(--space-1);
     color: var(--text-primary);
 }
@@ -6712,11 +6788,11 @@ body.tutorial-active {
     width: 24px;
     height: 24px;
     background: var(--bg-card);
-    border-radius: 50%;
+    border-radius: var(--radius-full);
     top: 2px;
     left: 2px;
     transition: transform 0.25s var(--ease-smooth);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-toggle-knob);
 }
 
 .toggle-switch-ui.active::after {
@@ -6791,7 +6867,7 @@ body.tutorial-active {
 
 .landing-ready-title {
     font-size: var(--text-xl);
-    font-weight: 700;
+    font-weight: var(--weight-bold);
     margin-bottom: var(--space-3);
     color: var(--text-primary);
 }
@@ -6826,7 +6902,7 @@ body.tutorial-active {
 
 .ready-summary-value {
     font-size: var(--text-sm);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     display: flex;
     align-items: center;
     gap: var(--space-2);
@@ -6845,6 +6921,7 @@ body.tutorial-active {
     justify-content: space-between;
     align-items: center;
     background: var(--bg-card);
+    flex-shrink: 0;
 }
 
 .landing-footer[hidden] {
@@ -6906,7 +6983,7 @@ body.tutorial-active {
    ============================================================================ */
 
 .dark .landing-overlay {
-    background: rgba(0, 0, 0, 0.7);
+    background: var(--overlay-landing);
 }
 
 .dark .landing-container {
@@ -6914,7 +6991,7 @@ body.tutorial-active {
 }
 
 .dark .landing-welcome-icon {
-    box-shadow: 0 8px 32px rgba(48, 161, 78, 0.2);
+    box-shadow: var(--shadow-safe);
 }
 
 .dark .landing-tutorial-toggle .toggle-icon {
@@ -7133,7 +7210,7 @@ body.tutorial-active {
 .factor-value-row {
     min-width: 0;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: var(--space-1);
 }
 
 /* Value inputs - allow shrinking */
@@ -7247,7 +7324,7 @@ body.tutorial-active {
 .error-message {
     display: flex;
     align-items: flex-start;
-    gap: 8px;
+    gap: var(--space-2);
     padding: 12px 16px;
     background: var(--danger-light);
     border: 1px solid var(--danger-border);
@@ -7267,7 +7344,7 @@ body.tutorial-active {
 .warning-message {
     display: flex;
     align-items: flex-start;
-    gap: 8px;
+    gap: var(--space-2);
     padding: 12px 16px;
     background: var(--alert-light);
     border: 1px solid var(--alert-border);
@@ -7281,7 +7358,7 @@ body.tutorial-active {
 .success-message {
     display: flex;
     align-items: flex-start;
-    gap: 8px;
+    gap: var(--space-2);
     padding: 12px 16px;
     background: var(--safe-light);
     border: 1px solid var(--safe-border);
@@ -7304,12 +7381,8 @@ body.tutorial-active {
     height: 20px;
     border: 2px solid var(--border);
     border-top-color: var(--primary);
-    border-radius: 50%;
+    border-radius: var(--radius-full);
     animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
 }
 
 /* Skeleton loading */
@@ -7342,7 +7415,7 @@ body.tutorial-active {
     height: 16px;
     border: 2px solid var(--border);
     border-top-color: currentColor;
-    border-radius: 50%;
+    border-radius: var(--radius-full);
     animation: spin 0.8s linear infinite;
 }
 
@@ -7364,21 +7437,21 @@ body.tutorial-active {
 .empty-state-icon {
     width: 48px;
     height: 48px;
-    margin-bottom: 16px;
+    margin-bottom: var(--space-4);
     color: var(--text-tertiary);
     opacity: 0.5;
 }
 
 .empty-state-title {
     font-size: var(--text-md);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     color: var(--text-secondary);
-    margin-bottom: 8px;
+    margin-bottom: var(--space-2);
 }
 
 .empty-state-text {
     font-size: var(--text-sm);
-    line-height: 1.5;
+    line-height: var(--leading-normal);
     max-width: 280px;
 }
 
@@ -7412,7 +7485,7 @@ body.tutorial-active {
     background: var(--primary);
     color: var(--text-on-primary);
     border-radius: var(--radius-sm);
-    font-weight: 600;
+    font-weight: var(--weight-semibold);
     font-size: var(--text-sm);
     text-decoration: none;
 }

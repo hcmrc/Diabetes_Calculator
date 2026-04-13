@@ -1015,9 +1015,9 @@ DRC.UIController = (() => {
         if (!container) return;
         container.replaceChildren();
 
-        // Check if risk-factors-only filter is active
+        // Sync with "Show Protective Factors" toggle from contribution chart
         const contribContainer = el('contribution-chart');
-        const filterRiskOnly = contribContainer?.getAttribute('data-filter-risk') !== 'false';
+        const showProtective = contribContainer?.getAttribute('data-show-protective') === 'true';
 
         // Calculate treatment items
         const treatStatus = { elevatedFactors, waistIsHigh };
@@ -1031,47 +1031,20 @@ DRC.UIController = (() => {
         const simulatedSet = new Set(DRC.TreatmentSimulator?.getSimulatedFactors?.() ?? []);
         modelFilteredItems.forEach(item => { item.isSimulated = simulatedSet.has(item.factor); });
 
-        // Apply risk filter but always keep simulated items (their value changed, not their relevance)
-        const displayItems = filterRiskOnly
-            ? modelFilteredItems.filter(i => i.isAboveAverage || i.isSimulated)
-            : modelFilteredItems;
-        displayItems.sort((a, b) => {
-            if (a.isSimulated !== b.isSimulated) return a.isSimulated ? -1 : 1;
-            return b.absContrib - a.absContrib;
-        });
+        // When protective factors are shown, display all treatments in contribution order
+        // When hidden, only show risk factors + simulated (their values changed)
+        const displayItems = showProtective
+            ? modelFilteredItems
+            : modelFilteredItems.filter(i => i.isAboveAverage || i.isSimulated);
+
+        // Sort by absolute contribution to match contribution chart order
+        displayItems.sort((a, b) => b.absContrib - a.absContrib);
 
         // Calculate max percentage for bar scaling
         const maxPct = calculateMaxValue(displayItems, i => i.pct, 1);
 
-        // Render simulated cards first, then a divider, then the rest
-        const simulatedItems = displayItems.filter(i => i.isSimulated);
-        const remainingItems = displayItems.filter(i => !i.isSimulated);
-
-        if (simulatedItems.length > 0) {
-            const simDivider = createSafeElement('div', { className: 'treatment-section-divider' });
-            const simLabel = createSafeElement('span', {
-                className: 'treatment-section-label',
-                text: t('treatments.simulatedInterventions', 'Simulated Interventions')
-            });
-            simDivider.appendChild(simLabel);
-            container.appendChild(simDivider);
-        }
-
-        simulatedItems.forEach(item => {
-            container.appendChild(renderTreatmentRow(item, maxPct, waistIsHigh));
-        });
-
-        if (simulatedItems.length > 0 && remainingItems.length > 0) {
-            const divider = createSafeElement('div', { className: 'treatment-section-divider' });
-            const label = createSafeElement('span', {
-                className: 'treatment-section-label',
-                text: t('treatments.otherInterventions', 'Other Interventions')
-            });
-            divider.appendChild(label);
-            container.appendChild(divider);
-        }
-
-        remainingItems.forEach(item => {
+        // Render all items in contribution order (no simulated/remaining divider)
+        displayItems.forEach(item => {
             container.appendChild(renderTreatmentRow(item, maxPct, waistIsHigh));
         });
 

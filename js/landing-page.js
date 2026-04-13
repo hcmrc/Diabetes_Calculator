@@ -937,6 +937,8 @@ DRC.LandingPage = (() => {
     const _renderStep = () => {
         if (!_content) return;
 
+        // Reset scroll position so the new step starts at the top
+        _content.scrollTop = 0;
         _content.replaceChildren();
 
         let stepContent;

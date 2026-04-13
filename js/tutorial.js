@@ -121,6 +121,7 @@ DRC.Tutorial = (() => {
     const EDGE_PAD           = 10;   // min distance from viewport edges
     const CARD_GAP           = 12;   // vertical gap between cards in a column
     const NAV_BAR_HEIGHT     = 100;  // space reserved for tutorial nav bar at bottom
+    const TOP_NAV_HEIGHT     = 56;   // top nav min-height (48px) + border + breathing room
 
     // ─── State ─────────────────────────────────────────────────────────
     let _currentStep  = 0;
@@ -557,8 +558,11 @@ DRC.Tutorial = (() => {
         // rect.top is viewport-relative; convert to document coordinates
         const documentTop = rect.top + currentScrollY;
         const vh = window.innerHeight;
-        // Place section near the top, leaving a small gap; clamp to document start
-        const marginTop = 10;
+        // For non-nav sections, reserve space for the top navigation bar so
+        // section headers (e.g. "Patient Data") don't overlap with "Diabetes Calculator".
+        // The nav step targets the top-nav itself, so it needs no extra margin.
+        const isNavStep = sectionEl.matches && sectionEl.matches('nav.top-nav');
+        const marginTop = isNavStep ? EDGE_PAD : TOP_NAV_HEIGHT;
         let newScrollY = documentTop - marginTop;
         newScrollY = Math.max(0, newScrollY);
         document.body.style.top = `-${newScrollY}px`;
