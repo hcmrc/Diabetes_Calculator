@@ -1395,6 +1395,7 @@ DRC.LandingPage = (() => {
         show,
         hide,
         reset,
+        restart: reset,
         getState,
         isCompleted
     };
