@@ -1135,10 +1135,16 @@ DRC.LandingPage = (() => {
             case 'encrypted': {
                 // Only open drawer if not in setup flow (skipDrawer = true)
                 if (!skipDrawer) {
-                    const drawer = document.getElementById('patientDrawer');
-                    const overlay = document.getElementById('patientOverlay');
-                    if (drawer) drawer.classList.add('open');
-                    if (overlay) overlay.classList.add('open');
+                    if (DRC.PatientManager?.toggleDrawer) {
+                        DRC.PatientManager.toggleDrawer(true);
+                    } else {
+                        const drawer = document.getElementById('patientDrawer');
+                        const overlay = document.getElementById('patientOverlay');
+                        const btn = document.getElementById('patientMenuBtn');
+                        if (drawer) drawer.classList.add('open');
+                        if (overlay) overlay.classList.add('open');
+                        if (btn) btn.classList.add('open');
+                    }
                 }
                 if (_pendingFile) {
                     setTimeout(() => {

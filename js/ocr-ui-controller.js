@@ -868,16 +868,15 @@
                 e.stopPropagation();
 
                 // Patient Drawer schliessen falls noetig
-                const drawer = document.getElementById('patientDrawer');
-                const overlay = document.getElementById('patientOverlay');
-                if (drawer) {
-                    drawer.classList.remove('open');
-                    drawer.style.transform = '';
-                }
-                if (overlay) {
-                    overlay.classList.remove('open');
-                    overlay.style.opacity = '0';
-                    overlay.style.pointerEvents = 'none';
+                if (DRC.PatientManager?.toggleDrawer) {
+                    DRC.PatientManager.toggleDrawer(false);
+                } else {
+                    const drawer = document.getElementById('patientDrawer');
+                    const overlay = document.getElementById('patientOverlay');
+                    const btn = document.getElementById('patientMenuBtn');
+                    if (drawer) drawer.classList.remove('open');
+                    if (overlay) overlay.classList.remove('open');
+                    if (btn) btn.classList.remove('open');
                 }
 
                 showModal();

@@ -1054,5 +1054,5 @@ DRC.PatientManager = (() => {
         return patient ? patient.data : null;
     };
 
-    return { init, loadPatient, applyValues, captureCurrentValues, updateNavLabel, getActivePatientData, addPatient, renamePatient };
+    return { init, loadPatient, applyValues, captureCurrentValues, updateNavLabel, getActivePatientData, addPatient, renamePatient, toggleDrawer };
 })();
