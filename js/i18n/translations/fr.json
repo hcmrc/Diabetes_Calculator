@@ -122,6 +122,25 @@
     "snapshot": "Instantané",
     "empty": "Définissez une référence et ajoutez des instantanés pour suivre votre risque à travers les scénarios."
   },
+  "models": {
+    "clinical": {
+      "name": "Clinique Uniquement",
+      "description": "Mesures corporelles et données démographiques uniquement, aucun test sanguin nécessaire"
+    },
+    "clinicalGlucose": {
+      "name": "Clinique + Glucose",
+      "description": "Valeurs cliniques plus glycémie à jeun"
+    },
+    "clinicalGlucoseLipids": {
+      "name": "Clinique + Glucose + Lipides",
+      "description": "Modèle complet avec toutes les valeurs de laboratoire"
+    },
+    "accuracy": {
+      "basis": "Base",
+      "gut": "Bon",
+      "beste": "Meilleur"
+    }
+  },
   "modals": {
     "profileWarning": {
       "title": "Sauvegarder Vos Données?",

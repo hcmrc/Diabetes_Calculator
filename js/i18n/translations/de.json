@@ -122,6 +122,25 @@
     "snapshot": "Schnappschuss",
     "empty": "Setzen Sie eine Baseline und fügen Sie Schnappschüsse hinzu, um Ihr Risiko über Szenarien zu verfolgen."
   },
+  "models": {
+    "clinical": {
+      "name": "Nur Klinisch",
+      "description": "Nur Körpermaße & Demografie, kein Bluttest nötig"
+    },
+    "clinicalGlucose": {
+      "name": "Klinisch + Glukose",
+      "description": "Klinische Werte plus Nüchternglukose"
+    },
+    "clinicalGlucoseLipids": {
+      "name": "Klinisch + Glukose + Lipide",
+      "description": "Vollständiges Modell mit allen Laborwerten"
+    },
+    "accuracy": {
+      "basis": "Basis",
+      "gut": "Gut",
+      "beste": "Beste"
+    }
+  },
   "modals": {
     "profileWarning": {
       "title": "Daten speichern?",

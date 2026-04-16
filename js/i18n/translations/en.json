@@ -122,6 +122,25 @@
     "snapshot": "Snapshot",
     "empty": "Set a baseline and add snapshots to track your risk over scenarios."
   },
+  "models": {
+    "clinical": {
+      "name": "Clinical Only",
+      "description": "Body measurements & demographics only, no blood test needed"
+    },
+    "clinicalGlucose": {
+      "name": "Clinical + Glucose",
+      "description": "Clinical values plus fasting glucose"
+    },
+    "clinicalGlucoseLipids": {
+      "name": "Clinical + Glucose + Lipids",
+      "description": "Full model with all lab values"
+    },
+    "accuracy": {
+      "basis": "Basic",
+      "gut": "Good",
+      "beste": "Best"
+    }
+  },
   "modals": {
     "profileWarning": {
       "title": "Save Your Data?",

@@ -122,6 +122,25 @@
     "snapshot": "Instantánea",
     "empty": "Establezca una línea base y añada instantáneas para rastrear su riesgo a través de escenarios."
   },
+  "models": {
+    "clinical": {
+      "name": "Solo Clínico",
+      "description": "Solo medidas corporales y datos demográficos, sin análisis de sangre necesario"
+    },
+    "clinicalGlucose": {
+      "name": "Clínico + Glucosa",
+      "description": "Valores clínicos más glucosa en ayunas"
+    },
+    "clinicalGlucoseLipids": {
+      "name": "Clínico + Glucosa + Lípidos",
+      "description": "Modelo completo con todos los valores de laboratorio"
+    },
+    "accuracy": {
+      "basis": "Básico",
+      "gut": "Bueno",
+      "beste": "Mejor"
+    }
+  },
   "modals": {
     "profileWarning": {
       "title": "¿Guardar Sus Datos?",
