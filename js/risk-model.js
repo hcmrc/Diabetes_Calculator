@@ -56,8 +56,8 @@ DRC.RiskModel = (() => {
     const computeProbability = (siVals, model) => {
         const lp = linearPredictor(siVals, model);
         if (!isFinite(lp)) {
-            console.warn('RiskModel: non-finite linear predictor, returning NaN');
-            return NaN;
+            console.warn('RiskModel: non-finite linear predictor, returning null');
+            return null;
         }
         return 1 / (1 + Math.exp(-lp));
     };

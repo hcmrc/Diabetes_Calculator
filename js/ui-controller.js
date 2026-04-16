@@ -21,6 +21,9 @@ DRC.UIController = (() => {
     const { el, setText, clampAndRound, formatAxisValue, escapeHtml } = DRC.UIHelpers;
     const CFG = DRC.CONFIG;
 
+    // Number of icons in the pictograph (100-person representation)
+    const ICON_ARRAY_SIZE = 100;
+
     // Translation helper
     const t = DRC.Utils.createTranslator();
 
@@ -28,6 +31,9 @@ DRC.UIController = (() => {
     let _filterHandlerAttached = false;
     let _rowClickHandlerAttached = false;
     let _treatmentDelegationAttached = false;
+
+    // AbortController for cleaning up treatment event listeners
+    let _treatmentAbortController = null;
 
     // ─── XSS-safe DOM element creation helper ─────────────────────────────
 
@@ -220,8 +226,8 @@ DRC.UIController = (() => {
 
     /** Display the risk percentage with preattentive color glow. */
     const renderRisk = (pct) => {
-        // Handle edge cases: NaN, Infinity, negative values
-        if (!isFinite(pct) || pct < 0) {
+        // Handle edge cases: null, NaN, Infinity, negative values
+        if (pct == null || !isFinite(pct) || pct < 0) {
             console.warn('UIController: Invalid risk percentage:', pct);
             setText('risk-percentage', '---');
             return;
@@ -971,6 +977,10 @@ DRC.UIController = (() => {
     const setupTreatmentEvents = () => {
         if (_treatmentDelegationAttached) return;
 
+        // Create AbortController for cleanup
+        _treatmentAbortController = new AbortController();
+        const { signal } = _treatmentAbortController;
+
         const container = el('treatment-overview');
         if (!container) return;
 
@@ -986,7 +996,7 @@ DRC.UIController = (() => {
                 if (simFactor && DRC.TreatmentSimulator?.unsimulate) {
                     DRC.TreatmentSimulator.unsimulate(simFactor);
                 }
-            });
+            }, { signal });
         }
 
         container.addEventListener('click', (e) => {
@@ -1025,7 +1035,7 @@ DRC.UIController = (() => {
                     DRC.TreatmentSimulator.unsimulate(simFactor);
                 }
             }
-        });
+        }, { signal });
 
         container.addEventListener('keydown', (e) => {
             if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -1040,7 +1050,7 @@ DRC.UIController = (() => {
                 const isExpanded = details?.classList.contains('expanded');
                 clickable.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
             }
-        });
+        }, { signal });
 
         _treatmentDelegationAttached = true;
     };
@@ -1164,12 +1174,6 @@ DRC.UIController = (() => {
         if (typeof lucide !== 'undefined') lucide.createIcons();
     };
 
-    /** Legacy no-op kept for API compatibility. */
-    const renderTreatmentRecommendations = () => {
-        const c = el('dynamic-treatments');
-        if (c) c.replaceChildren();
-    };
-
     // ─── Rendering: What-if badges ──────────────────────────────────────
 
     /** Update a single what-if delta badge. */
@@ -1207,7 +1211,7 @@ DRC.UIController = (() => {
         const affected = Math.min(Math.max(Math.round(riskPct), 0), 100);
         // Clear container safely (remove all children)
         while (container.firstChild) container.removeChild(container.firstChild);
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < ICON_ARRAY_SIZE; i++) {
             const icon = document.createElement('div');
             icon.className = `icon-array-item${i < affected ? ' affected' : ''}`;
             container.appendChild(icon);
@@ -1394,6 +1398,19 @@ DRC.UIController = (() => {
     const getUnitToggleState = () =>
         document.getElementById('unit-toggle')?.checked ?? false;
 
+    /**
+     * Clean up treatment event listeners.
+     * Aborts the AbortController and resets the delegation guard,
+     * allowing setupTreatmentEvents to be called again if needed.
+     */
+    const cleanupTreatmentEvents = () => {
+        if (_treatmentAbortController) {
+            _treatmentAbortController.abort();
+            _treatmentAbortController = null;
+        }
+        _treatmentDelegationAttached = false;
+    };
+
     // ─── Public API ─────────────────────────────────────────────────────
 
     return {
@@ -1401,9 +1418,9 @@ DRC.UIController = (() => {
         applyConvertedValues, updateSliderFill, updateAllSliderFills,
         renderRisk, renderChosenRisk, renderChosenTreatmentsList,
         renderContributionChart,
-        renderTreatmentOverview, renderTreatmentRecommendations,
+        renderTreatmentOverview,
         renderWhatIfBadge, renderIconArray,
         updateNonModSummary, updateModSummary, updateWaistSegments,
-        getSliderElements, getUnitToggleState
+        getSliderElements, getUnitToggleState, cleanupTreatmentEvents
     };
 })();

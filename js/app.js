@@ -152,7 +152,6 @@ DRC.App = (() => {
         UI().renderIconArray(riskPctOriginal);
         UI().renderContributionChart(marginalSummary);
         UI().renderTreatmentOverview(treatStatus, logOddsContributions, marginalSummary.contributions);
-        UI().renderTreatmentRecommendations(treatStatus, logOddsContributions);
 
         if (state.activeField && state.prevRiskPct !== null) {
             UI().renderWhatIfBadge(state.activeField, riskPctCurrent - state.prevRiskPct);

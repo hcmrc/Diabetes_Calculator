@@ -169,7 +169,7 @@ This application:
 | Practice | Implementation |
 |----------|---------------|
 | XSS Prevention | `DRC.Utils.escapeHtml()` for text content |
-| Safe DOM | `DRC.Utils.createElement()` instead of HTML strings |
+| Safe DOM | `textContent` and `escapeHtml()` instead of `innerHTML` |
 | Event Handling | Delegated events instead of document-level handlers |
 | Data Sanitization | Input validation in `DRC.Validation` utilities |
 

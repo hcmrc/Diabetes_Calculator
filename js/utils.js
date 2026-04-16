@@ -42,25 +42,6 @@
     };
 
     /**
-     * Create a DOM element with options
-     * @param {string} tag - HTML tag name
-     * @param {Object} options - Options object
-     * @param {string} [options.className] - CSS class(es)
-     * @param {string} [options.textContent] - Text content
-     * @param {Object} [options.attributes] - Key-value attribute pairs
-     * @returns {HTMLElement} Created element
-     */
-    const createElement = (tag, options = {}) => {
-        const el = document.createElement(tag);
-        if (options.className) el.className = options.className;
-        if (options.textContent) el.textContent = options.textContent;
-        if (options.attributes) {
-            Object.entries(options.attributes).forEach(([k, v]) => el.setAttribute(k, v));
-        }
-        return el;
-    };
-
-    /**
      * Escape HTML special characters
      * @param {string} str - String to escape
      * @returns {string} Escaped string
@@ -147,7 +128,6 @@
     DRC.Utils = {
         createTranslator,
         debounce,
-        createElement,
         escapeHtml,
         createElementCache,
         createFocusTrap

@@ -96,7 +96,8 @@ DRC.TreatmentSimulator = (() => {
             DRC.App.trigger('risk:recalculate');
 
             if (frame < CFG.ANIMATION_STEPS) {
-                _animationTimeoutId = setTimeout(tick, CFG.ANIMATION_DURATION / CFG.ANIMATION_STEPS);
+                const timeoutId = setTimeout(tick, CFG.ANIMATION_DURATION / CFG.ANIMATION_STEPS);
+                _animationTimeoutId = timeoutId;
             } else {
                 _animationTimeoutId = null;
                 _animating = false;
