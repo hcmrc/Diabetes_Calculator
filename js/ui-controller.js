@@ -1103,26 +1103,53 @@ DRC.UIController = (() => {
         const activeModel = DRC.App?.getActiveModel?.();
         const modelFilteredItems = filterContributionsByModel(items, activeModel);
 
-        // Mark simulated items before filtering — they must always be shown
+        // Mark simulated items
         const simulatedSet = new Set(DRC.TreatmentSimulator?.getSimulatedFactors?.() ?? []);
         modelFilteredItems.forEach(item => { item.isSimulated = simulatedSet.has(item.factor); });
 
-        // When protective factors are shown, display all treatments in contribution order
-        // When hidden, only show risk factors + simulated (their values changed)
-        const displayItems = showProtective
-            ? modelFilteredItems
-            : modelFilteredItems.filter(i => i.isAboveAverage || i.isSimulated);
+        // Split into simulated and other items
+        const simulatedItems = modelFilteredItems.filter(i => i.isSimulated);
 
-        // Sort by absolute contribution to match contribution chart order
-        displayItems.sort((a, b) => b.absContrib - a.absContrib);
+        // For "other" items: apply showProtective filter (simulated items are already shown above)
+        const otherItems = modelFilteredItems
+            .filter(i => !i.isSimulated)
+            .filter(i => showProtective ? true : i.isAboveAverage);
 
-        // Calculate max percentage for bar scaling
-        const maxPct = calculateMaxValue(displayItems, i => i.pct, 1);
+        // Sort both groups by absolute contribution
+        simulatedItems.sort((a, b) => b.absContrib - a.absContrib);
+        otherItems.sort((a, b) => b.absContrib - a.absContrib);
 
-        // Render all items in contribution order (no simulated/remaining divider)
-        displayItems.forEach(item => {
-            container.appendChild(renderTreatmentRow(item, maxPct, waistIsHigh));
-        });
+        // Calculate max percentage for bar scaling across all displayed items
+        const maxPct = calculateMaxValue([...simulatedItems, ...otherItems], i => i.pct, 1);
+
+        // Helper: create a section divider with label
+        const createSectionDivider = (labelKey, fallback) => {
+            const divider = createSafeElement('div', { className: 'treatment-section-divider' });
+            const label = createSafeElement('span', {
+                className: 'treatment-section-label',
+                text: t(labelKey, fallback)
+            });
+            divider.appendChild(label);
+            return divider;
+        };
+
+        // Render "Already Simulated" section
+        if (simulatedItems.length > 0) {
+            container.appendChild(createSectionDivider('treatments.simulatedInterventions', 'Simulated Interventions'));
+            simulatedItems.forEach(item => {
+                container.appendChild(renderTreatmentRow(item, maxPct, waistIsHigh));
+            });
+        }
+
+        // Render "Other Treatments" section
+        if (otherItems.length > 0) {
+            if (simulatedItems.length > 0) {
+                container.appendChild(createSectionDivider('treatments.otherInterventions', 'Other Interventions'));
+            }
+            otherItems.forEach(item => {
+                container.appendChild(renderTreatmentRow(item, maxPct, waistIsHigh));
+            });
+        }
 
         // Setup event delegation
         setupTreatmentEvents();
