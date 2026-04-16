@@ -637,11 +637,17 @@ DRC.UIController = (() => {
             container.classList.add('contrib-simple-mode');
         }
 
+        // Height stays in the sliders and risk model, but is hidden from the
+        // barchart visualisation (use a local copy so the shared contributions
+        // object passed to the treatment overview is not mutated).
+        const displayContributions = { ...contributions };
+        delete displayContributions.height;
+
         renderFilterToggle(container, showProtective);
         if (showProtective) {
             renderContributionHeader(container);
         }
-        renderContributionRows(container, contributions, !showProtective);
+        renderContributionRows(container, displayContributions, !showProtective);
     };
 
     // ─── Rendering: Treatment overview ──────────────────────────────────
