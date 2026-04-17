@@ -35,7 +35,9 @@ This application:
 
 The application uses minimal external dependencies:
 - Lucide Icons (local)
-- SheetJS for Excel import/export (loaded from CDN with integrity check)
+- SheetJS for Excel import/export (loaded from CDN with SRI)
+- Tesseract.js for OCR (loaded from CDN with SRI, lazy-loaded)
+- PDF.js for PDF rendering (loaded from CDN with SRI, lazy-loaded)
 - Google Fonts (loaded from CDN)
 
 All external resources use Subresource Integrity (SRI) where applicable.

@@ -149,8 +149,8 @@
             <span class="settings-option-label" data-i18n="settings.units">Units</span>
             <div class="unit-toggle-nav settings-unit-toggle">
                 <span class="toggle-label-nav" id="unit-label-us">US</span>
-                <label class="toggle-switch-nav" aria-label="Switch between US and SI units">
-                    <input type="checkbox" id="unit-toggle" aria-checked="false">
+                <label class="toggle-switch-nav">
+                    <input type="checkbox" id="unit-toggle" aria-label="Switch between US and SI units" aria-checked="false">
                     <span class="toggle-track-nav"></span>
                 </label>
                 <span class="toggle-label-nav" id="unit-label-si">SI</span>
@@ -265,13 +265,13 @@
                         </label>
                     </div>
                     <div class="slider-wrapper">
-                        <input type="range" id="age-slider" min="20" max="80" value="50" step="1" class="slider" aria-label="Age slider">
+                        <input type="range" id="age-slider" min="20" max="80" value="50" step="1" class="slider" aria-label="Age slider" aria-describedby="age-unit">
                         <div class="slider-track-bg" id="age-track"><div class="slider-fill" id="age-fill"></div></div>
                     </div>
                     <div class="slider-labels slider-labels-numeric"><span>20</span><span>50</span><span>80</span></div>
                     <div class="factor-value-row">
-                        <input type="number" id="age-value" value="50" min="20" max="80" step="1" class="value-input" aria-label="Age in years">
-                        <span class="value-unit-label" data-i18n="units.years">years</span>
+                        <input type="number" id="age-value" value="50" min="20" max="80" step="1" class="value-input" aria-label="Age in years" aria-describedby="age-unit">
+                        <span class="value-unit-label" id="age-unit" data-i18n="units.years">years</span>
                         <span class="what-if-badge" id="what-if-age"></span>
                     </div>
                 </div>
@@ -283,7 +283,7 @@
                     </div>
                     <div class="toggle-group">
                         <span class="toggle-option" data-i18n="units.other">Other</span>
-                        <label class="toggle-switch"><input type="checkbox" id="race-toggle" aria-label="Toggle ethnicity" aria-checked="false"><span class="toggle-slider"></span></label>
+                        <label class="toggle-switch"><input type="checkbox" id="race-toggle" aria-label="Ethnicity: Other" aria-checked="false"><span class="toggle-slider"></span></label>
                         <span class="toggle-option" data-i18n="units.black">Black</span>
                     </div>
                 </div>
@@ -295,7 +295,7 @@
                     </div>
                     <div class="toggle-group">
                         <span class="toggle-option" data-i18n="units.no">No</span>
-                        <label class="toggle-switch"><input type="checkbox" id="parentHist-toggle" aria-label="Toggle parental diabetes history" aria-checked="false"><span class="toggle-slider"></span></label>
+                        <label class="toggle-switch"><input type="checkbox" id="parentHist-toggle" aria-label="Parental diabetes history: No" aria-checked="false"><span class="toggle-slider"></span></label>
                         <span class="toggle-option" data-i18n="units.yes">Yes</span>
                     </div>
                 </div>
@@ -307,7 +307,7 @@
                     </div>
                     <div class="toggle-group">
                         <span class="toggle-option" data-i18n="units.female">Female</span>
-                        <label class="toggle-switch"><input type="checkbox" id="sex-toggle" checked aria-label="Toggle sex" aria-checked="true"><span class="toggle-slider"></span></label>
+                        <label class="toggle-switch"><input type="checkbox" id="sex-toggle" checked aria-label="Sex: Male" aria-checked="true"><span class="toggle-slider"></span></label>
                         <span class="toggle-option" data-i18n="units.male">Male</span>
                     </div>
                 </div>
@@ -318,12 +318,12 @@
                         <label for="height-slider"><i data-lucide="move-vertical" class="lucide-icon ig-icon"></i> <span data-i18n="factors.height">Height</span> <span class="unit-label" id="height-unit">(in)</span></label>
                     </div>
                     <div class="slider-wrapper">
-                        <input type="range" id="height-slider" min="48" max="84" value="66" step="1" class="slider" aria-label="Height slider">
+                        <input type="range" id="height-slider" min="48" max="84" value="66" step="1" class="slider" aria-label="Height slider" aria-describedby="height-value-unit">
                         <div class="slider-track-bg"><div class="slider-fill" id="height-fill"></div></div>
                     </div>
                     <div class="slider-labels slider-labels-numeric"><span id="height-min">48</span><span id="height-mid">66</span><span id="height-max">84</span></div>
                     <div class="factor-value-row">
-                        <input type="number" id="height-value" value="66" min="48" max="84" step="1" class="value-input" aria-label="Height">
+                        <input type="number" id="height-value" value="66" min="48" max="84" step="1" class="value-input" aria-label="Height in inches" aria-describedby="height-value-unit">
                         <span class="value-unit-label" id="height-value-unit">in</span>
                         <span class="what-if-badge" id="what-if-height"></span>
                     </div>
@@ -354,7 +354,7 @@
                     <label for="fastGlu-slider"><i data-lucide="droplet" class="lucide-icon ig-icon"></i> <span data-i18n="factors.fastGlu">Fasting Glucose</span> <span class="unit-label" id="fastGlu-unit">(mg/dL)</span></label>
                 </div>
                 <div class="slider-wrapper">
-                    <input type="range" id="fastGlu-slider" min="50" max="300" value="95" step="1" class="slider" aria-label="Fasting glucose slider">
+                    <input type="range" id="fastGlu-slider" min="50" max="300" value="95" step="1" class="slider" aria-label="Fasting glucose slider" aria-describedby="fastGlu-value-unit">
                     <div class="slider-track-bg segmented" id="fastGlu-track">
                         <div class="slider-segment safe" style="--flex:50"></div>
                         <div class="slider-segment alert" style="--flex:25"></div>
@@ -363,7 +363,7 @@
                 </div>
                 <div class="slider-labels"><span style="--flex:50">Normal</span><span style="--flex:25">Prediabetes</span><span style="--flex:175">Diabetes</span></div>
                 <div class="factor-value-row">
-                    <input type="number" id="fastGlu-value" value="95" min="50" max="300" step="1" class="value-input" aria-label="Fasting glucose">
+                    <input type="number" id="fastGlu-value" value="95" min="50" max="300" step="1" class="value-input" aria-label="Fasting glucose in mg/dL" aria-describedby="fastGlu-value-unit">
                     <span class="value-unit-label" id="fastGlu-value-unit">mg/dL</span>
                     <span class="what-if-badge" id="what-if-fastGlu"></span>
                 </div>
@@ -375,7 +375,7 @@
                     <label for="waist-slider"><i data-lucide="ruler" class="lucide-icon ig-icon"></i> <span data-i18n="factors.waist">Waist</span> <span class="unit-label" id="waist-unit">(in)</span></label>
                 </div>
                 <div class="slider-wrapper">
-                    <input type="range" id="waist-slider" min="26" max="60" value="36" step="1" class="slider" aria-label="Waist circumference slider">
+                    <input type="range" id="waist-slider" min="26" max="60" value="36" step="1" class="slider" aria-label="Waist circumference slider" aria-describedby="waist-value-unit">
                     <div class="slider-track-bg segmented" id="waist-track">
                         <div class="slider-segment safe" style="--flex:14"></div>
                         <div class="slider-segment danger" style="--flex:20"></div>
@@ -383,7 +383,7 @@
                 </div>
                 <div class="slider-labels" id="waist-labels"><span style="--flex:14;text-align:left">26</span><span style="--flex:0;white-space:nowrap">43</span><span style="--flex:20;text-align:right">60</span></div>
                 <div class="factor-value-row">
-                    <input type="number" id="waist-value" value="36" min="26" max="60" step="1" class="value-input" aria-label="Waist circumference">
+                    <input type="number" id="waist-value" value="36" min="26" max="60" step="1" class="value-input" aria-label="Waist circumference in inches" aria-describedby="waist-value-unit">
                     <span class="value-unit-label" id="waist-value-unit">in</span>
                     <span class="what-if-badge" id="what-if-waist"></span>
                 </div>
@@ -395,7 +395,7 @@
                     <label for="sbp-slider"><i data-lucide="heart-pulse" class="lucide-icon ig-icon"></i> <span data-i18n="factors.sbp">Blood Pressure</span> <span class="unit-label">(mmHg)</span></label>
                 </div>
                 <div class="slider-wrapper">
-                    <input type="range" id="sbp-slider" min="80" max="220" value="120" step="1" class="slider" aria-label="Systolic blood pressure slider">
+                    <input type="range" id="sbp-slider" min="80" max="220" value="120" step="1" class="slider" aria-label="Systolic blood pressure slider" aria-describedby="sbp-unit">
                     <div class="slider-track-bg segmented" id="sbp-track">
                         <div class="slider-segment safe" style="--flex:40"></div>
                         <div class="slider-segment alert" style="--flex:10"></div>
@@ -404,8 +404,8 @@
                 </div>
                 <div class="slider-labels"><span style="--flex:40">Normal</span><span style="--flex:10">Elevated</span><span style="--flex:90">Hypertension</span></div>
                 <div class="factor-value-row">
-                    <input type="number" id="sbp-value" value="120" min="80" max="220" step="1" class="value-input" aria-label="Systolic blood pressure">
-                    <span class="value-unit-label">mmHg</span>
+                    <input type="number" id="sbp-value" value="120" min="80" max="220" step="1" class="value-input" aria-label="Systolic blood pressure in mmHg" aria-describedby="sbp-unit">
+                    <span class="value-unit-label" id="sbp-unit">mmHg</span>
                     <span class="what-if-badge" id="what-if-sbp"></span>
                 </div>
             </div>
@@ -416,7 +416,7 @@
                     <label for="cholHDL-slider"><i data-lucide="droplets" class="lucide-icon ig-icon"></i> <span data-i18n="factors.cholHDL">HDL Cholesterol</span> <span class="unit-label" id="cholHDL-unit">(mg/dL)</span></label>
                 </div>
                 <div class="slider-wrapper">
-                    <input type="range" id="cholHDL-slider" min="20" max="100" value="50" step="1" class="slider" aria-label="HDL cholesterol slider">
+                    <input type="range" id="cholHDL-slider" min="20" max="100" value="50" step="1" class="slider" aria-label="HDL cholesterol slider" aria-describedby="cholHDL-value-unit">
                     <div class="slider-track-bg segmented" id="cholHDL-track">
                         <div class="slider-segment danger" style="--flex:20"></div>
                         <div class="slider-segment alert" style="--flex:21"></div>
@@ -425,7 +425,7 @@
                 </div>
                 <div class="slider-labels"><span style="--flex:20">Low</span><span style="--flex:21">Borderline</span><span style="--flex:40">Good</span></div>
                 <div class="factor-value-row">
-                    <input type="number" id="cholHDL-value" value="50" min="20" max="100" step="1" class="value-input" aria-label="HDL cholesterol">
+                    <input type="number" id="cholHDL-value" value="50" min="20" max="100" step="1" class="value-input" aria-label="HDL cholesterol in mg/dL" aria-describedby="cholHDL-value-unit">
                     <span class="value-unit-label" id="cholHDL-value-unit">mg/dL</span>
                     <span class="what-if-badge" id="what-if-cholHDL"></span>
                 </div>
@@ -437,7 +437,7 @@
                     <label for="cholTri-slider"><i data-lucide="flask-conical" class="lucide-icon ig-icon"></i> <span data-i18n="factors.cholTri">Blood Fats (Triglycerides)</span> <span class="unit-label" id="cholTri-unit">(mg/dL)</span></label>
                 </div>
                 <div class="slider-wrapper">
-                    <input type="range" id="cholTri-slider" min="50" max="500" value="150" step="1" class="slider" aria-label="Triglycerides slider">
+                    <input type="range" id="cholTri-slider" min="50" max="500" value="150" step="1" class="slider" aria-label="Triglycerides slider" aria-describedby="cholTri-value-unit">
                     <div class="slider-track-bg segmented" id="cholTri-track">
                         <div class="slider-segment safe" style="--flex:100"></div>
                         <div class="slider-segment alert" style="--flex:50"></div>
@@ -446,7 +446,7 @@
                 </div>
                 <div class="slider-labels"><span style="--flex:100">Normal</span><span style="--flex:50">Borderline</span><span style="--flex:300">High</span></div>
                 <div class="factor-value-row">
-                    <input type="number" id="cholTri-value" value="150" min="50" max="500" step="1" class="value-input" aria-label="Triglycerides">
+                    <input type="number" id="cholTri-value" value="150" min="50" max="500" step="1" class="value-input" aria-label="Triglycerides in mg/dL" aria-describedby="cholTri-value-unit">
                     <span class="value-unit-label" id="cholTri-value-unit">mg/dL</span>
                     <span class="what-if-badge" id="what-if-cholTri"></span>
                 </div>

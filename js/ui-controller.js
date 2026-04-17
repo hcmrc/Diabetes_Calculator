@@ -168,6 +168,15 @@ DRC.UIController = (() => {
         setText('cholHDL-value-unit', u.c);
         setText('cholTri-value-unit', u.c);
 
+        // Update aria-label on number inputs to reflect current units
+        const ariaLabels = isMetric
+            ? { height: 'Height in centimeters', waist: 'Waist circumference in centimeters', fastGlu: 'Fasting glucose in mmol/L', cholHDL: 'HDL cholesterol in mmol/L', cholTri: 'Triglycerides in mmol/L' }
+            : { height: 'Height in inches', waist: 'Waist circumference in inches', fastGlu: 'Fasting glucose in mg/dL', cholHDL: 'HDL cholesterol in mg/dL', cholTri: 'Triglycerides in mg/dL' };
+        Object.entries(ariaLabels).forEach(([field, label]) => {
+            const input = el(`${field}-value`);
+            if (input) input.setAttribute('aria-label', label);
+        });
+
         updateSliderAxisLabels(isMetric);
 
         // Toggle label emphasis
@@ -280,11 +289,13 @@ DRC.UIController = (() => {
                 const wasOpen = row.classList.contains('expanded');
                 container.querySelectorAll('.contrib-row.expanded').forEach(r => {
                     r.classList.remove('expanded');
-                    r.setAttribute('aria-expanded', 'false');
+                    const btn = r.querySelector('.contrib-row-trigger');
+                    if (btn) btn.setAttribute('aria-expanded', 'false');
                 });
                 if (!wasOpen) {
                     row.classList.add('expanded');
-                    row.setAttribute('aria-expanded', 'true');
+                    const btn = row.querySelector('.contrib-row-trigger');
+                    if (btn) btn.setAttribute('aria-expanded', 'true');
                 }
             };
 
@@ -301,7 +312,7 @@ DRC.UIController = (() => {
                     const isVisible = chainContainer.classList.contains('visible');
                     if (isVisible) {
                         chainContainer.classList.remove('visible');
-                        chainContainer.innerHTML = '';
+                        while (chainContainer.firstChild) chainContainer.removeChild(chainContainer.firstChild);
                     } else {
                         renderCausalityChainInline(factor, chainContainer);
                         if (window.lucide?.createIcons) window.lucide.createIcons();
@@ -309,18 +320,15 @@ DRC.UIController = (() => {
                     return;
                 }
 
-                const row = e.target.closest('.contrib-row[data-field]');
-                if (!row) return;
-                toggleContribRow(row);
+                // Disclosure trigger button click
+                const triggerBtn = e.target.closest('.contrib-row-trigger');
+                if (triggerBtn) {
+                    const row = triggerBtn.closest('.contrib-row[data-field]');
+                    if (row) toggleContribRow(row);
+                }
             });
 
-            container.addEventListener('keydown', (e) => {
-                if (e.key !== 'Enter' && e.key !== ' ') return;
-                const row = e.target.closest('.contrib-row[data-field]');
-                if (!row) return;
-                e.preventDefault();
-                toggleContribRow(row);
-            });
+            // Keyboard handled natively by <button>; no separate keydown listener needed
 
             _rowClickHandlerAttached = true;
         }
@@ -472,10 +480,7 @@ DRC.UIController = (() => {
         const row = createSafeElement('div', {
             className: 'contrib-row',
             attrs: {
-                'data-field': key,
-                tabindex: '0',
-                role: 'button',
-                'aria-expanded': 'false'
+                'data-field': key
             }
         });
 
@@ -554,8 +559,19 @@ DRC.UIController = (() => {
             detailDiv.appendChild(chainContainer);
         }
 
-        // Assemble full row
-        row.appendChild(rowInner);
+        // Disclosure button wrapping the visible row content
+        const disclosureBtn = createSafeElement('button', {
+            className: 'contrib-row-trigger',
+            attrs: {
+                type: 'button',
+                'aria-expanded': 'false',
+                'aria-label': label + ' — ' + t('chart.clickForInfo', 'Click for info')
+            }
+        });
+
+        // Assemble: button contains rowInner, detail sits outside button
+        disclosureBtn.appendChild(rowInner);
+        row.appendChild(disclosureBtn);
         row.appendChild(detailDiv);
 
         return row;
@@ -1209,11 +1225,16 @@ DRC.UIController = (() => {
         }
 
         const affected = Math.min(Math.max(Math.round(riskPct), 0), 100);
+        // WCAG 1.1.1 / 4.1.2: Make the pictograph perceivable to screen readers
+        container.setAttribute('role', 'img');
+        container.setAttribute('aria-label',
+            t('iconArray.ariaLabel', '${affected} out of 100 people with your profile may develop diabetes within 9 years').replace('${affected}', affected));
         // Clear container safely (remove all children)
         while (container.firstChild) container.removeChild(container.firstChild);
         for (let i = 0; i < ICON_ARRAY_SIZE; i++) {
             const icon = document.createElement('div');
             icon.className = `icon-array-item${i < affected ? ' affected' : ''}`;
+            icon.setAttribute('aria-hidden', 'true'); // Decorative — meaning conveyed by container
             container.appendChild(icon);
         }
         if (label) {

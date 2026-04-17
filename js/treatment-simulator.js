@@ -145,11 +145,13 @@ DRC.TreatmentSimulator = (() => {
         const activeModel = DRC.App?.getActiveModel?.();
 
         const siWith = DRC.RiskModel.toSI(currentInputs, isMetric);
-        const riskWith = DRC.RiskModel.computeProbability(siWith, activeModel) * 100;
+        const _riskWith = DRC.RiskModel.computeProbability(siWith, activeModel);
+        const riskWith = (_riskWith != null && isFinite(_riskWith)) ? _riskWith * 100 : NaN;
 
         const inputsWithout = { ...currentInputs, [factor]: origVal };
         const siWithout = DRC.RiskModel.toSI(inputsWithout, isMetric);
-        const riskWithout = DRC.RiskModel.computeProbability(siWithout, activeModel) * 100;
+        const _riskWithout = DRC.RiskModel.computeProbability(siWithout, activeModel);
+        const riskWithout = (_riskWithout != null && isFinite(_riskWithout)) ? _riskWithout * 100 : NaN;
 
         return riskWithout - riskWith;
     };
@@ -178,12 +180,20 @@ DRC.TreatmentSimulator = (() => {
         });
     };
 
-    /** Cancel any running animation and cleanup. */
+    /** Cancel any running animation and snap sliders back to original values. */
     const cancel = () => {
         if (_animationTimeoutId) {
             clearTimeout(_animationTimeoutId);
             _animationTimeoutId = null;
         }
+        // Snap any animating sliders to their pre-simulation values
+        _simulated.forEach((origVal, factor) => {
+            const { input, slider } = DRC.UIController.getSliderElements(factor);
+            if (input)  input.value  = origVal;
+            if (slider) slider.value = origVal;
+            DRC.UIController.updateSliderFill(factor);
+        });
+        _simulated.clear();
         _animating = false;
         document.querySelectorAll('.btn-simulate-treatment, .btn-undo-treatment').forEach(b => b.disabled = false);
     };
@@ -265,6 +275,13 @@ DRC.TreatmentSimulator = (() => {
          * @param {string} factor — Simulated factor key.
          * @returns {number} Risk reduction in percentage points (positive = reduced).
          */
-        getIndividualReduction
+        getIndividualReduction,
+        /**
+         * Get the unit-appropriate treatment delta for a factor.
+         * Supports sex-dependent effects (e.g. sbp with siMale/siFemale keys).
+         * @param {string} factor — Risk factor key.
+         * @returns {number} Expected change in current unit system.
+         */
+        getEffectDelta
     };
 })();

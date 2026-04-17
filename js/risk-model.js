@@ -185,6 +185,7 @@ DRC.RiskModel = (() => {
     const computeMarginalSummary = (siVals, model) => {
         const m = getModel(model);
         const pFull = computeProbability(siVals, m);
+        if (pFull == null) return null;
         const pBaseline = computeBaselineRisk(m);
         const contributions = computeMarginalContributions(siVals, m);
         const sumMarginals = Object.values(contributions).reduce((a, b) => a + b, 0);

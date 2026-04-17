@@ -846,7 +846,7 @@ DRC.PatientManager = (() => {
                 const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
                 const clamp = (v, min, max) => Math.min(Math.max(isNaN(v) ? min : v, min), max);
                 rows.forEach(row => {
-                    const rawName = String(row.Name || row.name || 'Imported Patient').trim().slice(0, 60);
+                    const rawName = _sanitizePatientName(String(row.Name || row.name || 'Imported Patient')) || 'Imported Patient';
                     const [ageMin, ageMax] = DRC.CONFIG.RANGES.age.us;
                     const [sbpMin, sbpMax] = DRC.CONFIG.RANGES.sbp.us;
                     const [heightMin, heightMax] = DRC.CONFIG.RANGES.height.us;
@@ -992,10 +992,34 @@ DRC.PatientManager = (() => {
 
     // ─── Drawer toggle ──────────────────────────────────────────────────
 
+    let _drawerFocusTrap = null;
+    let _drawerPreviousFocus = null;
+
     const toggleDrawer = (open) => {
-        const action = open ? 'add' : 'remove';
-        ['patientDrawer', 'patientOverlay', 'patientMenuBtn'].forEach(id =>
-            document.getElementById(id)?.classList[action]('open'));
+        const drawer = document.getElementById('patientDrawer');
+        const overlay = document.getElementById('patientOverlay');
+        const btn = document.getElementById('patientMenuBtn');
+
+        if (open) {
+            drawer?.classList.add('open');
+            overlay?.classList.add('open');
+            btn?.classList.add('open');
+            drawer?.setAttribute('role', 'dialog');
+            // Focus trap
+            _drawerPreviousFocus = document.activeElement;
+            if (drawer) {
+                _drawerFocusTrap = DRC.Utils.createFocusTrap(drawer);
+                _drawerFocusTrap.activate();
+            }
+        } else {
+            drawer?.classList.remove('open');
+            overlay?.classList.remove('open');
+            btn?.classList.remove('open');
+            drawer?.removeAttribute('role');
+            // Deactivate focus trap and restore focus
+            if (_drawerFocusTrap) { _drawerFocusTrap.deactivate(); _drawerFocusTrap = null; }
+            if (_drawerPreviousFocus) { _drawerPreviousFocus.focus(); _drawerPreviousFocus = null; }
+        }
     };
 
     // ─── Init ───────────────────────────────────────────────────────────

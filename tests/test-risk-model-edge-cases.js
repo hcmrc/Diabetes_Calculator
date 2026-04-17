@@ -336,6 +336,36 @@ console.log('\n═══ TEST SUITE 7: CONFIG.SIMULATION_EFFECTS structural inte
     });
 }
 
+// ─── TEST SUITE 8: NaN/null propagation guard (H9) ──────────────────────────────
+
+console.log('\n═══ TEST SUITE 8: computeProbability NaN/null guard ═══');
+{
+    // NaN input should return null from computeProbability
+    const nanInput = { ...popMeans, age: NaN };
+    const nanResult = computeProbability(nanInput);
+    assert(nanResult === null, 'computeProbability({age: NaN}) returns null');
+
+    // Missing field (undefined * beta = NaN in linear predictor) should return null
+    const missingField = { ...popMeans };
+    delete missingField.fastGlu;
+    const missingResult = computeProbability(missingField);
+    assert(missingResult === null, 'computeProbability with missing fastGlu returns null');
+
+    // All protective factors at best values should give a valid (finite) probability
+    const bestProfile = {
+        ...popMeans,
+        age: 25, race: 0, parentHist: 0, sbp: 90,
+        height: 190, waist: 70, fastGlu: 3.5, cholHDL: 3.0, cholTri: 0.5
+    };
+    const bestResult = computeProbability(bestProfile);
+    assert(bestResult !== null && isFinite(bestResult), 'All-protective profile gives finite probability');
+    assert(bestResult >= 0 && bestResult <= 1, 'All-protective probability in [0,1]');
+
+    // computeMarginalSummary with NaN input should return null
+    const summaryNan = DRC.RiskModel.computeMarginalSummary(nanInput);
+    assert(summaryNan === null, 'computeMarginalSummary with NaN input returns null');
+}
+
 // ─── Summary ─────────────────────────────────────────────────────────────────
 
 console.log('\n═══════════════════════════════════════════');
