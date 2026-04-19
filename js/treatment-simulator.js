@@ -21,9 +21,34 @@
 DRC.TreatmentSimulator = (() => {
     const CFG = DRC.CONFIG;
     let _animating = false;
-    /** @type {Map<string, number>} factor → original pre-simulation slider value */
+    /** @type {Map<string, number>} factor → original pre-simulation slider value (display unit) */
     const _simulated = new Map();
+    /**
+     * Pre-simulation snapshot: stores {value, isMetric} per factor so that
+     * _resolveSnapshotValue can correctly convert back to the current unit.
+     * @type {Object<string, {value: number, isMetric: boolean}>}
+     */
+    const _preSimulationValues = {};
     let _animationTimeoutId = null;
+
+    /**
+     * Resolve the pre-simulation value for a factor in the current display unit.
+     * Uses the snapshot (with unit metadata) when available; falls back to the
+     * legacy _simulated map value.
+     * @param {string} factor
+     * @returns {number|null}
+     */
+    const _resolveSnapshotValue = (factor) => {
+        const snap = _preSimulationValues[factor];
+        if (!snap) return _simulated.get(factor) ?? null;
+        const currentIsMetric = DRC.UIController.getUnitToggleState();
+        let val = snap.value;
+        if (snap.isMetric !== currentIsMetric && DRC.CONFIG.CONVERTIBLE_FIELDS.includes(factor)) {
+            const siVal = snap.isMetric ? val : DRC.ConversionService.convertField(factor, val, true);
+            val = currentIsMetric ? siVal : DRC.ConversionService.convertField(factor, siVal, false);
+        }
+        return val;
+    };
 
     /**
      * Get the unit-appropriate treatment delta for a factor.
@@ -124,6 +149,25 @@ DRC.TreatmentSimulator = (() => {
         // value during animation — this keeps renderRisk() (main risk) stable while
         // renderChosenRisk() shows the animated reduction in real-time.
         _simulated.set(factor, origVal);
+        _preSimulationValues[factor] = { value: origVal, isMetric: DRC.UIController.getUnitToggleState() };
+
+        // M6: Add aria-label to indicate simulated state
+        const t = DRC.Utils.createTranslator();
+        const simulatedSuffix = t('aria.simulatedSlider', '(simulated)');
+        const { input: simInput, slider: simSlider } = DRC.UIController.getSliderElements(factor);
+        if (simInput) {
+            simInput.dataset.original = String(origVal);
+            simInput.classList.add('slider--simulated');
+            simInput.dataset.originalAriaLabel = simInput.getAttribute('aria-label') || '';
+            const base = simInput.dataset.originalAriaLabel;
+            simInput.setAttribute('aria-label', (base ? base + ' ' : '') + simulatedSuffix);
+        }
+        if (simSlider) {
+            simSlider.classList.add('slider--simulated');
+            simSlider.dataset.originalAriaLabel = simSlider.getAttribute('aria-label') || '';
+            const base = simSlider.dataset.originalAriaLabel;
+            simSlider.setAttribute('aria-label', (base ? base + ' ' : '') + simulatedSuffix);
+        }
 
         animateTo(factor, currentVal, targetVal, decimals, () => {
             onSimulationComplete(factor);
@@ -139,7 +183,7 @@ DRC.TreatmentSimulator = (() => {
      */
     const getIndividualReduction = (factor) => {
         if (!_simulated.has(factor)) return 0;
-        const origVal = _simulated.get(factor);
+        const origVal = _resolveSnapshotValue(factor);
         const isMetric = DRC.UIController.getUnitToggleState();
         const currentInputs = DRC.UIController.readInputs();
         const activeModel = DRC.App?.getActiveModel?.();
@@ -157,6 +201,38 @@ DRC.TreatmentSimulator = (() => {
     };
 
     /**
+     * Clear simulation visuals (CSS class, aria-label) from a factor's DOM elements.
+     * @param {string} factor
+     */
+    const _clearSimulationVisuals = (factor) => {
+        const { input, slider } = DRC.UIController.getSliderElements(factor);
+        if (input) {
+            input.classList.remove('slider--simulated');
+            delete input.dataset.original;
+            if (input.dataset.originalAriaLabel != null) {
+                if (input.dataset.originalAriaLabel) {
+                    input.setAttribute('aria-label', input.dataset.originalAriaLabel);
+                } else {
+                    input.removeAttribute('aria-label');
+                }
+                delete input.dataset.originalAriaLabel;
+            }
+        }
+        if (slider) {
+            slider.classList.remove('slider--simulated');
+            if (slider.dataset.originalAriaLabel != null) {
+                if (slider.dataset.originalAriaLabel) {
+                    slider.setAttribute('aria-label', slider.dataset.originalAriaLabel);
+                } else {
+                    slider.removeAttribute('aria-label');
+                }
+                delete slider.dataset.originalAriaLabel;
+            }
+        }
+        delete _preSimulationValues[factor];
+    };
+
+    /**
      * Reverse a previously-simulated treatment: animate the slider back
      * to its pre-simulation value and remove the factor from the
      * simulated set.
@@ -166,16 +242,22 @@ DRC.TreatmentSimulator = (() => {
         if (_animating) return;
         if (!_simulated.has(factor)) return;
 
-        const origVal = _simulated.get(factor);
+        const origVal = _resolveSnapshotValue(factor);
         const { input, slider } = DRC.UIController.getSliderElements(factor);
-        if (!input || !slider) return;
+        if (!input || !slider || origVal == null) return;
 
         const currentVal = parseFloat(input.value);
         const step = parseFloat(slider.step) || 1;
+        const min = parseFloat(slider.min);
+        const max = parseFloat(slider.max);
         const decimals = step >= 1 ? 0 : Math.max(0, -Math.floor(Math.log10(step)));
+        const alignedOrig = DRC.UIHelpers.clampAndRound(origVal, min, max, step);
 
-        animateTo(factor, currentVal, origVal, decimals, () => {
+        animateTo(factor, currentVal, alignedOrig, decimals, () => {
+            input.value  = alignedOrig;
+            slider.value = alignedOrig;
             _simulated.delete(factor);
+            _clearSimulationVisuals(factor);
             onSimulationComplete(factor);
         });
     };
@@ -187,11 +269,21 @@ DRC.TreatmentSimulator = (() => {
             _animationTimeoutId = null;
         }
         // Snap any animating sliders to their pre-simulation values
-        _simulated.forEach((origVal, factor) => {
+        _simulated.forEach((legacyOrig, factor) => {
+            const origVal = _resolveSnapshotValue(factor) ?? legacyOrig;
             const { input, slider } = DRC.UIController.getSliderElements(factor);
-            if (input)  input.value  = origVal;
-            if (slider) slider.value = origVal;
+            if (slider) {
+                const step = parseFloat(slider.step) || 1;
+                const min = parseFloat(slider.min);
+                const max = parseFloat(slider.max);
+                const aligned = DRC.UIHelpers.clampAndRound(origVal, min, max, step);
+                if (input)  input.value  = aligned;
+                slider.value = aligned;
+            } else if (input) {
+                input.value = origVal;
+            }
             DRC.UIController.updateSliderFill(factor);
+            _clearSimulationVisuals(factor);
         });
         _simulated.clear();
         _animating = false;
@@ -208,17 +300,21 @@ DRC.TreatmentSimulator = (() => {
         if (_animating) return;
         if (!_simulated.has(factor)) return;
 
-        const origVal = _simulated.get(factor);
+        const origVal = _resolveSnapshotValue(factor) ?? _simulated.get(factor);
         const { input, slider } = DRC.UIController.getSliderElements(factor);
         if (!input || !slider) return;
 
         const step = parseFloat(slider.step) || 1;
+        const min = parseFloat(slider.min);
+        const max = parseFloat(slider.max);
+        const alignedOrig = DRC.UIHelpers.clampAndRound(origVal, min, max, step);
 
         // Instantly restore to pre-simulation value and clear the simulated state
-        input.value = origVal;
-        slider.value = origVal;
+        input.value = alignedOrig;
+        slider.value = alignedOrig;
         DRC.UIController.updateSliderFill(factor);
         _simulated.delete(factor);
+        _clearSimulationVisuals(factor);
         DRC.App.trigger('risk:recalculate');
 
         // Re-run simulation from the restored baseline
@@ -255,6 +351,15 @@ DRC.TreatmentSimulator = (() => {
          * Used by App to skip heavy DOM rebuilds during animation ticks.
          */
         isAnimating: () => _animating,
+        /**
+         * Whether any treatment simulation is currently active.
+         */
+        hasActiveSimulation: () => _simulated.size > 0,
+        /**
+         * Return the pre-simulation snapshot (factor → {value, isMetric}).
+         * Used by PatientManager to resolve original values when saving.
+         */
+        getPreSimulationSnapshot: () => ({ ..._preSimulationValues }),
         /**
          * Return a plain object of {factor: originalValue} for factors
          * that have been simulated (used by App to compute the

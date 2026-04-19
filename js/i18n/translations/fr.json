@@ -103,7 +103,11 @@
     "add": "Ajouter",
     "export": "Exporter .xlsx / .drc",
     "import": "Importer .xlsx / .drc",
-    "scan": "Scanner Rapport Labo"
+    "scan": "Scanner Rapport Labo",
+    "undoTreatment": "Annuler le traitement pour {factor}",
+    "undo": "Annuler",
+    "confirm": "Confirmer",
+    "ok": "OK"
   },
   "patientManager": {
     "title": "Mes Profils",
@@ -148,6 +152,11 @@
       "create": "Créer Profil",
       "continue": "Continuer Sans Sauvegarder"
     },
+    "simulationSaveWarning": {
+      "message": "Une simulation de traitement est active. Que souhaitez-vous enregistrer ?",
+      "saveOriginal": "Enregistrer les valeurs d'origine",
+      "saveSimulated": "Enregistrer les valeurs simulées"
+    },
     "ocr": {
       "title": "Scanner Rapport Labo",
       "instructions": "Prenez une photo ou téléchargez votre rapport de laboratoire",
@@ -158,5 +167,8 @@
       "confidence_medium": "Confiance moyenne",
       "confidence_low": "Confiance faible"
     }
+  },
+  "aria": {
+    "simulatedSlider": "(simulé)"
   }
 }

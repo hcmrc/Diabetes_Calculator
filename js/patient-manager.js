@@ -587,6 +587,262 @@ DRC.PatientManager = (() => {
         });
     };
 
+    // ─── Modal Helpers ──────────────────────────────────────────────────
+
+    let _toastTimer = null;
+
+    /**
+     * Show a brief toast notification (M4).
+     * Uses visibility:hidden so the aria-live region is preserved.
+     * @param {string} message
+     */
+    const showToast = (message) => {
+        let container = document.getElementById('drc-toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'drc-toast-container';
+            container.setAttribute('role', 'status');
+            container.setAttribute('aria-live', 'polite');
+            container.setAttribute('aria-atomic', 'true');
+            container.style.cssText = 'position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);z-index:99999;pointer-events:none;';
+            document.body.appendChild(container);
+        }
+        if (_toastTimer) clearTimeout(_toastTimer);
+        container.textContent = message;
+        container.style.cssText = container.style.cssText.replace(/visibility:\s*hidden;?/g, '').replace(/display:\s*none;?/g, '') + ';display:block;visibility:visible;';
+        container.className = 'drc-toast';
+        _toastTimer = setTimeout(() => { container.style.visibility = 'hidden'; }, 4000);
+    };
+
+    /**
+     * Custom confirm dialog with focus trap and focus restoration (H3/L1).
+     * @param {string} message
+     * @returns {Promise<boolean>}
+     */
+    const showConfirm = (message) => new Promise(resolve => {
+        const previousFocus = document.activeElement;
+        const overlay = document.createElement('div');
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-label', message);
+        overlay.className = 'drc-modal-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;';
+
+        const dialog = document.createElement('div');
+        dialog.className = 'drc-modal';
+
+        const msg = document.createElement('p');
+        msg.textContent = message;
+
+        const btnRow = document.createElement('div');
+        btnRow.className = 'drc-modal-btn-row';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = DRC.Utils?.createTranslator?.()('buttons.cancel', 'Cancel') || 'Cancel';
+        cancelBtn.className = 'drc-btn drc-btn-secondary';
+        cancelBtn.onclick = () => { cleanup(); resolve(false); };
+
+        const confirmBtn = document.createElement('button');
+        confirmBtn.textContent = DRC.Utils?.createTranslator?.()('buttons.confirm', 'Confirm') || 'Confirm';
+        confirmBtn.className = 'drc-btn drc-btn-primary';
+        confirmBtn.onclick = () => { cleanup(); resolve(true); };
+
+        let focusTrap = null;
+        const cleanup = () => {
+            if (focusTrap) focusTrap.deactivate();
+            overlay.remove();
+            if (previousFocus && typeof previousFocus.focus === 'function') {
+                try { previousFocus.focus(); } catch (_) { /* ignore */ }
+            }
+        };
+
+        btnRow.appendChild(cancelBtn);
+        btnRow.appendChild(confirmBtn);
+        dialog.appendChild(msg);
+        dialog.appendChild(btnRow);
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+        focusTrap = DRC.Utils?.createFocusTrap?.(overlay);
+        if (focusTrap) focusTrap.activate();
+        confirmBtn.focus();
+
+        overlay.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { cleanup(); resolve(false); }
+        });
+    });
+
+    /**
+     * Custom prompt dialog with focus trap and focus restoration (H3/L1).
+     * @param {string} message
+     * @param {string} [defaultValue]
+     * @returns {Promise<string|null>}
+     */
+    const showPrompt = (message, defaultValue) => new Promise(resolve => {
+        const previousFocus = document.activeElement;
+        const overlay = document.createElement('div');
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-label', message);
+        overlay.className = 'drc-modal-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;';
+
+        const dialog = document.createElement('div');
+        dialog.className = 'drc-modal';
+
+        const msg = document.createElement('p');
+        msg.textContent = message;
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = defaultValue || '';
+        input.className = 'drc-prompt-input';
+
+        const btnRow = document.createElement('div');
+        btnRow.className = 'drc-modal-btn-row';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = DRC.Utils?.createTranslator?.()('buttons.cancel', 'Cancel') || 'Cancel';
+        cancelBtn.className = 'drc-btn drc-btn-secondary';
+        cancelBtn.onclick = () => { cleanup(); resolve(null); };
+
+        const okBtn = document.createElement('button');
+        okBtn.textContent = DRC.Utils?.createTranslator?.()('buttons.ok', 'OK') || 'OK';
+        okBtn.className = 'drc-btn drc-btn-primary';
+        okBtn.onclick = () => { cleanup(); resolve(input.value); };
+
+        let focusTrap = null;
+        const cleanup = () => {
+            if (focusTrap) focusTrap.deactivate();
+            overlay.remove();
+            if (previousFocus && typeof previousFocus.focus === 'function') {
+                try { previousFocus.focus(); } catch (_) { /* ignore */ }
+            }
+        };
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { cleanup(); resolve(input.value); }
+        });
+
+        btnRow.appendChild(cancelBtn);
+        btnRow.appendChild(okBtn);
+        dialog.appendChild(msg);
+        dialog.appendChild(input);
+        dialog.appendChild(btnRow);
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+        focusTrap = DRC.Utils?.createFocusTrap?.(overlay);
+        if (focusTrap) focusTrap.activate();
+        input.focus();
+        input.select();
+
+        overlay.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { cleanup(); resolve(null); }
+        });
+    });
+
+    /**
+     * Three-option modal dialog (M2). Resolves to 'original' | 'simulated' | 'cancel'.
+     * @param {string} message
+     * @param {string} originalLabel
+     * @param {string} simulatedLabel
+     * @param {string} cancelLabel
+     * @returns {Promise<'original'|'simulated'|'cancel'>}
+     */
+    const _showThreeOptionDialog = (message, originalLabel, simulatedLabel, cancelLabel) => new Promise(resolve => {
+        const previousFocus = document.activeElement;
+        const overlay = document.createElement('div');
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-label', message);
+        overlay.className = 'drc-modal-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;';
+
+        const dialog = document.createElement('div');
+        dialog.className = 'drc-modal';
+        const msg = document.createElement('p');
+        msg.textContent = message;
+        const btnRow = document.createElement('div');
+        btnRow.className = 'drc-modal-btn-row';
+
+        let focusTrap = null;
+        const cleanup = () => {
+            if (focusTrap) focusTrap.deactivate();
+            overlay.remove();
+            if (previousFocus && typeof previousFocus.focus === 'function') {
+                try { previousFocus.focus(); } catch (_) {}
+            }
+        };
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = cancelLabel;
+        cancelBtn.className = 'drc-btn drc-btn-secondary';
+        cancelBtn.onclick = () => { cleanup(); resolve('cancel'); };
+
+        const simBtn = document.createElement('button');
+        simBtn.textContent = simulatedLabel;
+        simBtn.className = 'drc-btn drc-btn-secondary';
+        simBtn.onclick = () => { cleanup(); resolve('simulated'); };
+
+        const origBtn = document.createElement('button');
+        origBtn.textContent = originalLabel;
+        origBtn.className = 'drc-btn drc-btn-primary';
+        origBtn.onclick = () => { cleanup(); resolve('original'); };
+
+        btnRow.appendChild(cancelBtn);
+        btnRow.appendChild(simBtn);
+        btnRow.appendChild(origBtn);
+        dialog.appendChild(msg);
+        dialog.appendChild(btnRow);
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+        focusTrap = DRC.Utils?.createFocusTrap?.(overlay);
+        if (focusTrap) focusTrap.activate();
+        origBtn.focus();
+        overlay.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { cleanup(); resolve('cancel'); }
+        });
+    });
+
+    /**
+     * Resolve save data when a treatment simulation is active (M2).
+     * Shows a three-option dialog: save original, save simulated, or cancel.
+     * @returns {Promise<Object|null>} Data to save, or null if user cancelled.
+     */
+    const _resolveSaveDataForSimulation = async () => {
+        const data = captureCurrentValues();
+        const sim = DRC.TreatmentSimulator;
+        if (!sim?.hasActiveSimulation?.()) return data;
+
+        const snap = sim.getPreSimulationSnapshot?.() || {};
+        const factors = Object.keys(snap);
+        if (factors.length === 0) return data;
+
+        const tr = DRC.Utils?.createTranslator?.() || ((_, fb) => fb);
+        const msg = tr('modals.simulationSaveWarning.message',
+            'You have an active treatment simulation. What would you like to save?');
+        const originalLabel = tr('modals.simulationSaveWarning.saveOriginal', 'Save Original');
+        const simulatedLabel = tr('modals.simulationSaveWarning.saveSimulated', 'Save Simulated');
+        const cancelLabel = tr('buttons.cancel', 'Cancel');
+
+        const choice = await _showThreeOptionDialog(msg, originalLabel, simulatedLabel, cancelLabel);
+        if (choice === 'cancel') return null;
+        if (choice === 'original') {
+            const currentIsMetric = DRC.UIController?.getUnitToggleState?.() ?? false;
+            factors.forEach(f => {
+                const entry = snap[f];
+                if (!entry || typeof entry !== 'object') return;
+                let val = entry.value;
+                if (entry.isMetric !== currentIsMetric && DRC.CONFIG.CONVERTIBLE_FIELDS.includes(f)) {
+                    const siVal = entry.isMetric ? val : DRC.ConversionService.convertField(f, val, true);
+                    val = currentIsMetric ? siVal : DRC.ConversionService.convertField(f, siVal, false);
+                }
+                data[f] = val;
+            });
+        }
+        // choice === 'simulated' → return data as-is (captured from current DOM)
+        return data;
+    };
+
     // ─── CRUD Operations ────────────────────────────────────────────────
 
     /** Helper to persist changes and refresh UI. */
@@ -617,10 +873,11 @@ DRC.PatientManager = (() => {
         return sanitized.length > 0 ? sanitized : null;
     };
 
-    const addPatient = (name) => {
+    const addPatient = async (name) => {
         const sanitizedName = _sanitizePatientName(name);
         if (!sanitizedName) return null;
-        const data = captureCurrentValues();
+        const data = await _resolveSaveDataForSimulation();
+        if (data == null) return null; // user cancelled
         const patient = {
             id: generateId(), name: sanitizedName, data,
             riskPct: data._riskPct, savedAt: new Date().toISOString()
@@ -632,10 +889,11 @@ DRC.PatientManager = (() => {
         return patient;
     };
 
-    const updatePatient = (id) => {
+    const updatePatient = async (id) => {
         const patient = patients.find(p => p.id === id);
         if (!patient) return;
-        const data = captureCurrentValues();
+        const data = await _resolveSaveDataForSimulation();
+        if (data == null) return; // user cancelled
         Object.assign(patient, { data, riskPct: data._riskPct, savedAt: new Date().toISOString() });
         _persistAndRender();
     };

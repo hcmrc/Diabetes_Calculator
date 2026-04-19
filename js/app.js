@@ -207,8 +207,12 @@ DRC.App = (() => {
         const input  = document.getElementById(`${field}-value`);
         if (!slider || !input) return;
 
+        const min = parseFloat(slider.min);
+        const max = parseFloat(slider.max);
+        const step = parseFloat(slider.step) || 1;
         let val = parseFloat(input.value);
-        val = Math.min(Math.max(val, parseFloat(slider.min)), parseFloat(slider.max));
+        if (!isFinite(val)) val = min;
+        val = DRC.UIHelpers.clampAndRound(val, min, max, step);
         input.value  = val;
         slider.value = val;
 
@@ -466,6 +470,7 @@ DRC.App = (() => {
                 if (!target) return;
                 const collapsed = target.classList.toggle('collapsed');
                 btn.classList.toggle('collapsed', collapsed);
+                btn.setAttribute('aria-expanded', String(!collapsed));
                 if (targetId === 'non-mod-section') {
                     document.getElementById('non-mod-summary')?.classList.toggle('visible', collapsed);
                 }

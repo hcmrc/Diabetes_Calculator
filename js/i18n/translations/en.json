@@ -103,7 +103,11 @@
     "add": "Add",
     "export": "Export .xlsx / .drc",
     "import": "Import .xlsx / .drc",
-    "scan": "Scan Lab Report"
+    "scan": "Scan Lab Report",
+    "undoTreatment": "Undo treatment for {factor}",
+    "undo": "Undo",
+    "confirm": "Confirm",
+    "ok": "OK"
   },
   "patientManager": {
     "title": "My Profiles",
@@ -148,6 +152,11 @@
       "create": "Create Profile",
       "continue": "Continue Without Saving"
     },
+    "simulationSaveWarning": {
+      "message": "You have an active treatment simulation. What would you like to save?",
+      "saveOriginal": "Save Original",
+      "saveSimulated": "Save Simulated"
+    },
     "ocr": {
       "title": "Scan Lab Report",
       "instructions": "Take a photo or upload your lab report",
@@ -158,5 +167,8 @@
       "confidence_medium": "Medium confidence",
       "confidence_low": "Low confidence"
     }
+  },
+  "aria": {
+    "simulatedSlider": "(simulated)"
   }
 }

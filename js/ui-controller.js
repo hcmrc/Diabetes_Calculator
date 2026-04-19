@@ -943,7 +943,11 @@ DRC.UIController = (() => {
                 attrs: {
                     type: 'button',
                     'data-sim-factor': factor,
-                    'aria-label': t('buttons.undoTreatment', 'Undo this treatment')
+                    'aria-label': (() => {
+                        const factorName = t('factors.' + factor, factor);
+                        const template = t('buttons.undoTreatment', 'Undo treatment for {factor}');
+                        return template.replace('{factor}', factorName);
+                    })()
                 }
             });
             const undoIcon = createSafeElement('i', {
@@ -1050,21 +1054,6 @@ DRC.UIController = (() => {
                 if (simFactor && DRC.TreatmentSimulator?.unsimulate) {
                     DRC.TreatmentSimulator.unsimulate(simFactor);
                 }
-            }
-        }, { signal });
-
-        container.addEventListener('keydown', (e) => {
-            if (e.key !== 'Enter' && e.key !== ' ') return;
-            const clickable = e.target.closest('.tov-clickable');
-            if (!clickable) return;
-            e.preventDefault();
-            const row = clickable.closest('.treatment-overview-row');
-            if (row) {
-                const details = row.querySelector('.tov-details');
-                details?.classList.toggle('expanded');
-                row.querySelector('.tov-chevron')?.classList.toggle('collapsed');
-                const isExpanded = details?.classList.contains('expanded');
-                clickable.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
             }
         }, { signal });
 
