@@ -3057,6 +3057,7 @@ body.ocr-modal-open .col-step-label {
     justify-content: center;
     gap: 5px;
     padding: 8px 12px;
+    font-family: inherit;
     font-size: var(--text-xs);
     font-weight: var(--weight-semibold);
     color: var(--text-secondary);

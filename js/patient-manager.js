@@ -856,8 +856,17 @@ DRC.PatientManager = (() => {
                 }
                 data[f] = val;
             });
+            // Update _riskPct to match original values
+            const origRiskEl = document.getElementById('risk-percentage');
+            if (origRiskEl) data._riskPct = parseFloat(origRiskEl.textContent) || data._riskPct;
         }
-        // choice === 'simulated' → return data as-is (captured from current DOM)
+        // choice === 'simulated' → factor values already captured from DOM (simulated).
+        // But _riskPct was read from 'risk-percentage' which shows ORIGINAL risk;
+        // override with the simulated risk from 'chosen-risk-percentage'.
+        if (choice === 'simulated') {
+            const simRiskEl = document.getElementById('chosen-risk-percentage');
+            if (simRiskEl) data._riskPct = parseFloat(simRiskEl.textContent) || data._riskPct;
+        }
         return data;
     };
 
