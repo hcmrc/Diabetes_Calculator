@@ -23,11 +23,7 @@ DRC.TreatmentSimulator = (() => {
     let _animating = false;
     /** @type {Map<string, number>} factor → original pre-simulation slider value (display unit) */
     const _simulated = new Map();
-    /**
-     * Pre-simulation snapshot: stores {value, isMetric} per factor so that
-     * _resolveSnapshotValue can correctly convert back to the current unit.
-     * @type {Object<string, {value: number, isMetric: boolean}>}
-     */
+    /** @type {Object<string, {value: number, isMetric: boolean}>} Authoritative pre-simulation snapshot keyed by factor. */
     const _preSimulationValues = {};
     let _animationTimeoutId = null;
 
@@ -99,6 +95,10 @@ DRC.TreatmentSimulator = (() => {
      * @param {number} decimals — Number of decimal places
      * @param {Function} onFinish — Callback when animation completes
      */
+    const _enableSimButtons = () => {
+        document.querySelectorAll('.btn-simulate-treatment, .btn-undo-treatment').forEach(b => b.disabled = false);
+    };
+
     const animateTo = (factor, currentVal, targetVal, decimals, onFinish) => {
         if (currentVal === targetVal) {
             onFinish();
@@ -112,7 +112,10 @@ DRC.TreatmentSimulator = (() => {
             frame++;
             const progress     = easeOutCubic(frame / CFG.ANIMATION_STEPS);
             const interpolated = currentVal + (targetVal - currentVal) * progress;
-            const val = parseFloat(interpolated.toFixed(decimals));
+            const isLast = frame >= CFG.ANIMATION_STEPS;
+            // Snap the final frame to targetVal exactly to avoid float-rounding drift
+            // (e.g. an Undo animating to 120 must land on 120, not 119.9 or 120.1).
+            const val = isLast ? targetVal : parseFloat(interpolated.toFixed(decimals));
 
             const { input, slider } = DRC.UIController.getSliderElements(factor);
             if (input)  input.value  = val;
@@ -120,12 +123,13 @@ DRC.TreatmentSimulator = (() => {
             DRC.UIController.updateSliderFill(factor);
             DRC.App.trigger('risk:recalculate');
 
-            if (frame < CFG.ANIMATION_STEPS) {
+            if (!isLast) {
                 const timeoutId = setTimeout(tick, CFG.ANIMATION_DURATION / CFG.ANIMATION_STEPS);
                 _animationTimeoutId = timeoutId;
             } else {
                 _animationTimeoutId = null;
                 _animating = false;
+                _enableSimButtons();
                 onFinish();
             }
         };
@@ -238,6 +242,51 @@ DRC.TreatmentSimulator = (() => {
      * simulated set.
      * @param {string} factor — Risk factor key
      */
+    const _clearSimulationVisuals = (factor) => {
+        const { input, slider } = DRC.UIController.getSliderElements(factor);
+        if (input) {
+            input.classList.remove('slider--simulated');
+            delete input.dataset.original;
+            if (input.dataset.originalAriaLabel != null) {
+                if (input.dataset.originalAriaLabel) {
+                    input.setAttribute('aria-label', input.dataset.originalAriaLabel);
+                } else {
+                    input.removeAttribute('aria-label');
+                }
+                delete input.dataset.originalAriaLabel;
+            }
+        }
+        if (slider) {
+            slider.classList.remove('slider--simulated');
+            if (slider.dataset.originalAriaLabel != null) {
+                if (slider.dataset.originalAriaLabel) {
+                    slider.setAttribute('aria-label', slider.dataset.originalAriaLabel);
+                } else {
+                    slider.removeAttribute('aria-label');
+                }
+                delete slider.dataset.originalAriaLabel;
+            }
+        }
+        delete _preSimulationValues[factor];
+    };
+
+    /** Resolve the pre-simulation value for a factor, converting units if needed. */
+    const _resolveSnapshotValue = (factor) => {
+        const snap = _preSimulationValues[factor];
+        if (snap && typeof snap === 'object') {
+            const currentIsMetric = DRC.UIController.getUnitToggleState();
+            if (snap.isMetric === currentIsMetric) return snap.value;
+            if (DRC.CONFIG.CONVERTIBLE_FIELDS.includes(factor)) {
+                // Snapshot was captured in a different unit system — convert.
+                const siVal = snap.isMetric ? snap.value : DRC.ConversionService.convertField(factor, snap.value, true);
+                return currentIsMetric ? siVal : DRC.ConversionService.convertField(factor, siVal, false);
+            }
+            return snap.value;
+        }
+        // Fallback to the legacy Map if snapshot missing.
+        return _simulated.get(factor);
+    };
+
     const unsimulate = (factor) => {
         if (_animating) return;
         if (!_simulated.has(factor)) return;
@@ -287,7 +336,7 @@ DRC.TreatmentSimulator = (() => {
         });
         _simulated.clear();
         _animating = false;
-        document.querySelectorAll('.btn-simulate-treatment, .btn-undo-treatment').forEach(b => b.disabled = false);
+        _enableSimButtons();
     };
 
     /**
@@ -344,8 +393,16 @@ DRC.TreatmentSimulator = (() => {
         simulate,
         unsimulate,
         resimulate,
-        resetSimulated: () => { cancel(); _simulated.clear(); },
+        resetSimulated: () => {
+            cancel();
+            _simulated.clear();
+            Object.keys(_preSimulationValues).forEach(k => delete _preSimulationValues[k]);
+        },
         cancel,
+        /** True if any factor currently has an active simulation snapshot. */
+        hasActiveSimulation: () => _simulated.size > 0,
+        /** Return the pre-simulation snapshot map (keyed by factor) for save guards. */
+        getPreSimulationSnapshot: () => ({ ..._preSimulationValues }),
         /**
          * Whether an animation is currently in progress.
          * Used by App to skip heavy DOM rebuilds during animation ticks.

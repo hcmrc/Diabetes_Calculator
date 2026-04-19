@@ -6,6 +6,8 @@
   "nav": {
     "brand": "Calculadora de Riesgo Diabetes",
     "reset": "Reiniciar",
+    "restoreProfile": "Restaurar valores del perfil",
+    "resetDefaults": "Restablecer valores predeterminados",
     "riskTimeline": "Línea Temporal de Riesgo",
     "selectProfile": "Seleccionar Perfil",
     "language": "Seleccionar Idioma"
@@ -145,12 +147,29 @@
       "beste": "Mejor"
     }
   },
+  "zones": {
+    "normal": "Normal",
+    "elevated": "Elevado",
+    "high": "Alto",
+    "veryHigh": "Muy alto",
+    "diabetes": "Diabetes",
+    "prediabetes": "Prediabetes",
+    "low": "Bajo"
+  },
   "modals": {
     "profileWarning": {
-      "title": "¿Guardar Sus Datos?",
-      "message": "Aún no ha creado un perfil. Si continúa, sus datos actuales no se guardarán.",
+      "title": "¿Restablecer todos los valores?",
+      "message": "Tiene cambios sin guardar. Al restablecer se perderán sus datos actuales.",
+      "message1": "Tiene cambios sin guardar.",
+      "message2": "Al restablecer se perderán sus datos actuales.",
       "create": "Crear Perfil",
-      "continue": "Continuar Sin Guardar"
+      "continue": "Restablecer",
+      "cancel": "Cancelar"
+    },
+    "simulationSaveWarning": {
+      "message": "Hay una simulación de tratamiento activa. ¿Qué desea guardar?",
+      "saveOriginal": "Guardar valores originales",
+      "saveSimulated": "Guardar valores simulados"
     },
     "simulationSaveWarning": {
       "message": "Hay una simulación de tratamiento activa. ¿Qué desea guardar?",

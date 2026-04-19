@@ -6,6 +6,8 @@
   "nav": {
     "brand": "Diabetes Risk Calculator",
     "reset": "Reset",
+    "restoreProfile": "Restore profile values",
+    "resetDefaults": "Reset to defaults",
     "riskTimeline": "Risk Timeline",
     "selectProfile": "Select Profile",
     "language": "Select Language"
@@ -145,12 +147,29 @@
       "beste": "Best"
     }
   },
+  "zones": {
+    "normal": "Normal",
+    "elevated": "Elevated",
+    "high": "High",
+    "veryHigh": "Very High",
+    "diabetes": "Diabetes",
+    "prediabetes": "Prediabetes",
+    "low": "Low"
+  },
   "modals": {
     "profileWarning": {
-      "title": "Save Your Data?",
-      "message": "You haven't created a profile yet. If you continue, your current data won't be saved.",
+      "title": "Reset All Values?",
+      "message": "You have unsaved changes. Resetting will discard your current data.",
+      "message1": "You have unsaved changes.",
+      "message2": "Resetting will discard your current data.",
       "create": "Create Profile",
-      "continue": "Continue Without Saving"
+      "continue": "Reset",
+      "cancel": "Cancel"
+    },
+    "simulationSaveWarning": {
+      "message": "You have an active treatment simulation. What would you like to save?",
+      "saveOriginal": "Save Original",
+      "saveSimulated": "Save Simulated"
     },
     "simulationSaveWarning": {
       "message": "You have an active treatment simulation. What would you like to save?",

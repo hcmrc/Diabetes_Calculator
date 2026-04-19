@@ -110,3 +110,4 @@ build/
 tmp/
 temp/
 .vercel
+.gstack/

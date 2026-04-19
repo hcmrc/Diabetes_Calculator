@@ -1,7 +1,7 @@
 /**
  * Profile Warning Modal
  *
- * Shows a centered modal when user attempts treatment simulation without an active profile.
+ * Shows a centered modal when user resets all values without an active profile.
  *
  * @module ProfileWarning
  * @memberof DRC
@@ -12,7 +12,6 @@
 
     window.DRC = window.DRC || {};
 
-    let _pendingFactor = null;
     let _modalResolve = null;
     let _sessionDismissed = false;
     let _focusTrap = null;
@@ -61,7 +60,6 @@
             modal.style.display = 'none';
         }
         document.body.style.overflow = '';
-        // Deactivate focus trap and restore focus
         if (_focusTrap) { _focusTrap.deactivate(); _focusTrap = null; }
         if (_previousFocus) { _previousFocus.focus(); _previousFocus = null; }
         _modalResolve = null;
@@ -77,12 +75,10 @@
                 return;
             }
 
-            // Zuerst Klasse hinzufuegen, dann display setzen
             modal.classList.add('open');
             modal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
 
-            // Activate focus trap
             _previousFocus = document.activeElement;
             _focusTrap = DRC.Utils?.createFocusTrap?.(modal);
             if (_focusTrap) _focusTrap.activate();
@@ -101,7 +97,6 @@
     }
 
     function openPatientDrawer() {
-        // Use shared toggleDrawer to keep button state consistent
         if (DRC.PatientManager?.toggleDrawer) {
             DRC.PatientManager.toggleDrawer(true);
         } else {
@@ -119,9 +114,7 @@
         }, 100);
     }
 
-    async function checkBeforeSimulation(factor) {
-        _pendingFactor = factor;
-
+    async function checkBeforeReset() {
         if (hasActiveProfile()) return true;
         if (!checkForUnsavedData()) return true;
         if (_sessionDismissed) return true;
@@ -130,7 +123,7 @@
 
         if (choice === 'create') {
             openPatientDrawer();
-            return 'pending';
+            return false;
         } else if (choice === 'continue') {
             _sessionDismissed = true;
             return true;
@@ -177,17 +170,6 @@
                 }
             }
         });
-
-        if (DRC.App?.on) {
-            DRC.App.on('patient:saved', () => {
-                _sessionDismissed = false;
-                if (_pendingFactor && hasActiveProfile()) {
-                    const factor = _pendingFactor;
-                    _pendingFactor = null;
-                    DRC.TreatmentSimulator?.simulate(factor);
-                }
-            });
-        }
     }
 
     if (document.readyState === 'loading') {
@@ -199,7 +181,7 @@
     DRC.ProfileWarning = {
         hasActiveProfile,
         checkForUnsavedData,
-        checkBeforeSimulation,
+        checkBeforeReset,
         showModal,
         hideModal
     };

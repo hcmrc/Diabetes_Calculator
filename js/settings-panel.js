@@ -31,36 +31,8 @@ DRC.SettingsPanel = (() => {
     let _modelDropdown = null;
     let _isModelDropdownOpen = false;
 
-    // SVG Flags
-    const FLAG_SVGS = {
-        en: `<svg viewBox="0 0 20 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <rect x="0.5" y="0.5" width="19" height="13" rx="1" fill="#1e3a8a" stroke="currentColor" stroke-width="0.5"/>
-            <path d="M0 0L20 14M20 0L0 14" stroke="#f8fafc" stroke-width="2.5"/>
-            <path d="M0 0L20 14M20 0L0 14" stroke="#dc2626" stroke-width="1.5"/>
-            <rect x="8.5" y="0" width="3" height="14" fill="#f8fafc"/>
-            <rect x="0" y="5.5" width="20" height="3" fill="#f8fafc"/>
-            <rect x="9" y="0" width="2" height="14" fill="#dc2626"/>
-            <rect x="0" y="6" width="20" height="2" fill="#dc2626"/>
-        </svg>`,
-        de: `<svg viewBox="0 0 20 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <rect x="0.5" y="0.5" width="19" height="13" rx="1" stroke="currentColor" stroke-width="0.5"/>
-            <rect x="1" y="1" width="18" height="4" fill="#1f2937"/>
-            <rect x="1" y="5" width="18" height="4" fill="#dc2626"/>
-            <rect x="1" y="9" width="18" height="4" fill="#f59e0b"/>
-        </svg>`,
-        fr: `<svg viewBox="0 0 20 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <rect x="0.5" y="0.5" width="19" height="13" rx="1" stroke="currentColor" stroke-width="0.5"/>
-            <rect x="1" y="1" width="6" height="12" fill="#1e40af"/>
-            <rect x="7" y="1" width="6" height="12" fill="#f8fafc"/>
-            <rect x="13" y="1" width="6" height="12" fill="#dc2626"/>
-        </svg>`,
-        es: `<svg viewBox="0 0 20 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <rect x="0.5" y="0.5" width="19" height="13" rx="1" stroke="currentColor" stroke-width="0.5"/>
-            <rect x="1" y="1" width="18" height="3" fill="#dc2626"/>
-            <rect x="1" y="4" width="18" height="6" fill="#fbbf24"/>
-            <rect x="1" y="10" width="18" height="3" fill="#dc2626"/>
-        </svg>`
-    };
+    // Supported flag language codes (delegates to DRC.Utils.createFlagSvg)
+    const FLAG_LANGS = ['en', 'de', 'fr', 'es'];
 
     // Language names
     const LANG_NAMES = {
@@ -415,7 +387,8 @@ DRC.SettingsPanel = (() => {
 
             const flag = document.createElement('span');
             flag.className = 'lang-flag';
-            flag.innerHTML = FLAG_SVGS[lang] || FLAG_SVGS['en'];
+            const svgEl = DRC.Utils.createFlagSvg(FLAG_LANGS.includes(lang) ? lang : 'en');
+            flag.appendChild(svgEl);
 
             const name = document.createElement('span');
             name.className = 'lang-name';
@@ -467,7 +440,7 @@ DRC.SettingsPanel = (() => {
         }
 
         if (flagEl) {
-            flagEl.innerHTML = FLAG_SVGS[lang] || FLAG_SVGS['en'];
+            flagEl.replaceChildren(DRC.Utils.createFlagSvg(FLAG_LANGS.includes(lang) ? lang : 'en'));
         }
     };
 

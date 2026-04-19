@@ -27,7 +27,15 @@ DRC.App = (() => {
          */
         preciseSI: null,
         /** Active model identifier, references a key in CONFIG.MODELS. */
-        activeModel: CFG.DEFAULT_MODEL
+        activeModel: CFG.DEFAULT_MODEL,
+        /**
+         * ISSUE-005: Re-entrancy guard for onToggleUnits.
+         * While true, any stray calculate() triggered by DOM side-effects
+         * (slider clamping, event bubbling, listeners on unit-toggle) is
+         * skipped so it cannot overwrite state.preciseSI with rounded DOM
+         * values, which would make unit conversion lossy.
+         */
+        _suppressRecalc: false
     };
 
     let _highlightedField = null;
@@ -89,41 +97,133 @@ DRC.App = (() => {
      * @returns {number} Current risk percentage.
      */
     /**
-     * Compute the "original" raw inputs by overriding any simulated
-     * factors with their stored pre-simulation slider values.
-     * Used to show the pre-treatment "Your Risk" reference value.
-     * @param {Object} rawInputs - Current slider values
-     * @returns {Object} Raw inputs with simulated factors reverted
+     * Compute the "original" (pre-simulation) SI-unit values by overriding
+     * any simulated factors with their stored pre-simulation slider values
+     * (converted from display units to SI). Operates on the lossless
+     * preciseSI source of truth so the main "Your Risk" display is
+     * idempotent across unit toggles.
+     * @param {Object} siVals - Current SI values (full precision)
+     * @returns {Object} SI values with simulated factors reverted to originals
      */
-    const _getOriginalRawInputs = (rawInputs) => {
-        const originals = DRC.TreatmentSimulator?.getOriginalValues?.() || null;
-        if (!originals || Object.keys(originals).length === 0) return rawInputs;
-        return { ...rawInputs, ...originals };
+    const _getOriginalSI = (siVals) => {
+        // Prefer the authoritative pre-simulation snapshot: it carries the unit
+        // system (isMetric) captured at simulation start, so we can convert to
+        // SI correctly even if the user toggled units while a sim is active.
+        const snapshot = DRC.TreatmentSimulator?.getPreSimulationSnapshot?.() || {};
+        const legacy = DRC.TreatmentSimulator?.getOriginalValues?.() || {};
+        const factors = new Set([...Object.keys(snapshot), ...Object.keys(legacy)]);
+        if (factors.size === 0) return siVals;
+        const result = { ...siVals };
+        factors.forEach(factor => {
+            const snap = snapshot[factor];
+            // Snapshot form: { value, isMetric }. Convert to SI using the
+            // snapshot's own isMetric, not the current display unit system.
+            if (snap && typeof snap === 'object' && 'value' in snap) {
+                const val = snap.value;
+                if (CFG.CONVERTIBLE_FIELDS.includes(factor)) {
+                    result[factor] = snap.isMetric
+                        ? val
+                        : DRC.ConversionService.convertField(factor, val, true);
+                } else {
+                    result[factor] = val;
+                }
+                return;
+            }
+            // Legacy fallback (no unit-system metadata): assume current display units.
+            const val = legacy[factor];
+            if (val == null) return;
+            if (CFG.CONVERTIBLE_FIELDS.includes(factor)) {
+                result[factor] = state.isMetric
+                    ? val
+                    : DRC.ConversionService.convertField(factor, val, true);
+            } else {
+                result[factor] = val;
+            }
+        });
+        return result;
+    };
+
+    /**
+     * ISSUE-005: Merge DOM-derived SI values into stored preciseSI without
+     * introducing rounding drift.
+     *
+     * If a field's new SI value rounds to the same DOM display representation
+     * (within one slider step) as the currently-stored preciseSI value, keep
+     * the stored precise value. Otherwise treat it as a genuine user edit and
+     * overwrite losslessly with the new value.
+     *
+     * @param {Object|null} previous — Previously stored precise SI values.
+     * @param {Object} current — Fresh SI values derived from DOM inputs.
+     * @returns {Object} Merged SI values (full precision preserved).
+     */
+    const _mergePreciseSI = (previous, current) => {
+        if (!previous) return { ...current };
+        const merged = { ...current };
+        CFG.CONVERTIBLE_FIELDS.forEach(f => {
+            const prev = previous[f];
+            const curr = current[f];
+            if (prev == null || curr == null) return;
+            // Step in the *display* unit, converted back to SI. This is the
+            // smallest increment a user can actually produce via the slider,
+            // so differences below half-step are guaranteed to be rounding
+            // artefacts, not edits.
+            const mode = state.isMetric ? 'si' : 'us';
+            const range = CFG.RANGES[f]?.[mode];
+            if (!range) return;
+            const step = range[2];
+            const stepSI = state.isMetric
+                ? step
+                : DRC.ConversionService.convertField(f, step, true) - DRC.ConversionService.convertField(f, 0, true);
+            const MERGE_TOLERANCE_RATIO = 0.5; // Half-step tolerance for lossless merge
+            const tolerance = Math.abs(stepSI) * MERGE_TOLERANCE_RATIO;
+            if (Math.abs(curr - prev) <= tolerance) {
+                merged[f] = prev; // Keep full-precision value
+            }
+        });
+        return merged;
     };
 
     const calculate = () => {
+        // ISSUE-005: Skip recalcs while a unit toggle is in progress. The
+        // toggle uses state.preciseSI directly for its render pass; letting
+        // calculate() run here would re-read rounded DOM values and overwrite
+        // state.preciseSI, introducing cumulative rounding drift.
+        if (state._suppressRecalc) return;
+
         const activeModel   = getActiveModel();
         const rawInputs     = UI().readInputs();
         const siValsCurrent = Model().toSI(rawInputs, state.isMetric);
-        state.preciseSI     = { ...siValsCurrent };   // Preserve full-precision SI values
 
-        // "Your Risk" = risk based on the original (pre-simulation) slider values
-        const rawOriginal     = _getOriginalRawInputs(rawInputs);
-        const siValsOriginal  = Model().toSI(rawOriginal, state.isMetric);
+        // ISSUE-005 — Idempotent preciseSI update:
+        // Only overwrite state.preciseSI for a field when the DOM-derived SI
+        // value differs meaningfully from the stored precise value. This makes
+        // repeated unit toggles lossless: rounding the display does not drift
+        // the underlying SI source of truth.
+        state.preciseSI = _mergePreciseSI(state.preciseSI, siValsCurrent);
+
+        // All risk/contribution computations use the lossless preciseSI, not
+        // the rounded DOM-derived siValsCurrent. In SI display mode the DOM
+        // is rounded to the slider step (e.g. 0.1 mmol/L), so feeding it into
+        // computeProbability() would produce different risk before vs. after
+        // a unit toggle — even when state.preciseSI is stable.
+        const siLossless = state.preciseSI;
+
+        // "Your Risk" = risk based on the original (pre-simulation) values
+        const siValsOriginal = _getOriginalSI(siLossless);
         const _riskOriginal = Model().computeProbability(siValsOriginal, activeModel);
         const riskPctOriginal = (_riskOriginal != null && isFinite(_riskOriginal)) ? _riskOriginal * 100 : NaN;
 
         // "Your Risk with Chosen Treatments" = current (possibly simulated) risk
-        const _riskCurrent = Model().computeProbability(siValsCurrent, activeModel);
+        const _riskCurrent = Model().computeProbability(siLossless, activeModel);
         const riskPctCurrent  = (_riskCurrent != null && isFinite(_riskCurrent)) ? _riskCurrent * 100 : NaN;
 
-        const logOddsContributions = Model().computeContributions(siValsCurrent, activeModel);
-        const marginalSummary = Model().computeMarginalSummary(siValsCurrent, activeModel);
+        const logOddsContributions = Model().computeContributions(siLossless, activeModel);
+        const marginalSummary = Model().computeMarginalSummary(siLossless, activeModel);
         const isMale        = rawInputs.sex === 1;
-        const treatStatus   = Model().getElevatedFactors(siValsCurrent, isMale);
+        const treatStatus   = Model().getElevatedFactors(siLossless, isMale);
 
         // Render all views with the calculated data
-        _renderAllViews(riskPctOriginal, riskPctCurrent, logOddsContributions, marginalSummary, treatStatus, siValsCurrent, activeModel);
+        _renderAllViews(riskPctOriginal, riskPctCurrent, logOddsContributions, marginalSummary, treatStatus, siLossless, activeModel);
         return riskPctCurrent;
     };
 
@@ -152,8 +252,8 @@ DRC.App = (() => {
         UI().updateNonModSummary();
         UI().updateModSummary();
         UI().renderIconArray(riskPctOriginal);
-        UI().renderContributionChart(marginalSummary);
-        UI().renderTreatmentOverview(treatStatus, logOddsContributions, marginalSummary.contributions);
+        UI().renderContributionChart(marginalSummary, { trigger: trigger, activeModel: CFG.MODELS[state.activeModel] });
+        UI().renderTreatmentOverview(treatStatus, logOddsContributions, marginalSummary.contributions, { activeModel: CFG.MODELS[state.activeModel] });
 
         if (state.activeField && state.prevRiskPct !== null) {
             UI().renderWhatIfBadge(state.activeField, riskPctCurrent - state.prevRiskPct);
@@ -189,6 +289,7 @@ DRC.App = (() => {
     };
 
     /** @type {Object<string, number>} Active badge-clear timeouts per field. */
+    // Entries are auto-cleaned via `delete _badgeTimeouts[field]` inside the timeout callback.
     const _badgeTimeouts = {};
 
     const onSliderEnd = (field) => {
@@ -229,6 +330,19 @@ DRC.App = (() => {
         unitToggle.setAttribute('aria-checked', String(unitToggle.checked));
         if (prev === state.isMetric) return;
 
+        // ISSUE-005: Suppress any calculate() triggered by DOM side-effects
+        // (slider auto-clamp, external listeners on unit-toggle, etc.) while
+        // we rebuild display values. We render the final state manually below
+        // using state.preciseSI as the lossless source of truth.
+        state._suppressRecalc = true;
+        try {
+            _performToggleUnits();
+        } finally {
+            state._suppressRecalc = false;
+        }
+    };
+
+    const _performToggleUnits = () => {
         // ── Rounding-drift prevention ──────────────────────────────────
         // Convert slider values FROM the stored precise SI values rather
         // than from the (rounded) DOM values. This eliminates cumulative
@@ -272,9 +386,9 @@ DRC.App = (() => {
         const _riskToggle = Model().computeProbability(preciseSI, activeModel);
         const riskPctCurrent = (_riskToggle != null && isFinite(_riskToggle)) ? _riskToggle * 100 : NaN;
 
-        // Recompute "original" (pre-simulation) risk for the top field
-        const rawOriginal     = _getOriginalRawInputs(UI().readInputs());
-        const siValsOriginal  = Model().toSI(rawOriginal, state.isMetric);
+        // Recompute "original" (pre-simulation) risk from the same lossless
+        // preciseSI source, converting simulation originals from display to SI.
+        const siValsOriginal  = _getOriginalSI(preciseSI);
         const _riskOrigToggle = Model().computeProbability(siValsOriginal, activeModel);
         const riskPctOriginal = (_riskOrigToggle != null && isFinite(_riskOrigToggle)) ? _riskOrigToggle * 100 : NaN;
 
@@ -297,7 +411,12 @@ DRC.App = (() => {
      * reference points (Vicente, 1999), enabling meaningful before/after
      * comparisons within a patient's clinical context.
      */
-    const onReset = () => {
+    const onReset = async () => {
+        if (DRC.ProfileWarning) {
+            const shouldProceed = await DRC.ProfileWarning.checkBeforeReset();
+            if (!shouldProceed) return;
+        }
+
         const patientData = DRC.PatientManager?.getActivePatientData?.();
         const D = CFG.DEFAULTS;
 
@@ -408,6 +527,30 @@ DRC.App = (() => {
         // Action buttons
         const resetBtn = document.getElementById('resetBtn');
         if (resetBtn) resetBtn.addEventListener('click', onReset);
+
+        // ISSUE-004: Dynamic reset-button label — reflects whether clicking
+        // restores an active patient's saved values or CONFIG.DEFAULTS.
+        const updateResetLabel = () => {
+            if (!resetBtn) return;
+            const t = DRC.Utils.createTranslator();
+            const hasProfile = !!DRC.PatientManager?.getActivePatientData?.();
+            const key = hasProfile ? 'nav.restoreProfile' : 'nav.resetDefaults';
+            const fallback = hasProfile ? 'Restore profile values' : 'Reset to defaults';
+            const label = t(key, fallback);
+            resetBtn.setAttribute('aria-label', label);
+            resetBtn.setAttribute('title', label);
+        };
+        updateResetLabel();
+        // Re-evaluate when a profile is loaded (loadPatient triggers risk:recalculate)
+        on('risk:recalculate', updateResetLabel);
+        // Re-evaluate on language change so translated labels stay current
+        if (DRC.I18n?.onLanguageChange) DRC.I18n.onLanguageChange(updateResetLabel);
+        // Cheap safety net for add/delete/rename paths that don't fire risk:recalculate:
+        // re-check right when the button is about to be used.
+        if (resetBtn) {
+            resetBtn.addEventListener('mouseenter', updateResetLabel);
+            resetBtn.addEventListener('focus', updateResetLabel);
+        }
 
         // Hero expandable toggle
         const expandHeroBtn = document.getElementById('expandHeroBtn');

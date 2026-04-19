@@ -115,6 +115,18 @@ const rtResult = fromSI(toSI(usInputs, false), false);
 assertApprox(rtResult.height,  usInputs.height,  1e-9, 'Round-trip height');
 assertApprox(rtResult.fastGlu, usInputs.fastGlu, 1e-9, 'Round-trip fastGlu');
 assertApprox(rtResult.cholHDL, usInputs.cholHDL, 1e-9, 'Round-trip cholHDL');
+assertApprox(rtResult.waist,   usInputs.waist,   0.01, 'Round-trip waist');
+assertApprox(rtResult.cholTri, usInputs.cholTri, 0.01, 'Round-trip cholTri');
+
+// Reverse round-trip: fromSI → toSI === original (SI → US → SI)
+const siInputs2 = { age: 54, race: 0, parentHist: 0, sbp: 120,
+                   height: 170, waist: 96, fastGlu: 5.5, cholHDL: 1.3, cholTri: 1.7 };
+const rtResult2 = toSI(fromSI(siInputs2, false), false);
+assertApprox(rtResult2.height,  siInputs2.height,  1e-9, 'Reverse round-trip height');
+assertApprox(rtResult2.fastGlu, siInputs2.fastGlu, 1e-9, 'Reverse round-trip fastGlu');
+assertApprox(rtResult2.cholHDL, siInputs2.cholHDL, 1e-9, 'Reverse round-trip cholHDL');
+assertApprox(rtResult2.waist,   siInputs2.waist,   0.01, 'Reverse round-trip waist');
+assertApprox(rtResult2.cholTri, siInputs2.cholTri, 0.01, 'Reverse round-trip cholTri');
 
 // getConversionFactor
 const { getConversionFactor } = DRC.ConversionService;

@@ -6,6 +6,8 @@
   "nav": {
     "brand": "Calculateur de Risque Diabète",
     "reset": "Réinitialiser",
+    "restoreProfile": "Restaurer les valeurs du profil",
+    "resetDefaults": "Réinitialiser aux valeurs par défaut",
     "riskTimeline": "Chronologie du Risque",
     "selectProfile": "Sélectionner Profil",
     "language": "Choisir Langue"
@@ -145,12 +147,29 @@
       "beste": "Meilleur"
     }
   },
+  "zones": {
+    "normal": "Normal",
+    "elevated": "Élevé",
+    "high": "Haut",
+    "veryHigh": "Très élevé",
+    "diabetes": "Diabète",
+    "prediabetes": "Prédiabète",
+    "low": "Bas"
+  },
   "modals": {
     "profileWarning": {
-      "title": "Sauvegarder Vos Données?",
-      "message": "Vous n'avez pas encore créé de profil. Si vous continuez, vos données actuelles ne seront pas sauvegardées.",
+      "title": "Réinitialiser toutes les valeurs?",
+      "message": "Vous avez des modifications non sauvegardées. La réinitialisation supprimera vos données actuelles.",
+      "message1": "Vous avez des modifications non sauvegardées.",
+      "message2": "La réinitialisation supprimera vos données actuelles.",
       "create": "Créer Profil",
-      "continue": "Continuer Sans Sauvegarder"
+      "continue": "Réinitialiser",
+      "cancel": "Annuler"
+    },
+    "simulationSaveWarning": {
+      "message": "Une simulation de traitement est active. Que souhaitez-vous enregistrer ?",
+      "saveOriginal": "Enregistrer les valeurs d'origine",
+      "saveSimulated": "Enregistrer les valeurs simulées"
     },
     "simulationSaveWarning": {
       "message": "Une simulation de traitement est active. Que souhaitez-vous enregistrer ?",

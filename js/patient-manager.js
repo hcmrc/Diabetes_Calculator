@@ -15,6 +15,158 @@
 const t = DRC.Utils.createTranslator();
 
 DRC.PatientManager = (() => {
+    // ─── Accessible toast and modal helpers (replace native dialogs) ────
+    let _toastTimer = null;
+
+    /**
+     * Show an accessible toast notification (replaces alert()).
+     * Uses visibility:hidden so the aria-live region is preserved.
+     * @param {string} message
+     */
+    const showToast = (message) => {
+        let container = document.getElementById('drc-toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'drc-toast-container';
+            container.setAttribute('role', 'status');
+            container.setAttribute('aria-live', 'polite');
+            container.setAttribute('aria-atomic', 'true');
+            container.style.cssText = 'position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);z-index:99999;pointer-events:none;';
+            document.body.appendChild(container);
+        }
+        if (_toastTimer) clearTimeout(_toastTimer);
+        container.textContent = message;
+        container.style.cssText = container.style.cssText.replace(/visibility:\s*hidden;?/g, '').replace(/display:\s*none;?/g, '') + ';display:block;visibility:visible;';
+        container.className = 'drc-toast';
+        _toastTimer = setTimeout(() => { container.style.visibility = 'hidden'; }, 4000);
+    };
+
+    /**
+     * Custom confirm dialog with focus trap and focus restoration (H3/L1).
+     * @param {string} message
+     * @returns {Promise<boolean>}
+     */
+    const showConfirm = (message) => new Promise(resolve => {
+        const previousFocus = document.activeElement;
+        const overlay = document.createElement('div');
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-label', message);
+        overlay.className = 'drc-modal-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;';
+
+        const dialog = document.createElement('div');
+        dialog.className = 'drc-modal';
+
+        const msg = document.createElement('p');
+        msg.textContent = message;
+
+        const btnRow = document.createElement('div');
+        btnRow.className = 'drc-modal-btn-row';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = DRC.Utils?.createTranslator?.()('buttons.cancel', 'Cancel') || 'Cancel';
+        cancelBtn.className = 'drc-btn drc-btn-secondary';
+        cancelBtn.onclick = () => { cleanup(); resolve(false); };
+
+        const confirmBtn = document.createElement('button');
+        confirmBtn.textContent = DRC.Utils?.createTranslator?.()('buttons.confirm', 'Confirm') || 'Confirm';
+        confirmBtn.className = 'drc-btn drc-btn-primary';
+        confirmBtn.onclick = () => { cleanup(); resolve(true); };
+
+        let focusTrap = null;
+        const cleanup = () => {
+            if (focusTrap) focusTrap.deactivate();
+            overlay.remove();
+            if (previousFocus && typeof previousFocus.focus === 'function') {
+                try { previousFocus.focus(); } catch (_) { /* ignore */ }
+            }
+        };
+
+        btnRow.appendChild(cancelBtn);
+        btnRow.appendChild(confirmBtn);
+        dialog.appendChild(msg);
+        dialog.appendChild(btnRow);
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+        focusTrap = DRC.Utils?.createFocusTrap?.(overlay);
+        if (focusTrap) focusTrap.activate();
+        confirmBtn.focus();
+
+        overlay.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { cleanup(); resolve(false); }
+        });
+    });
+
+    /**
+     * Custom prompt dialog with focus trap and focus restoration (H3/L1).
+     * @param {string} message
+     * @param {string} [defaultValue]
+     * @returns {Promise<string|null>}
+     */
+    const showPrompt = (message, defaultValue) => new Promise(resolve => {
+        const previousFocus = document.activeElement;
+        const overlay = document.createElement('div');
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-label', message);
+        overlay.className = 'drc-modal-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;';
+
+        const dialog = document.createElement('div');
+        dialog.className = 'drc-modal';
+
+        const msg = document.createElement('p');
+        msg.textContent = message;
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = defaultValue || '';
+        input.className = 'drc-prompt-input';
+
+        const btnRow = document.createElement('div');
+        btnRow.className = 'drc-modal-btn-row';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = DRC.Utils?.createTranslator?.()('buttons.cancel', 'Cancel') || 'Cancel';
+        cancelBtn.className = 'drc-btn drc-btn-secondary';
+        cancelBtn.onclick = () => { cleanup(); resolve(null); };
+
+        const okBtn = document.createElement('button');
+        okBtn.textContent = DRC.Utils?.createTranslator?.()('buttons.ok', 'OK') || 'OK';
+        okBtn.className = 'drc-btn drc-btn-primary';
+        okBtn.onclick = () => { cleanup(); resolve(input.value); };
+
+        let focusTrap = null;
+        const cleanup = () => {
+            if (focusTrap) focusTrap.deactivate();
+            overlay.remove();
+            if (previousFocus && typeof previousFocus.focus === 'function') {
+                try { previousFocus.focus(); } catch (_) { /* ignore */ }
+            }
+        };
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { cleanup(); resolve(input.value); }
+        });
+
+        btnRow.appendChild(cancelBtn);
+        btnRow.appendChild(okBtn);
+        dialog.appendChild(msg);
+        dialog.appendChild(input);
+        dialog.appendChild(btnRow);
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+        focusTrap = DRC.Utils?.createFocusTrap?.(overlay);
+        if (focusTrap) focusTrap.activate();
+        input.focus();
+        input.select();
+
+        overlay.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { cleanup(); resolve(null); }
+        });
+    });
+
     const STORAGE_KEY = 'drc_v1_patients';
     /** @deprecated Legacy key for backward-compatible migration */
     const LEGACY_STORAGE_KEY = 'diabetes_risk_patients';
@@ -59,7 +211,10 @@ DRC.PatientManager = (() => {
             const jsonStr = JSON.stringify({ patients, activePatientId });
             const encoded = btoa(jsonStr);
             localStorage.setItem(STORAGE_KEY, encoded);
-        } catch (_) { console.warn('PatientManager: localStorage quota exceeded, data not saved.'); }
+        } catch (_) {
+            console.warn('PatientManager: localStorage quota exceeded, data not saved.');
+            showToast(t('patientManager.saveFailed', 'Failed to save — storage is full. Please export and delete old profiles.'));
+        }
     };
 
     const loadFromStorage = () => {
@@ -346,6 +501,11 @@ DRC.PatientManager = (() => {
         }
         // Focus trap: deactivate and restore focus
         if (_encryptionFocusTrap) { _encryptionFocusTrap.deactivate(); _encryptionFocusTrap = null; }
+        // Reactivate drawer focus trap if drawer is still open and visible
+        if (_drawerFocusTrap) {
+            const drawer = document.getElementById('patientDrawer');
+            if (drawer && drawer.classList.contains('open') && getComputedStyle(drawer).display !== 'none') _drawerFocusTrap.activate();
+        }
         if (_encryptionPreviousFocus) { _encryptionPreviousFocus.focus(); _encryptionPreviousFocus = null; }
         // Clear password input
         const passwordInput = document.getElementById('encPasswordInput');
@@ -449,6 +609,8 @@ DRC.PatientManager = (() => {
                 _encryptionPreviousFocus = document.activeElement;
                 _encryptionFocusTrap = DRC.Utils.createFocusTrap(modal);
                 _encryptionFocusTrap.activate();
+                // Deactivate drawer focus trap while modal is open (prevents conflict)
+                if (_drawerFocusTrap) _drawerFocusTrap.deactivate();
             }
         });
     };
@@ -537,6 +699,11 @@ DRC.PatientManager = (() => {
         }
         // Focus trap: deactivate and restore focus
         if (_passwordPromptFocusTrap) { _passwordPromptFocusTrap.deactivate(); _passwordPromptFocusTrap = null; }
+        // Reactivate drawer focus trap if drawer is still open and visible
+        if (_drawerFocusTrap) {
+            const drawer = document.getElementById('patientDrawer');
+            if (drawer && drawer.classList.contains('open') && getComputedStyle(drawer).display !== 'none') _drawerFocusTrap.activate();
+        }
         if (_passwordPromptPreviousFocus) { _passwordPromptPreviousFocus.focus(); _passwordPromptPreviousFocus = null; }
         const passwordInput = document.getElementById('pwdPromptInput');
         if (passwordInput) passwordInput.value = '';
@@ -583,6 +750,8 @@ DRC.PatientManager = (() => {
                 _passwordPromptPreviousFocus = document.activeElement;
                 _passwordPromptFocusTrap = DRC.Utils.createFocusTrap(modal);
                 _passwordPromptFocusTrap.activate();
+                // Deactivate drawer focus trap while modal is open (prevents conflict)
+                if (_drawerFocusTrap) _drawerFocusTrap.deactivate();
             }
         });
     };
@@ -862,7 +1031,7 @@ DRC.PatientManager = (() => {
         let sanitized = name.trim();
         // Limit length (HTML maxlength should enforce, but double-check)
         if (sanitized.length === 0 || sanitized.length > 60) return null;
-        // Remove control characters and potentially dangerous content
+        // Strip dangerous chars as defense-in-depth — createSafeElement/textContent also prevents XSS.
         // Allow: letters, numbers, spaces, common punctuation, international chars
         // Block: < > " ' & and control characters
         sanitized = sanitized
@@ -871,6 +1040,109 @@ DRC.PatientManager = (() => {
         // Final trim after sanitization
         sanitized = sanitized.trim();
         return sanitized.length > 0 ? sanitized : null;
+    };
+
+    /**
+     * Three-option modal dialog (M2). Resolves to 'original' | 'simulated' | 'cancel'.
+     * @param {string} message
+     * @param {string} originalLabel
+     * @param {string} simulatedLabel
+     * @param {string} cancelLabel
+     * @returns {Promise<'original'|'simulated'|'cancel'>}
+     */
+    const _showThreeOptionDialog = (message, originalLabel, simulatedLabel, cancelLabel) => new Promise(resolve => {
+        const previousFocus = document.activeElement;
+        const overlay = document.createElement('div');
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-label', message);
+        overlay.className = 'drc-modal-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;';
+
+        const dialog = document.createElement('div');
+        dialog.className = 'drc-modal';
+        const msg = document.createElement('p');
+        msg.textContent = message;
+        const btnRow = document.createElement('div');
+        btnRow.className = 'drc-modal-btn-row';
+
+        let focusTrap = null;
+        const cleanup = () => {
+            if (focusTrap) focusTrap.deactivate();
+            overlay.remove();
+            if (previousFocus && typeof previousFocus.focus === 'function') {
+                try { previousFocus.focus(); } catch (_) {}
+            }
+        };
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = cancelLabel;
+        cancelBtn.className = 'drc-btn drc-btn-secondary';
+        cancelBtn.onclick = () => { cleanup(); resolve('cancel'); };
+
+        const simBtn = document.createElement('button');
+        simBtn.textContent = simulatedLabel;
+        simBtn.className = 'drc-btn drc-btn-secondary';
+        simBtn.onclick = () => { cleanup(); resolve('simulated'); };
+
+        const origBtn = document.createElement('button');
+        origBtn.textContent = originalLabel;
+        origBtn.className = 'drc-btn drc-btn-primary';
+        origBtn.onclick = () => { cleanup(); resolve('original'); };
+
+        btnRow.appendChild(cancelBtn);
+        btnRow.appendChild(simBtn);
+        btnRow.appendChild(origBtn);
+        dialog.appendChild(msg);
+        dialog.appendChild(btnRow);
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+        focusTrap = DRC.Utils?.createFocusTrap?.(overlay);
+        if (focusTrap) focusTrap.activate();
+        origBtn.focus();
+        overlay.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { cleanup(); resolve('cancel'); }
+        });
+    });
+
+    /**
+     * Resolve save data when a treatment simulation is active (M2).
+     * Shows a three-option dialog: save original, save simulated, or cancel.
+     * @returns {Promise<Object|null>} Data to save, or null if user cancelled.
+     */
+    const _resolveSaveDataForSimulation = async () => {
+        const data = captureCurrentValues();
+        const sim = DRC.TreatmentSimulator;
+        if (!sim?.hasActiveSimulation?.()) return data;
+
+        const snap = sim.getPreSimulationSnapshot?.() || {};
+        const factors = Object.keys(snap);
+        if (factors.length === 0) return data;
+
+        const tr = DRC.Utils?.createTranslator?.() || ((_, fb) => fb);
+        const msg = tr('modals.simulationSaveWarning.message',
+            'You have an active treatment simulation. What would you like to save?');
+        const originalLabel = tr('modals.simulationSaveWarning.saveOriginal', 'Save Original');
+        const simulatedLabel = tr('modals.simulationSaveWarning.saveSimulated', 'Save Simulated');
+        const cancelLabel = tr('buttons.cancel', 'Cancel');
+
+        const choice = await _showThreeOptionDialog(msg, originalLabel, simulatedLabel, cancelLabel);
+        if (choice === 'cancel') return null;
+        if (choice === 'original') {
+            const currentIsMetric = DRC.UIController?.getUnitToggleState?.() ?? false;
+            factors.forEach(f => {
+                const entry = snap[f];
+                if (!entry || typeof entry !== 'object') return;
+                let val = entry.value;
+                if (entry.isMetric !== currentIsMetric && DRC.CONFIG.CONVERTIBLE_FIELDS.includes(f)) {
+                    const siVal = entry.isMetric ? val : DRC.ConversionService.convertField(f, val, true);
+                    val = currentIsMetric ? siVal : DRC.ConversionService.convertField(f, siVal, false);
+                }
+                data[f] = val;
+            });
+        }
+        // choice === 'simulated' → return data as-is (captured from current DOM)
+        return data;
     };
 
     const addPatient = async (name) => {
@@ -967,7 +1239,7 @@ DRC.PatientManager = (() => {
     };
 
     const exportToExcel = async () => {
-        if (patients.length === 0) { alert(t('patientManager.noPatientsExport', 'No patients to export.')); return; }
+        if (patients.length === 0) { showToast(t('patientManager.noPatientsExport', 'No patients to export.')); return; }
 
         // Show encryption modal
         const result = await showEncryptionModal();
@@ -985,7 +1257,7 @@ DRC.PatientManager = (() => {
         if (result.useEncryption && result.password) {
             // Encrypt the data
             if (!DRC.CryptoService) {
-                alert(t('patientManager.encryptionNotAvailable', 'Encryption service not available.'));
+                showToast(t('patientManager.encryptionNotAvailable', 'Encryption service not available.'));
                 return;
             }
             try {
@@ -993,7 +1265,7 @@ DRC.PatientManager = (() => {
                 _downloadFile(encrypted, 'diabetes_risk_patients.drc', 'application/octet-stream');
             } catch (e) {
                 console.error('Encryption failed:', e);
-                alert(t('patientManager.encryptionFailed', 'Encryption failed. Please try again.'));
+                showToast(t('patientManager.encryptionFailed', 'Encryption failed. Please try again.'));
             }
         } else {
             // Download as regular Excel file
@@ -1004,7 +1276,7 @@ DRC.PatientManager = (() => {
     /** Export a single patient profile with formatted filename. */
     const exportSinglePatient = async (patientId) => {
         const patient = patients.find(p => p.id === patientId);
-        if (!patient) { alert(t('patientManager.patientNotFound', 'Patient not found.')); return; }
+        if (!patient) { showToast(t('patientManager.patientNotFound', 'Patient not found.')); return; }
 
         // Show encryption modal
         const result = await showEncryptionModal();
@@ -1031,7 +1303,7 @@ DRC.PatientManager = (() => {
         if (result.useEncryption && result.password) {
             // Encrypt the data
             if (!DRC.CryptoService) {
-                alert(t('patientManager.encryptionNotAvailable', 'Encryption service not available.'));
+                showToast(t('patientManager.encryptionNotAvailable', 'Encryption service not available.'));
                 return;
             }
             try {
@@ -1039,7 +1311,7 @@ DRC.PatientManager = (() => {
                 _downloadFile(encrypted, `${baseFilename}.drc`, 'application/octet-stream');
             } catch (e) {
                 console.error('Encryption failed:', e);
-                alert(t('patientManager.encryptionFailed', 'Encryption failed. Please try again.'));
+                showToast(t('patientManager.encryptionFailed', 'Encryption failed. Please try again.'));
             }
         } else {
             // Download as regular Excel file
@@ -1052,13 +1324,13 @@ DRC.PatientManager = (() => {
         const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
         if (file.size > MAX_FILE_SIZE) {
-            alert(t('patientManager.fileTooLarge', 'File is too large. Maximum size is 5MB.'));
+            showToast(t('patientManager.fileTooLarge', 'File is too large. Maximum size is 5MB.'));
             return;
         }
 
         // Validate file extension (security check beyond HTML accept attribute)
         if (!/\.(xlsx|xls|drc)$/i.test(file.name)) {
-            alert(t('patientManager.invalidExtension', 'Invalid file type. Please upload an .xlsx, .xls, or .drc file.'));
+            showToast(t('patientManager.invalidExtension', 'Invalid file type. Please upload an .xlsx, .xls, or .drc file.'));
             return;
         }
 
@@ -1090,12 +1362,12 @@ DRC.PatientManager = (() => {
                         try {
                             fileData = await DRC.CryptoService.decrypt(fileData, passwordRetry);
                         } catch (retryErr) {
-                            alert(t('patientManager.decryptError', 'Error decrypting. Please check the password.'));
+                            showToast(t('patientManager.decryptError', 'Error decrypting. Please check the password.'));
                             return;
                         }
                     }
                 } else if (isDrcFile) {
-                    alert(t('patientManager.unknownEncryptionFormat', 'This file appears to be encrypted, but the encryption format is not recognized.'));
+                    showToast(t('patientManager.unknownEncryptionFormat', 'This file appears to be encrypted, but the encryption format is not recognized.'));
                     return;
                 }
 
@@ -1124,8 +1396,8 @@ DRC.PatientManager = (() => {
                         cholHDL:    clamp(parseFloat(row.HDL_Cholesterol || row.cholHDL) || 50, cholHDLMin, cholHDLMax),
                         cholTri:    clamp(parseFloat(row.Blood_Fats_Triglycerides || row.Triglycerides || row.cholTri) || 150, cholTriMin, cholTriMax),
                         _riskPct:   clamp(parseFloat(row.Risk_Pct || 0) || 0, 0, 100),
-                        // Excel format stores raw values without explicit unit system metadata.
-                        // Default to US units (false) as conservative assumption.
+                        // Excel import assumes US units (_isMetric: false). If the file was created
+                        // in SI mode, values may be misinterpreted. Future: add _isMetric column to Excel export format.
                         _isMetric: false
                     };
                     patients.push({
@@ -1138,7 +1410,7 @@ DRC.PatientManager = (() => {
 
                 // Notify that import is complete (for tutorial trigger)
                 window.dispatchEvent(new CustomEvent('drc:import:completed'));
-            } catch (_) { alert(t('patientManager.invalidExcel', 'Could not read the Excel file. Please check that it is a valid .xlsx file.')); }
+            } catch (_) { console.error('Import failed:', _); showToast(t('patientManager.invalidExcel', 'Could not read the Excel file. Please check that it is a valid .xlsx file.')); }
         };
         reader.readAsArrayBuffer(file);
     };
@@ -1229,17 +1501,17 @@ DRC.PatientManager = (() => {
 
             card.addEventListener('click', (e) => { if (!e.target.closest('[data-action]')) loadPatient(p.id); });
             exportBtn.addEventListener('click', (e) => { e.stopPropagation(); exportSinglePatient(p.id); });
-            renameBtn.addEventListener('click', (e) => {
+            renameBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                const newName = prompt(t('patientManager.renamePrompt', 'Rename "{name}" to:').replace('{name}', p.name), p.name);
+                const newName = await showPrompt(t('patientManager.renamePrompt', 'Rename "{name}" to:').replace('{name}', p.name), p.name);
                 if (newName && newName.trim() && newName.trim() !== p.name) {
                     renamePatient(p.id, newName.trim());
                 }
             });
-            saveBtn.addEventListener('click', (e) => { e.stopPropagation(); updatePatient(p.id); });
-            delBtn.addEventListener('click', (e) => {
+            saveBtn.addEventListener('click', async (e) => { e.stopPropagation(); await updatePatient(p.id); });
+            delBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                if (confirm(t('patientManager.deleteConfirm', 'Delete profile "{name}"?').replace('{name}', p.name))) deletePatient(p.id);
+                if (await showConfirm(t('patientManager.deleteConfirm', 'Delete profile "{name}"?').replace('{name}', p.name))) deletePatient(p.id);
             });
             container.appendChild(card);
         });
@@ -1307,10 +1579,10 @@ DRC.PatientManager = (() => {
         document.getElementById('patientDrawerClose')?.addEventListener('click', () => toggleDrawer(false));
         document.getElementById('patientOverlay')?.addEventListener('click', () => toggleDrawer(false));
 
-        document.getElementById('pdAddPatientBtn')?.addEventListener('click', () => {
+        document.getElementById('pdAddPatientBtn')?.addEventListener('click', async () => {
             const input = document.getElementById('pdNewPatientName');
             if (!input?.value.trim()) { input?.focus(); return; }
-            addPatient(input.value);
+            await addPatient(input.value);
             input.value = '';
         });
 

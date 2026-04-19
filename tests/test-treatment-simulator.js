@@ -107,7 +107,9 @@ assert(typeof TS.getIndividualReduction === 'function', 'TreatmentSimulator.getI
 assert(typeof TS.resimulate             === 'function', 'TreatmentSimulator.resimulate is a function');
 assert(typeof TS.isAnimating            === 'function', 'TreatmentSimulator.isAnimating is a function');
 assert(typeof TS.getEffectDelta         === 'function', 'TreatmentSimulator.getEffectDelta is a function');
-assert(Object.keys(TS).length           === 10,         'Public API has exactly 10 members');
+assert(typeof TS.hasActiveSimulation    === 'function', 'TreatmentSimulator.hasActiveSimulation is a function');
+assert(typeof TS.getPreSimulationSnapshot === 'function', 'TreatmentSimulator.getPreSimulationSnapshot is a function');
+assert(Object.keys(TS).length           === 12,         'Public API has exactly 12 members');
 
 // ─── TEST SUITE 2: Resilience — null DOM ──────────────────────────────────────
 

@@ -4,7 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- CSP: 'unsafe-inline' in style-src is required for JS dynamic styling (element.style).
-         Mitigated by strict script-src, object-src 'none', and base-uri/form-action restrictions. -->
+         Mitigated by strict script-src, object-src 'none', and base-uri/form-action restrictions.
+         Domains: cdn.sheetjs.com (Excel I/O), cdn.jsdelivr.net (Tesseract.js/PDF.js),
+         tessdata.projectnaptha.com (OCR language data), fonts.googleapis.com (web fonts).
+         data:/blob: in connect-src/img-src required by Tesseract.js Web Worker & OCR pipeline.
+         wasm-unsafe-eval required by SheetJS WASM module.
+         frame-ancestors 'none' in <meta> CSP is enforced by Chromium/Firefox and
+         provides clickjacking protection for the file:// and static-host deployment. -->
     <meta http-equiv="Content-Security-Policy"
           content="default-src 'self';
                    script-src 'self' 'wasm-unsafe-eval' https://cdn.sheetjs.com https://cdn.jsdelivr.net;
@@ -17,7 +23,6 @@
                    base-uri 'self';
                    form-action 'self';
                    frame-ancestors 'none';">
-    <meta http-equiv="X-Frame-Options" content="DENY">
     <title>Diabetes Risk Calculator</title>
     <meta name="theme-color" content="#f2f4f8">
 
@@ -75,7 +80,7 @@
             <span data-i18n="nav.brand">Diabetes Risk Calculator</span>
         </h1>
         <div class="nav-actions">
-            <button id="resetBtn" type="button" class="btn-reset" aria-label="Reset all values">
+            <button id="resetBtn" type="button" class="btn-reset" aria-label="Reset to defaults" title="Reset to defaults">
                 <i data-lucide="rotate-ccw" class="lucide-icon"></i>
             </button>
             <!-- Patient Management Button -->
@@ -242,7 +247,7 @@
 <div class="panel-body-inner">
             <!-- Demographic Data Section with Collapse -->
             <div class="section-collapse-header">
-                <button class="section-collapse-btn" data-target="non-mod-section" aria-expanded="true">
+                <button class="section-collapse-btn" data-target="non-mod-section" aria-controls="non-mod-section" aria-expanded="true">
                     <i data-lucide="chevron-down" class="lucide-icon"></i>
                 </button>
                 <div class="input-section-label" data-i18n="sections.demographic">
@@ -333,7 +338,7 @@
 
             <!-- Clinical Values Section with Collapse -->
             <div class="section-collapse-header">
-                <button class="section-collapse-btn" data-target="mod-section" aria-expanded="true">
+                <button class="section-collapse-btn" data-target="mod-section" aria-controls="mod-section" aria-expanded="true">
                     <i data-lucide="chevron-down" class="lucide-icon"></i>
                 </button>
                 <div class="input-section-label modifiable" data-i18n="sections.clinical">
@@ -866,7 +871,7 @@
         <div class="modal-header">
             <h3 id="profileWarnTitle" data-i18n="modals.profileWarning.title">
                 <i data-lucide="alert-circle" class="lucide-icon"></i>
-                Save Your Data?
+                Reset All Values?
             </h3>
             <button type="button" class="modal-close-btn" id="profileWarnClose" aria-label="Close">
                 <i data-lucide="x" class="lucide-icon"></i>
@@ -877,10 +882,10 @@
                 <i data-lucide="alert-triangle" class="lucide-icon"></i>
             </div>
             <p style="font-size: 16px; color: var(--text-primary); margin-bottom: 8px; font-weight: 500;" data-i18n="modals.profileWarning.message1">
-                You haven't created a profile yet.
+                You have unsaved changes.
             </p>
             <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 24px;" data-i18n="modals.profileWarning.message2">
-                Create a profile to save your data and track your progress over time. Without a profile, your data may be lost when you close the browser.
+                Resetting will discard your current data.
             </p>
         </div>
         <div class="modal-footer" style="flex-direction: column; gap: 10px;">
@@ -889,7 +894,7 @@
                 Create Profile
             </button>
             <button type="button" class="modal-btn modal-btn-secondary" id="profileWarnContinueBtn" data-i18n="modals.profileWarning.continue">
-                Continue Without Saving
+                Reset
             </button>
             <button type="button" class="modal-btn modal-btn-secondary" id="profileWarnCancelBtn" data-i18n="modals.profileWarning.cancel">
                 Cancel

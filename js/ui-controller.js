@@ -98,6 +98,9 @@ DRC.UIController = (() => {
     // ─── Risk-level color mapping ───────────────────────────────────────
     // High-risk threshold (26%) aligns with Schmidt et al. (2005) published cutoff:
     // Pr(DM) ≥ 0.26 → sensitivity 52%, specificity 86% (see CONFIG.HIGH_RISK_CUTOFF)
+    // WCAG AA contrast: These colors are used for large text (≥18px / ≥14px bold)
+    // and visual elements (bars, markers), where they pass AA. Not suitable for
+    // small body text below 18px.
     const RISK_COLORS = [
         { min: 50, color: '#c43d35', level: 'danger' },
         { min: 26, color: '#d4653a', level: 'warning' },
@@ -125,6 +128,52 @@ DRC.UIController = (() => {
             ? ((parseFloat(slider.value) - parseFloat(slider.min)) / range) * 100
             : 0;
         fill.style.transform = `scaleX(${pct / 100})`;
+
+        // M16: Set aria-valuetext with zone name for threshold fields
+        const zone = _getSliderZone(field, parseFloat(slider.value));
+        if (zone) {
+            slider.setAttribute('aria-valuetext', slider.value + ' ' + zone);
+        } else {
+            slider.removeAttribute('aria-valuetext');
+        }
+    };
+
+    /** Determine zone name for a slider value (e.g. "Normal", "Elevated"). */
+    const _getSliderZone = (field, value) => {
+        const thresholds = CFG.THRESHOLDS[field];
+        if (!thresholds || isNaN(value)) return null;
+
+        const isMetric = getUnitToggleState();
+        const siVal = isMetric ? value : DRC.ConversionService.convertField(field, value, true);
+
+        switch (field) {
+            case 'fastGlu':
+                if (siVal >= thresholds.high) return t('zones.diabetes', 'Diabetes');
+                if (siVal >= thresholds.elevated) return t('zones.prediabetes', 'Prediabetes');
+                return t('zones.normal', 'Normal');
+            case 'sbp':
+                if (siVal >= thresholds.high) return t('zones.high', 'High');
+                if (siVal >= thresholds.elevated) return t('zones.elevated', 'Elevated');
+                return t('zones.normal', 'Normal');
+            case 'cholHDL':
+                if (siVal < thresholds.low) return t('zones.low', 'Low');
+                if (siVal >= thresholds.high) return t('zones.high', 'High');
+                return t('zones.normal', 'Normal');
+            case 'cholTri':
+                if (siVal >= thresholds.veryHigh) return t('zones.veryHigh', 'Very High');
+                if (siVal >= thresholds.high) return t('zones.high', 'High');
+                if (siVal >= thresholds.elevated) return t('zones.elevated', 'Elevated');
+                return t('zones.normal', 'Normal');
+            case 'waist': {
+                // Male threshold: 102 cm (high); Female threshold: 88 cm (elevated) — mirrors visual 2-zone track
+                const isMale = !!document.getElementById('sex-toggle')?.checked;
+                const waistThreshold = isMale ? thresholds.high : thresholds.elevated;
+                if (siVal >= waistThreshold) return t('zones.high', 'High');
+                return t('zones.normal', 'Normal');
+            }
+            default:
+                return null;
+        }
     };
 
     /** Update all slider fills at once. */
@@ -273,12 +322,12 @@ DRC.UIController = (() => {
      * Guards ensure handlers are attached at most once.
      * @param {HTMLElement} container
      */
-    const setupContributionEvents = (container) => {
+    const setupContributionEvents = (container, trigger) => {
         if (!_filterHandlerAttached) {
             container.addEventListener('change', (e) => {
                 if (e.target.id === 'risk-filter-toggle') {
                     container.setAttribute('data-show-protective', e.target.checked);
-                    DRC.App.trigger('risk:recalculate');
+                    if (trigger) trigger('risk:recalculate');
                 }
             });
             _filterHandlerAttached = true;
@@ -336,19 +385,19 @@ DRC.UIController = (() => {
 
     /**
      * Filter contributions to only include factors in the active model.
-     * Mutates the contributions object in place.
+     * Returns a new object — does not mutate the input.
      * @param {Object} contributions
      * @param {Object} model
      * @returns {Object} filtered contributions
      */
     const filterByModel = (contributions, model) => {
         const modelBetaKeys = model ? Object.keys(model.betas) : null;
-        if (modelBetaKeys) {
-            Object.keys(contributions).forEach(key => {
-                if (!modelBetaKeys.includes(key)) delete contributions[key];
-            });
+        if (!modelBetaKeys) return { ...contributions };
+        const result = {};
+        for (const key of Object.keys(contributions)) {
+            if (modelBetaKeys.includes(key)) result[key] = contributions[key];
         }
-        return contributions;
+        return result;
     };
 
     /**
@@ -639,16 +688,14 @@ DRC.UIController = (() => {
      * in log-odds space per Lundberg & Lee, 2017, transformed to probability space).
      * Bar width scaled relative to the largest absolute contribution in the visible set.
      */
-    const renderContributionChart = (summaryData) => {
+    // Full DOM rebuild — intentionally skipped during animation via the `isAnimating` guard in `_renderAllViews`.
+    const renderContributionChart = (summaryData, { trigger, activeModel } = {}) => {
         const container = el('contribution-chart');
         if (!container) return;
-        container.replaceChildren();
+        container.replaceChildren(); // Safe clear: replaceChildren avoids innerHTML XSS risk
 
-        const { contributions } = summaryData;
-        const activeModel = DRC.App?.getActiveModel?.();
-
-        filterByModel(contributions, activeModel);
-        setupContributionEvents(container);
+        const contributions = filterByModel(summaryData.contributions, activeModel);
+        setupContributionEvents(container, trigger);
 
         // Default to hiding protective factors (button off by default)
         const showProtective = container.getAttribute('data-show-protective') === 'true';
@@ -724,9 +771,9 @@ DRC.UIController = (() => {
      * @param {string} factor - Factor key
      * @param {Object} treatment - Treatment config
      * @param {boolean} waistIsHigh - Whether waist is clinically elevated
-     * @returns {string} HTML string for therapies
+     * @returns {HTMLElement[]} Array of therapy DOM elements
      */
-    const buildTherapiesHTML = (factor, treatment, waistIsHigh) => {
+    const buildTherapyElements = (factor, treatment, waistIsHigh) => {
         let therapies = [...treatment.therapies];
         if (factor === 'waist' && waistIsHigh && treatment.surgicalOption) {
             therapies.push(treatment.surgicalOption);
@@ -734,8 +781,14 @@ DRC.UIController = (() => {
         return therapies.map((tItem, idx) => {
             const therapyName = t(`treatments.${factor}.therapy${idx+1}_name`, tItem.name);
             const therapyDesc = t(`treatments.${factor}.therapy${idx+1}_desc`, tItem.desc);
-            return `<div class="therapy-mini"><div><strong>${escapeHtml(therapyName)}:</strong> ${escapeHtml(therapyDesc)}</div></div>`;
-        }).join('');
+            const wrapper = createSafeElement('div', { className: 'therapy-mini' });
+            const inner = createSafeElement('div');
+            const nameEl = createSafeElement('strong', { text: therapyName + ': ' });
+            inner.appendChild(nameEl);
+            inner.appendChild(document.createTextNode(therapyDesc));
+            wrapper.appendChild(inner);
+            return wrapper;
+        });
     };
 
     /**
@@ -799,20 +852,6 @@ DRC.UIController = (() => {
     // ===== Treatment DOM rendering functions =====
 
     /**
-     * Parse therapy HTML and append to details container.
-     * @param {HTMLElement} detailsInner - Container for therapy items
-     * @param {string} therapiesHTML - HTML string of therapies
-     */
-    const appendTherapiesToDetails = (detailsInner, therapiesHTML) => {
-        const parser = new DOMParser();
-        const parsedDoc = parser.parseFromString(therapiesHTML, 'text/html');
-        const therapyElements = parsedDoc.body.children;
-        while (therapyElements.length > 0) {
-            detailsInner.appendChild(therapyElements[0]);
-        }
-    };
-
-    /**
      * Create simulate button for indicated treatments.
      * @param {string} factor - Factor key
      * @returns {HTMLElement} Simulate button element
@@ -865,13 +904,12 @@ DRC.UIController = (() => {
         // Main column
         const mainCol = createSafeElement('div', { className: 'tov-main-col' });
 
-        // Label row — always clickable (expand/collapse)
-        const labelRow = createSafeElement('div', {
+        // Label row — always clickable (expand/collapse). Native <button> provides implicit role, tabindex, and keyboard activation.
+        const labelRow = createSafeElement('button', {
             className: 'tov-label-row tov-clickable',
             attrs: {
+                type: 'button',
                 'data-toggle-factor': factor,
-                tabindex: '0',
-                role: 'button',
                 'aria-expanded': isIndicated ? 'true' : 'false'
             }
         });
@@ -930,10 +968,10 @@ DRC.UIController = (() => {
 
         if (isSimulated) {
             // Expandable details with therapies (collapsed by default)
-            const therapiesHTML = buildTherapiesHTML(factor, treatment, waistIsHigh);
+            const therapyElements = buildTherapyElements(factor, treatment, waistIsHigh);
             const detailsDiv = createSafeElement('div', { className: 'tov-details' });
             const detailsInner = createSafeElement('div', { className: 'tov-details-inner' });
-            appendTherapiesToDetails(detailsInner, therapiesHTML);
+            therapyElements.forEach(el => detailsInner.appendChild(el));
             detailsDiv.appendChild(detailsInner);
             mainCol.appendChild(detailsDiv);
 
@@ -966,12 +1004,12 @@ DRC.UIController = (() => {
             });
             mainCol.appendChild(pctDiv);
 
-            const therapiesHTML = buildTherapiesHTML(factor, treatment, waistIsHigh);
+            const therapyElements = buildTherapyElements(factor, treatment, waistIsHigh);
             const detailsDiv = createSafeElement('div', {
                 className: ['tov-details', isIndicated ? 'expanded' : '']
             });
             const detailsInner = createSafeElement('div', { className: 'tov-details-inner' });
-            appendTherapiesToDetails(detailsInner, therapiesHTML);
+            therapyElements.forEach(el => detailsInner.appendChild(el));
             if (isIndicated) {
                 detailsInner.appendChild(createSimulateButton(factor));
             }
@@ -1082,19 +1120,11 @@ DRC.UIController = (() => {
     };
 
     /**
-     * Handle simulation with profile warning check.
+     * Handle simulation.
      * @param {string} factor - Factor to simulate
      */
     const handleSimulation = (factor) => {
-        if (DRC.ProfileWarning) {
-            DRC.ProfileWarning.checkBeforeSimulation(factor).then(shouldProceed => {
-                if (shouldProceed === true) {
-                    DRC.TreatmentSimulator.simulate(factor);
-                }
-            });
-        } else {
-            DRC.TreatmentSimulator.simulate(factor);
-        }
+        DRC.TreatmentSimulator.simulate(factor);
     };
 
     /**
@@ -1107,7 +1137,8 @@ DRC.UIController = (() => {
      *
      * Surgical options for waist use clinical threshold (waistIsHigh).
      */
-    const renderTreatmentOverview = ({ elevatedFactors, waistIsHigh }, contributions = {}, marginalContributions = {}) => {
+    // Full DOM rebuild — intentionally skipped during animation via the `isAnimating` guard in `_renderAllViews`.
+    const renderTreatmentOverview = ({ elevatedFactors, waistIsHigh }, contributions = {}, marginalContributions = {}, { activeModel: passedModel } = {}) => {
         const container = el('treatment-overview');
         if (!container) return;
         container.replaceChildren();
@@ -1121,7 +1152,7 @@ DRC.UIController = (() => {
         const items = calculateTreatmentItems(contributions, marginalContributions, treatStatus);
 
         // Filter by active model
-        const activeModel = DRC.App?.getActiveModel?.();
+        const activeModel = passedModel;
         const modelFilteredItems = filterContributionsByModel(items, activeModel);
 
         // Mark simulated items

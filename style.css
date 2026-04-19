@@ -2538,6 +2538,14 @@ body.ocr-modal-open .col-step-label {
     gap: 6px;
     margin-bottom: 3px;
     min-width: 0;
+    /* button reset — element changed from div to <button> for native a11y */
+    border: none;
+    background: none;
+    padding: 0;
+    text-align: left;
+    width: 100%;
+    font: inherit;
+    color: inherit;
 }
 
 .tov-title {
@@ -3395,6 +3403,7 @@ body.ocr-modal-open .col-step-label {
 .lang-option.active {
     background: var(--blue-light);
     font-weight: var(--weight-medium);
+    cursor: pointer;
 }
 
 .lang-option .lang-flag {
@@ -3404,16 +3413,19 @@ body.ocr-modal-open .col-step-label {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    pointer-events: none;
 }
 
 .lang-option .lang-flag svg {
     width: 100%;
     height: 100%;
     display: block;
+    pointer-events: none;
 }
 
 .lang-option .lang-name {
     flex: 1;
+    pointer-events: none;
 }
 
 /* Dark mode adjustments */
@@ -3668,6 +3680,7 @@ body.ocr-modal-open .col-step-label {
 .settings-lang-option.active {
     background: var(--blue-light);
     font-weight: var(--weight-medium);
+    cursor: pointer;
 }
 
 .settings-lang-option .lang-flag {
@@ -3677,16 +3690,19 @@ body.ocr-modal-open .col-step-label {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    pointer-events: none;
 }
 
 .settings-lang-option .lang-flag svg {
     width: 100%;
     height: 100%;
     display: block;
+    pointer-events: none;
 }
 
 .settings-lang-option .lang-name {
     flex: 1;
+    pointer-events: none;
 }
 
 /* Dark mode for settings dropdown */
@@ -6116,7 +6132,7 @@ body.tutorial-active {
 .landing-container {
     width: 100%;
     max-width: 720px;
-    max-height: 90vh;
+    max-height: 96vh;
     background: var(--bg-card);
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-card);
@@ -6139,7 +6155,7 @@ body.tutorial-active {
 
 /* Landing Header */
 .landing-header {
-    padding: var(--space-6) var(--space-7) var(--space-4);
+    padding: var(--space-4) var(--space-7) var(--space-3);
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
 }
@@ -6212,8 +6228,9 @@ body.tutorial-active {
 /* Landing Content */
 .landing-content {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
-    padding: var(--space-6) var(--space-7);
+    padding: var(--space-4) var(--space-6);
     position: relative;
 }
 
@@ -6260,7 +6277,7 @@ body.tutorial-active {
     font-size: var(--text-xl);
     font-weight: var(--weight-bold);
     color: var(--text-primary);
-    margin-bottom: var(--space-2);
+    margin-bottom: var(--space-1);
     line-height: var(--leading-snug);
     scroll-margin-top: var(--space-3);
 }
@@ -6268,20 +6285,20 @@ body.tutorial-active {
 .landing-step-subtitle {
     font-size: var(--text-base);
     color: var(--text-secondary);
-    margin-bottom: var(--space-4);
+    margin-bottom: var(--space-3);
     line-height: var(--leading-normal);
 }
 
 /* Welcome Step */
 .landing-welcome {
     text-align: center;
-    padding: var(--space-8) 0;
+    padding: var(--space-7) 0;
 }
 
 .landing-welcome-icon {
-    width: 80px;
-    height: 80px;
-    margin: 0 auto var(--space-6);
+    width: 64px;
+    height: 64px;
+    margin: 0 auto var(--space-4);
     background: linear-gradient(135deg, var(--safe), var(--safe-end));
     border-radius: var(--radius-lg);
     display: flex;
@@ -6291,8 +6308,8 @@ body.tutorial-active {
 }
 
 .landing-welcome-icon .lucide-icon {
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
     color: var(--text-on-primary);
 }
 
@@ -6503,7 +6520,7 @@ body.tutorial-active {
 /* Landing Cards Grid */
 .landing-cards {
     display: grid;
-    gap: var(--space-3);
+    gap: var(--space-1);
 }
 
 .landing-cards.four-col {
@@ -6536,7 +6553,7 @@ body.tutorial-active {
     background: var(--bg-card);
     border: 2px solid var(--border);
     border-radius: var(--radius);
-    padding: var(--space-5);
+    padding: var(--space-4);
     cursor: pointer;
     transition: transform 0.25s var(--ease-smooth), box-shadow 0.25s var(--ease-smooth), background-color 0.25s var(--ease-smooth), opacity 0.25s var(--ease-smooth);
     display: flex;
@@ -6589,7 +6606,7 @@ body.tutorial-active {
 }
 
 .landing-card .card-subtitle {
-    font-size: var(--text-sm);
+    font-size: var(--text-xs);
     color: var(--text-tertiary);
 }
 
@@ -6677,8 +6694,8 @@ body.tutorial-active {
 
 /* Landing Card Icon */
 .landing-card-icon {
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
     background: var(--bg-page);
     border-radius: var(--radius-sm);
     display: flex;
@@ -6689,8 +6706,8 @@ body.tutorial-active {
 }
 
 .landing-card-icon .lucide-icon {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     color: var(--text-secondary);
 }
 
@@ -6736,8 +6753,8 @@ body.tutorial-active {
 .model-card {
     align-items: flex-start;
     text-align: left;
-    padding: var(--space-5);
-    margin-top: var(--space-4);
+    padding: var(--space-2) var(--space-3);
+    margin-top: 0;
 }
 
 .model-card .model-header {
@@ -6745,7 +6762,7 @@ body.tutorial-active {
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    margin-bottom: var(--space-3);
+    margin-bottom: var(--space-1);
 }
 
 .model-card .model-name {
@@ -6778,12 +6795,12 @@ body.tutorial-active {
 .model-card .model-description {
     font-size: var(--text-sm);
     color: var(--text-secondary);
-    line-height: var(--leading-normal);
-    margin-bottom: var(--space-3);
+    line-height: var(--leading-snug);
+    margin-bottom: var(--space-1);
 }
 
 .model-card .model-values {
-    padding-top: var(--space-3);
+    padding-top: var(--space-1);
     border-top: 1px solid var(--border);
     font-size: var(--text-xs);
     color: var(--text-tertiary);
@@ -6975,13 +6992,13 @@ body.tutorial-active {
 /* Ready Step */
 .landing-ready {
     text-align: center;
-    padding: var(--space-6) 0;
+    padding: var(--space-4) 0;
 }
 
 .landing-success-icon {
-    width: 100px;
-    height: 100px;
-    margin: 0 auto var(--space-6);
+    width: 72px;
+    height: 72px;
+    margin: 0 auto var(--space-4);
     background: var(--safe);
     border-radius: var(--radius-full);
     display: flex;
@@ -7004,8 +7021,8 @@ body.tutorial-active {
 }
 
 .landing-success-icon .lucide-icon {
-    width: 50px;
-    height: 50px;
+    width: 36px;
+    height: 36px;
     color: var(--text-on-primary);
 }
 
@@ -7019,9 +7036,9 @@ body.tutorial-active {
 .landing-ready-summary {
     background: var(--bg-page);
     border-radius: var(--radius);
-    padding: var(--space-5);
+    padding: var(--space-4);
     text-align: left;
-    margin-bottom: var(--space-6);
+    margin-bottom: var(--space-4);
     max-width: 400px;
     margin-left: auto;
     margin-right: auto;
@@ -7054,12 +7071,12 @@ body.tutorial-active {
 }
 
 .landing-ready .btn-large {
-    margin-bottom: var(--space-4);
+    margin-bottom: var(--space-2);
 }
 
 /* Landing Footer */
 .landing-footer {
-    padding: var(--space-5) var(--space-7);
+    padding: var(--space-3) var(--space-7);
     border-top: 1px solid var(--border);
     display: flex;
     justify-content: space-between;
@@ -7929,4 +7946,98 @@ body.tutorial-active {
     @keyframes profile-warn-icon-pulse {
         from, to { opacity: 1; transform: none; }
     }
+}
+
+/* ===================== SIMULATED SLIDER STATE =====================
+ * Visual indicator that a slider currently shows a simulated (treatment)
+ * value rather than the user's actual measurement. Applied by the
+ * TreatmentSimulator while a simulation is active on that factor.
+ */
+input.slider--simulated,
+.slider.slider--simulated {
+    accent-color: var(--warning);
+    border-color: var(--warning-border);
+}
+
+input.slider--simulated {
+    background: var(--warning-light);
+    color: var(--warning);
+    font-weight: var(--weight-medium, 500);
+}
+
+/* ===================== TOAST NOTIFICATIONS =====================
+ * Accessible toast rendered by PatientManager.showToast(). Base colors
+ * are defined here (not inline) so both light and dark themes remain
+ * readable. Positioning is set inline on #drc-toast-container.
+ */
+.drc-toast {
+    background: var(--text-primary);
+    color: var(--text-on-primary);
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium, 500);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+    max-width: 90vw;
+    line-height: 1.4;
+}
+
+.dark .drc-toast {
+    background: var(--text-on-primary);
+    color: var(--text-primary);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+/* ===================== MODAL & BUTTON COMPONENTS =====================
+ * Styles for accessible modal overlays, dialogs, and buttons used by
+ * PatientManager.showConfirm() and showPrompt(). Positioning (position,
+ * inset, z-index) is set inline as it is layout-critical.
+ */
+.drc-modal {
+    background: var(--bg-primary, #fff);
+    color: var(--text-primary, #333);
+    padding: 24px;
+    border-radius: 8px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+}
+
+.drc-modal p {
+    margin: 0 0 20px 0;
+    line-height: 1.5;
+}
+
+.drc-modal-btn-row {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.drc-btn {
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: inherit;
+}
+
+.drc-btn-primary {
+    border: none;
+    background: var(--accent, #2563eb);
+    color: #fff;
+}
+
+.drc-btn-secondary {
+    border: 1px solid #ccc;
+    background: transparent;
+}
+
+.drc-prompt-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+    margin-bottom: 16px;
 }

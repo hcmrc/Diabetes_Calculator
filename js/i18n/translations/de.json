@@ -6,6 +6,8 @@
   "nav": {
     "brand": "Diabetes Risikorechner",
     "reset": "Zurücksetzen",
+    "restoreProfile": "Profilwerte wiederherstellen",
+    "resetDefaults": "Auf Standard zurücksetzen",
     "riskTimeline": "Risiko-Zeitleiste",
     "selectProfile": "Profil auswählen",
     "language": "Sprache wählen"
@@ -145,12 +147,29 @@
       "beste": "Beste"
     }
   },
+  "zones": {
+    "normal": "Normal",
+    "elevated": "Erhöht",
+    "high": "Hoch",
+    "veryHigh": "Sehr hoch",
+    "diabetes": "Diabetes",
+    "prediabetes": "Prädiabetes",
+    "low": "Niedrig"
+  },
   "modals": {
     "profileWarning": {
-      "title": "Daten speichern?",
-      "message": "Sie haben noch kein Profil erstellt. Wenn Sie fortfahren, werden Ihre aktuellen Daten nicht gespeichert.",
+      "title": "Alle Werte zurücksetzen?",
+      "message": "Sie haben ungespeicherte Änderungen. Das Zurücksetzen verwirft Ihre aktuellen Daten.",
+      "message1": "Sie haben ungespeicherte Änderungen.",
+      "message2": "Das Zurücksetzen verwirft Ihre aktuellen Daten.",
       "create": "Profil erstellen",
-      "continue": "Ohne Speichern fortfahren"
+      "continue": "Zurücksetzen",
+      "cancel": "Abbrechen"
+    },
+    "simulationSaveWarning": {
+      "message": "Eine Behandlungssimulation ist aktiv. Was möchten Sie speichern?",
+      "saveOriginal": "Originalwerte speichern",
+      "saveSimulated": "Simulierte Werte speichern"
     },
     "simulationSaveWarning": {
       "message": "Eine Behandlungssimulation ist aktiv. Was möchten Sie speichern?",
