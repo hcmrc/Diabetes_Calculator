@@ -236,57 +236,6 @@ DRC.TreatmentSimulator = (() => {
         delete _preSimulationValues[factor];
     };
 
-    /**
-     * Reverse a previously-simulated treatment: animate the slider back
-     * to its pre-simulation value and remove the factor from the
-     * simulated set.
-     * @param {string} factor — Risk factor key
-     */
-    const _clearSimulationVisuals = (factor) => {
-        const { input, slider } = DRC.UIController.getSliderElements(factor);
-        if (input) {
-            input.classList.remove('slider--simulated');
-            delete input.dataset.original;
-            if (input.dataset.originalAriaLabel != null) {
-                if (input.dataset.originalAriaLabel) {
-                    input.setAttribute('aria-label', input.dataset.originalAriaLabel);
-                } else {
-                    input.removeAttribute('aria-label');
-                }
-                delete input.dataset.originalAriaLabel;
-            }
-        }
-        if (slider) {
-            slider.classList.remove('slider--simulated');
-            if (slider.dataset.originalAriaLabel != null) {
-                if (slider.dataset.originalAriaLabel) {
-                    slider.setAttribute('aria-label', slider.dataset.originalAriaLabel);
-                } else {
-                    slider.removeAttribute('aria-label');
-                }
-                delete slider.dataset.originalAriaLabel;
-            }
-        }
-        delete _preSimulationValues[factor];
-    };
-
-    /** Resolve the pre-simulation value for a factor, converting units if needed. */
-    const _resolveSnapshotValue = (factor) => {
-        const snap = _preSimulationValues[factor];
-        if (snap && typeof snap === 'object') {
-            const currentIsMetric = DRC.UIController.getUnitToggleState();
-            if (snap.isMetric === currentIsMetric) return snap.value;
-            if (DRC.CONFIG.CONVERTIBLE_FIELDS.includes(factor)) {
-                // Snapshot was captured in a different unit system — convert.
-                const siVal = snap.isMetric ? snap.value : DRC.ConversionService.convertField(factor, snap.value, true);
-                return currentIsMetric ? siVal : DRC.ConversionService.convertField(factor, siVal, false);
-            }
-            return snap.value;
-        }
-        // Fallback to the legacy Map if snapshot missing.
-        return _simulated.get(factor);
-    };
-
     const unsimulate = (factor) => {
         if (_animating) return;
         if (!_simulated.has(factor)) return;
