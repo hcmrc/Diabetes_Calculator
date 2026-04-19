@@ -8034,6 +8034,7 @@ input.slider--simulated {
     display: flex;
     gap: var(--space-3);
     justify-content: flex-end;
+    flex-wrap: wrap;
 }
 
 .drc-modal-btn-row--grid {
@@ -8125,7 +8126,6 @@ input.slider--simulated {
     .drc-modal-btn-row--grid {
         grid-template-columns: 1fr;
     }
-
     .drc-btn {
         width: 100%;
     }
