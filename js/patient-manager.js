@@ -53,7 +53,6 @@ DRC.PatientManager = (() => {
         overlay.setAttribute('aria-modal', 'true');
         overlay.setAttribute('aria-label', message);
         overlay.className = 'drc-modal-overlay';
-        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;';
 
         const dialog = document.createElement('div');
         dialog.className = 'drc-modal';
@@ -111,7 +110,6 @@ DRC.PatientManager = (() => {
         overlay.setAttribute('aria-modal', 'true');
         overlay.setAttribute('aria-label', message);
         overlay.className = 'drc-modal-overlay';
-        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;';
 
         const dialog = document.createElement('div');
         dialog.className = 'drc-modal';
@@ -759,30 +757,29 @@ DRC.PatientManager = (() => {
     // ─── Modal Helpers ──────────────────────────────────────────────────
 
     /**
-     * Three-option modal dialog (M2). Resolves to 'original' | 'simulated' | 'cancel'.
+     * Generic N-option modal dialog (M2).
      * @param {string} message
-     * @param {string} originalLabel
-     * @param {string} simulatedLabel
-     * @param {string} cancelLabel
-     * @returns {Promise<'original'|'simulated'|'cancel'>}
+     * @param {Array<{label: string, value: string, isPrimary?: boolean}>} options
+     *   Button specs in left-to-right order. The last isPrimary button receives focus.
+     * @returns {Promise<string>} Resolves to the value of the clicked button, or 'cancel' on Escape.
      */
-    const _showThreeOptionDialog = (message, originalLabel, simulatedLabel, cancelLabel) => new Promise(resolve => {
+    const _showOptionDialog = (message, options) => new Promise(resolve => {
         const previousFocus = document.activeElement;
         const overlay = document.createElement('div');
         overlay.setAttribute('role', 'dialog');
         overlay.setAttribute('aria-modal', 'true');
         overlay.setAttribute('aria-label', message);
         overlay.className = 'drc-modal-overlay';
-        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;';
 
         const dialog = document.createElement('div');
         dialog.className = 'drc-modal';
         const msg = document.createElement('p');
         msg.textContent = message;
         const btnRow = document.createElement('div');
-        btnRow.className = 'drc-modal-btn-row';
+        btnRow.className = 'drc-modal-btn-row' + (options.length >= 4 ? ' drc-modal-btn-row--grid' : '');
 
         let focusTrap = null;
+        let primaryBtn = null;
         const cleanup = () => {
             if (focusTrap) focusTrap.deactivate();
             overlay.remove();
@@ -791,31 +788,22 @@ DRC.PatientManager = (() => {
             }
         };
 
-        const cancelBtn = document.createElement('button');
-        cancelBtn.textContent = cancelLabel;
-        cancelBtn.className = 'drc-btn drc-btn-secondary';
-        cancelBtn.onclick = () => { cleanup(); resolve('cancel'); };
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.textContent = opt.label;
+            btn.className = opt.isPrimary ? 'drc-btn drc-btn-primary' : 'drc-btn drc-btn-secondary';
+            btn.onclick = () => { cleanup(); resolve(opt.value); };
+            if (opt.isPrimary) primaryBtn = btn;
+            btnRow.appendChild(btn);
+        });
 
-        const simBtn = document.createElement('button');
-        simBtn.textContent = simulatedLabel;
-        simBtn.className = 'drc-btn drc-btn-secondary';
-        simBtn.onclick = () => { cleanup(); resolve('simulated'); };
-
-        const origBtn = document.createElement('button');
-        origBtn.textContent = originalLabel;
-        origBtn.className = 'drc-btn drc-btn-primary';
-        origBtn.onclick = () => { cleanup(); resolve('original'); };
-
-        btnRow.appendChild(cancelBtn);
-        btnRow.appendChild(simBtn);
-        btnRow.appendChild(origBtn);
         dialog.appendChild(msg);
         dialog.appendChild(btnRow);
         overlay.appendChild(dialog);
         document.body.appendChild(overlay);
         focusTrap = DRC.Utils?.createFocusTrap?.(overlay);
         if (focusTrap) focusTrap.activate();
-        origBtn.focus();
+        if (primaryBtn) primaryBtn.focus();
         overlay.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') { cleanup(); resolve('cancel'); }
         });
@@ -823,52 +811,57 @@ DRC.PatientManager = (() => {
 
     /**
      * Resolve save data when a treatment simulation is active (M2).
-     * Shows a three-option dialog: save original, save simulated, or cancel.
+     * Shows a dialog: save original, save simulated, save both, or cancel.
      * @returns {Promise<Object|null>} Data to save, or null if user cancelled.
+     *   For 'both': returns { choice: 'both', originalData, simulatedData }.
+     *   For 'original'/'simulated': returns the single data object.
      */
     const _resolveSaveDataForSimulation = async () => {
-        const data = captureCurrentValues();
+        const simulatedData = captureCurrentValues();
         const sim = DRC.TreatmentSimulator;
-        if (!sim?.hasActiveSimulation?.()) return data;
+        if (!sim?.hasActiveSimulation?.()) return simulatedData;
 
         const snap = sim.getPreSimulationSnapshot?.() || {};
         const factors = Object.keys(snap);
-        if (factors.length === 0) return data;
+        if (factors.length === 0) return simulatedData;
+
+        // Build original data from snapshot
+        const currentIsMetric = DRC.UIController?.getUnitToggleState?.() ?? false;
+        const originalData = { ...simulatedData };
+        factors.forEach(f => {
+            const entry = snap[f];
+            if (!entry || typeof entry !== 'object') return;
+            let val = entry.value;
+            if (entry.isMetric !== currentIsMetric && DRC.CONFIG.CONVERTIBLE_FIELDS.includes(f)) {
+                const siVal = entry.isMetric ? val : DRC.ConversionService.convertField(f, val, true);
+                val = currentIsMetric ? siVal : DRC.ConversionService.convertField(f, siVal, false);
+            }
+            originalData[f] = val;
+        });
+        const origRiskEl = document.getElementById('risk-percentage');
+        if (origRiskEl) originalData._riskPct = parseFloat(origRiskEl.textContent) || originalData._riskPct;
+
+        const simRiskEl = document.getElementById('chosen-risk-percentage');
+        if (simRiskEl) simulatedData._riskPct = parseFloat(simRiskEl.textContent) || simulatedData._riskPct;
 
         const tr = DRC.Utils?.createTranslator?.() || ((_, fb) => fb);
         const msg = tr('modals.simulationSaveWarning.message',
             'You have an active treatment simulation. What would you like to save?');
-        const originalLabel = tr('modals.simulationSaveWarning.saveOriginal', 'Save Original');
-        const simulatedLabel = tr('modals.simulationSaveWarning.saveSimulated', 'Save Simulated');
-        const cancelLabel = tr('buttons.cancel', 'Cancel');
+        const options = [
+            { label: tr('buttons.cancel', 'Cancel'), value: 'cancel' },
+            { label: tr('modals.simulationSaveWarning.saveSimulated', 'Save Simulated'), value: 'simulated' },
+            { label: tr('modals.simulationSaveWarning.saveBoth', 'Save Both'), value: 'both' },
+            { label: tr('modals.simulationSaveWarning.saveOriginal', 'Save Original'), value: 'original', isPrimary: true },
+        ];
 
-        const choice = await _showThreeOptionDialog(msg, originalLabel, simulatedLabel, cancelLabel);
-        _lastSaveWasSimulated = (choice === 'simulated');
+        const choice = await _showOptionDialog(msg, options);
+        _lastSaveChoice = choice;
+
         if (choice === 'cancel') return null;
-        if (choice === 'original') {
-            const currentIsMetric = DRC.UIController?.getUnitToggleState?.() ?? false;
-            factors.forEach(f => {
-                const entry = snap[f];
-                if (!entry || typeof entry !== 'object') return;
-                let val = entry.value;
-                if (entry.isMetric !== currentIsMetric && DRC.CONFIG.CONVERTIBLE_FIELDS.includes(f)) {
-                    const siVal = entry.isMetric ? val : DRC.ConversionService.convertField(f, val, true);
-                    val = currentIsMetric ? siVal : DRC.ConversionService.convertField(f, siVal, false);
-                }
-                data[f] = val;
-            });
-            // Update _riskPct to match original values
-            const origRiskEl = document.getElementById('risk-percentage');
-            if (origRiskEl) data._riskPct = parseFloat(origRiskEl.textContent) || data._riskPct;
-        }
-        // choice === 'simulated' → factor values already captured from DOM (simulated).
-        // But _riskPct was read from 'risk-percentage' which shows ORIGINAL risk;
-        // override with the simulated risk from 'chosen-risk-percentage'.
-        if (choice === 'simulated') {
-            const simRiskEl = document.getElementById('chosen-risk-percentage');
-            if (simRiskEl) data._riskPct = parseFloat(simRiskEl.textContent) || data._riskPct;
-        }
-        return data;
+        if (choice === 'original') return originalData;
+        if (choice === 'simulated') return simulatedData;
+        if (choice === 'both') return { choice: 'both', originalData, simulatedData };
+        return null;
     };
 
     // ─── CRUD Operations ────────────────────────────────────────────────
@@ -904,11 +897,28 @@ DRC.PatientManager = (() => {
     const addPatient = async (name) => {
         const sanitizedName = _sanitizePatientName(name);
         if (!sanitizedName) return null;
-        const data = await _resolveSaveDataForSimulation();
-        if (data == null) return null; // user cancelled
+        const result = await _resolveSaveDataForSimulation();
+        if (result == null) return null;
+
+        const tr = DRC.Utils?.createTranslator?.() || ((_, fb) => fb);
+
+        if (result && typeof result === 'object' && result.choice === 'both') {
+            const origSuffix = ' ' + tr('modals.simulationSaveWarning.suffixOriginal', '(Original)');
+            const simSuffix = ' ' + tr('modals.simulationSaveWarning.suffixSimulated', '(Simulated)');
+            const origId = generateId();
+            const simId = generateId();
+            patients.push({ id: origId, name: sanitizedName + origSuffix, data: result.originalData, riskPct: result.originalData._riskPct, savedAt: new Date().toISOString() });
+            patients.push({ id: simId, name: sanitizedName + simSuffix, data: result.simulatedData, riskPct: result.simulatedData._riskPct, savedAt: new Date().toISOString() });
+            activePatientId = simId;
+            _lastBothSaveIds = { originalId: origId, simulatedId: simId };
+            _persistAndRender();
+            updateNavLabel();
+            return patients.find(p => p.id === simId);
+        }
+
         const patient = {
-            id: generateId(), name: sanitizedName, data,
-            riskPct: data._riskPct, savedAt: new Date().toISOString()
+            id: generateId(), name: sanitizedName, data: result,
+            riskPct: result._riskPct, savedAt: new Date().toISOString()
         };
         patients.push(patient);
         activePatientId = patient.id;
@@ -920,9 +930,22 @@ DRC.PatientManager = (() => {
     const updatePatient = async (id) => {
         const patient = patients.find(p => p.id === id);
         if (!patient) return;
-        const data = await _resolveSaveDataForSimulation();
-        if (data == null) return; // user cancelled
-        Object.assign(patient, { data, riskPct: data._riskPct, savedAt: new Date().toISOString() });
+        const result = await _resolveSaveDataForSimulation();
+        if (result == null) return;
+
+        const tr = DRC.Utils?.createTranslator?.() || ((_, fb) => fb);
+
+        if (result && typeof result === 'object' && result.choice === 'both') {
+            const origSuffix = ' ' + tr('modals.simulationSaveWarning.suffixOriginal', '(Original)');
+            Object.assign(patient, { data: result.simulatedData, riskPct: result.simulatedData._riskPct, savedAt: new Date().toISOString() });
+            const origId = generateId();
+            patients.push({ id: origId, name: patient.name + origSuffix, data: result.originalData, riskPct: result.originalData._riskPct, savedAt: new Date().toISOString() });
+            _lastBothSaveIds = { originalId: origId, simulatedId: patient.id };
+            _persistAndRender();
+            return;
+        }
+
+        Object.assign(patient, { data: result, riskPct: result._riskPct, savedAt: new Date().toISOString() });
         _persistAndRender();
     };
 
@@ -948,7 +971,8 @@ DRC.PatientManager = (() => {
         const patient = patients.find(p => p.id === id);
         if (!patient) return;
         activePatientId = id;
-        _lastSaveWasSimulated = false;
+        _lastSaveChoice = null;
+        _lastBothSaveIds = { originalId: null, simulatedId: null };
         applyValues(patient.data);
         // Restore active model if saved with profile
         if (patient.data._activeModel && DRC.App?.switchModel) {
@@ -1281,7 +1305,42 @@ DRC.PatientManager = (() => {
 
     let _drawerFocusTrap = null;
     let _drawerPreviousFocus = null;
-    let _lastSaveWasSimulated = false;
+    let _lastSaveChoice = null;
+    let _lastBothSaveIds = { originalId: null, simulatedId: null };
+
+    /**
+     * Handle close-warning dialog when closing the drawer after saving during simulation.
+     * @returns {Promise<{closeDrawer: boolean, loadId: string|null}>}
+     */
+    const _handleSimulationCloseWarning = async () => {
+        const tr = DRC.Utils?.createTranslator?.() || ((_, fb) => fb);
+
+        if (_lastSaveChoice === 'both') {
+            const msg = tr('modals.simulationCloseWarning.messageBoth',
+                'You saved both original and simulated profiles. Which would you like to load?');
+            const options = [
+                { label: tr('modals.simulationCloseWarning.keepCurrent', 'Keep Current State'), value: 'keep' },
+                { label: tr('modals.simulationCloseWarning.loadOriginal', 'Load Original Profile'), value: 'loadOriginal' },
+                { label: tr('modals.simulationCloseWarning.loadSimulated', 'Load Simulated Profile'), value: 'loadSimulated', isPrimary: true },
+            ];
+            const choice = await _showOptionDialog(msg, options);
+            if (choice === 'keep') return { closeDrawer: true, loadId: null };
+            if (choice === 'loadOriginal') return { closeDrawer: true, loadId: _lastBothSaveIds.originalId };
+            if (choice === 'loadSimulated') return { closeDrawer: true, loadId: _lastBothSaveIds.simulatedId };
+            return { closeDrawer: false, loadId: null };
+        }
+
+        const msg = tr('modals.simulationCloseWarning.message',
+            'You saved a profile. The simulation is still active. What would you like to do?');
+        const options = [
+            { label: tr('modals.simulationCloseWarning.keepCurrent', 'Keep Current State'), value: 'keep' },
+            { label: tr('modals.simulationCloseWarning.loadProfile', 'Load Profile'), value: 'load', isPrimary: true },
+        ];
+        const choice = await _showOptionDialog(msg, options);
+        if (choice === 'keep') return { closeDrawer: true, loadId: null };
+        if (choice === 'load') return { closeDrawer: true, loadId: activePatientId };
+        return { closeDrawer: false, loadId: null };
+    };
 
     const toggleDrawer = async (open) => {
         const drawer = document.getElementById('patientDrawer');
@@ -1300,34 +1359,18 @@ DRC.PatientManager = (() => {
                 _drawerFocusTrap.activate();
             }
         } else {
-            // If a simulated profile was saved and simulation is still active, ask the user
-            if (_lastSaveWasSimulated && DRC.TreatmentSimulator?.hasActiveSimulation?.() && activePatientId) {
-                const tr = DRC.Utils?.createTranslator?.() || ((_, fb) => fb);
-                const msg = tr('modals.simulationCloseWarning.message',
-                    'You saved a profile with simulated values. What would you like to do?');
-                const loadLabel = tr('modals.simulationCloseWarning.loadProfile', 'Load Profile');
-                const deleteLabel = tr('modals.simulationCloseWarning.deleteProfile', 'Delete Profile');
-                const cancelLabel = tr('buttons.cancel', 'Cancel');
+            // If a profile was saved during simulation and simulation is still active, ask the user
+            if (_lastSaveChoice && DRC.TreatmentSimulator?.hasActiveSimulation?.() && activePatientId) {
+                const { closeDrawer, loadId } = await _handleSimulationCloseWarning();
+                if (!closeDrawer) return;
 
-                const choice = await _showThreeOptionDialog(msg, loadLabel, deleteLabel, cancelLabel);
-
-                if (choice === 'cancel') return; // Don't close drawer
-
-                // 'simulated' maps to "Delete Profile" (secondary button)
-                if (choice === 'simulated') {
-                    const idToDelete = activePatientId;
+                if (loadId) {
                     DRC.TreatmentSimulator?.cancel?.();
-                    deletePatient(idToDelete);
-                    DRC.App?.trigger?.('risk:recalculate');
-                }
-                // 'original' maps to "Load Profile" (primary button)
-                else if (choice === 'original') {
-                    const idToLoad = activePatientId;
-                    DRC.TreatmentSimulator?.cancel?.();
-                    loadPatient(idToLoad);
+                    loadPatient(loadId);
                 }
 
-                _lastSaveWasSimulated = false;
+                _lastSaveChoice = null;
+                _lastBothSaveIds = { originalId: null, simulatedId: null };
             }
 
             drawer?.classList.remove('open');

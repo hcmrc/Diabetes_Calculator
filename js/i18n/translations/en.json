@@ -169,17 +169,18 @@
     "simulationSaveWarning": {
       "message": "You have an active treatment simulation. What would you like to save?",
       "saveOriginal": "Save Original",
-      "saveSimulated": "Save Simulated"
-    },
-    "simulationSaveWarning": {
-      "message": "You have an active treatment simulation. What would you like to save?",
-      "saveOriginal": "Save Original",
-      "saveSimulated": "Save Simulated"
+      "saveSimulated": "Save Simulated",
+      "saveBoth": "Save Both",
+      "suffixOriginal": "(Original)",
+      "suffixSimulated": "(Simulated)"
     },
     "simulationCloseWarning": {
-      "message": "You saved a profile with simulated values. What would you like to do?",
+      "message": "You saved a profile. The simulation is still active. What would you like to do?",
+      "messageBoth": "You saved both profiles. Which would you like to load?",
       "loadProfile": "Load Profile",
-      "deleteProfile": "Delete Profile"
+      "loadOriginal": "Load Original Profile",
+      "loadSimulated": "Load Simulated Profile",
+      "keepCurrent": "Keep Current State"
     },
     "ocr": {
       "title": "Scan Lab Report",

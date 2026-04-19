@@ -169,17 +169,18 @@
     "simulationSaveWarning": {
       "message": "Eine Behandlungssimulation ist aktiv. Was möchten Sie speichern?",
       "saveOriginal": "Originalwerte speichern",
-      "saveSimulated": "Simulierte Werte speichern"
-    },
-    "simulationSaveWarning": {
-      "message": "Eine Behandlungssimulation ist aktiv. Was möchten Sie speichern?",
-      "saveOriginal": "Originalwerte speichern",
-      "saveSimulated": "Simulierte Werte speichern"
+      "saveSimulated": "Simulierte Werte speichern",
+      "saveBoth": "Beide speichern",
+      "suffixOriginal": "(Original)",
+      "suffixSimulated": "(Simuliert)"
     },
     "simulationCloseWarning": {
-      "message": "Sie haben ein Profil mit simulierten Werten gespeichert. Was möchten Sie tun?",
+      "message": "Sie haben ein Profil gespeichert. Die Simulation ist noch aktiv. Was möchten Sie tun?",
+      "messageBoth": "Sie haben beide Profile gespeichert. Welches möchten Sie laden?",
       "loadProfile": "Profil laden",
-      "deleteProfile": "Profil löschen"
+      "loadOriginal": "Originalprofil laden",
+      "loadSimulated": "Simuliertes Profil laden",
+      "keepCurrent": "Aktuellen Zustand behalten"
     },
     "ocr": {
       "title": "Laborbericht scannen",

@@ -169,17 +169,18 @@
     "simulationSaveWarning": {
       "message": "Hay una simulación de tratamiento activa. ¿Qué desea guardar?",
       "saveOriginal": "Guardar valores originales",
-      "saveSimulated": "Guardar valores simulados"
-    },
-    "simulationSaveWarning": {
-      "message": "Hay una simulación de tratamiento activa. ¿Qué desea guardar?",
-      "saveOriginal": "Guardar valores originales",
-      "saveSimulated": "Guardar valores simulados"
+      "saveSimulated": "Guardar valores simulados",
+      "saveBoth": "Guardar ambos",
+      "suffixOriginal": "(Original)",
+      "suffixSimulated": "(Simulado)"
     },
     "simulationCloseWarning": {
-      "message": "Ha guardado un perfil con valores simulados. ¿Qué desea hacer?",
+      "message": "Ha guardado un perfil. La simulación sigue activa. ¿Qué desea hacer?",
+      "messageBoth": "Ha guardado ambos perfiles. ¿Cuál desea cargar?",
       "loadProfile": "Cargar perfil",
-      "deleteProfile": "Eliminar perfil"
+      "loadOriginal": "Cargar perfil original",
+      "loadSimulated": "Cargar perfil simulado",
+      "keepCurrent": "Mantener estado actual"
     },
     "ocr": {
       "title": "Escanear Informe Lab",

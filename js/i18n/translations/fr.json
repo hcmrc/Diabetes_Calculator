@@ -169,17 +169,18 @@
     "simulationSaveWarning": {
       "message": "Une simulation de traitement est active. Que souhaitez-vous enregistrer ?",
       "saveOriginal": "Enregistrer les valeurs d'origine",
-      "saveSimulated": "Enregistrer les valeurs simulées"
-    },
-    "simulationSaveWarning": {
-      "message": "Une simulation de traitement est active. Que souhaitez-vous enregistrer ?",
-      "saveOriginal": "Enregistrer les valeurs d'origine",
-      "saveSimulated": "Enregistrer les valeurs simulées"
+      "saveSimulated": "Enregistrer les valeurs simulées",
+      "saveBoth": "Enregistrer les deux",
+      "suffixOriginal": "(Original)",
+      "suffixSimulated": "(Simulé)"
     },
     "simulationCloseWarning": {
-      "message": "Vous avez enregistré un profil avec des valeurs simulées. Que souhaitez-vous faire ?",
+      "message": "Vous avez enregistré un profil. La simulation est toujours active. Que souhaitez-vous faire ?",
+      "messageBoth": "Vous avez enregistré les deux profils. Lequel souhaitez-vous charger ?",
       "loadProfile": "Charger le profil",
-      "deleteProfile": "Supprimer le profil"
+      "loadOriginal": "Charger le profil original",
+      "loadSimulated": "Charger le profil simulé",
+      "keepCurrent": "Conserver l'état actuel"
     },
     "ocr": {
       "title": "Scanner Rapport Labo",
