@@ -176,6 +176,11 @@
       "saveOriginal": "Originalwerte speichern",
       "saveSimulated": "Simulierte Werte speichern"
     },
+    "simulationCloseWarning": {
+      "message": "Sie haben ein Profil mit simulierten Werten gespeichert. Was möchten Sie tun?",
+      "loadProfile": "Profil laden",
+      "deleteProfile": "Profil löschen"
+    },
     "ocr": {
       "title": "Laborbericht scannen",
       "instructions": "Machen Sie ein Foto oder laden Sie Ihren Laborbericht hoch",

@@ -176,6 +176,11 @@
       "saveOriginal": "Save Original",
       "saveSimulated": "Save Simulated"
     },
+    "simulationCloseWarning": {
+      "message": "You saved a profile with simulated values. What would you like to do?",
+      "loadProfile": "Load Profile",
+      "deleteProfile": "Delete Profile"
+    },
     "ocr": {
       "title": "Scan Lab Report",
       "instructions": "Take a photo or upload your lab report",

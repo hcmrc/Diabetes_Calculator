@@ -843,6 +843,7 @@ DRC.PatientManager = (() => {
         const cancelLabel = tr('buttons.cancel', 'Cancel');
 
         const choice = await _showThreeOptionDialog(msg, originalLabel, simulatedLabel, cancelLabel);
+        _lastSaveWasSimulated = (choice === 'simulated');
         if (choice === 'cancel') return null;
         if (choice === 'original') {
             const currentIsMetric = DRC.UIController?.getUnitToggleState?.() ?? false;
@@ -947,6 +948,7 @@ DRC.PatientManager = (() => {
         const patient = patients.find(p => p.id === id);
         if (!patient) return;
         activePatientId = id;
+        _lastSaveWasSimulated = false;
         applyValues(patient.data);
         // Restore active model if saved with profile
         if (patient.data._activeModel && DRC.App?.switchModel) {
@@ -1279,8 +1281,9 @@ DRC.PatientManager = (() => {
 
     let _drawerFocusTrap = null;
     let _drawerPreviousFocus = null;
+    let _lastSaveWasSimulated = false;
 
-    const toggleDrawer = (open) => {
+    const toggleDrawer = async (open) => {
         const drawer = document.getElementById('patientDrawer');
         const overlay = document.getElementById('patientOverlay');
         const btn = document.getElementById('patientMenuBtn');
@@ -1297,6 +1300,36 @@ DRC.PatientManager = (() => {
                 _drawerFocusTrap.activate();
             }
         } else {
+            // If a simulated profile was saved and simulation is still active, ask the user
+            if (_lastSaveWasSimulated && DRC.TreatmentSimulator?.hasActiveSimulation?.() && activePatientId) {
+                const tr = DRC.Utils?.createTranslator?.() || ((_, fb) => fb);
+                const msg = tr('modals.simulationCloseWarning.message',
+                    'You saved a profile with simulated values. What would you like to do?');
+                const loadLabel = tr('modals.simulationCloseWarning.loadProfile', 'Load Profile');
+                const deleteLabel = tr('modals.simulationCloseWarning.deleteProfile', 'Delete Profile');
+                const cancelLabel = tr('buttons.cancel', 'Cancel');
+
+                const choice = await _showThreeOptionDialog(msg, loadLabel, deleteLabel, cancelLabel);
+
+                if (choice === 'cancel') return; // Don't close drawer
+
+                // 'simulated' maps to "Delete Profile" (secondary button)
+                if (choice === 'simulated') {
+                    const idToDelete = activePatientId;
+                    DRC.TreatmentSimulator?.cancel?.();
+                    deletePatient(idToDelete);
+                    DRC.App?.trigger?.('risk:recalculate');
+                }
+                // 'original' maps to "Load Profile" (primary button)
+                else if (choice === 'original') {
+                    const idToLoad = activePatientId;
+                    DRC.TreatmentSimulator?.cancel?.();
+                    loadPatient(idToLoad);
+                }
+
+                _lastSaveWasSimulated = false;
+            }
+
             drawer?.classList.remove('open');
             overlay?.classList.remove('open');
             btn?.classList.remove('open');

@@ -176,6 +176,11 @@
       "saveOriginal": "Guardar valores originales",
       "saveSimulated": "Guardar valores simulados"
     },
+    "simulationCloseWarning": {
+      "message": "Ha guardado un perfil con valores simulados. ¿Qué desea hacer?",
+      "loadProfile": "Cargar perfil",
+      "deleteProfile": "Eliminar perfil"
+    },
     "ocr": {
       "title": "Escanear Informe Lab",
       "instructions": "Tome una foto o suba su informe de laboratorio",
