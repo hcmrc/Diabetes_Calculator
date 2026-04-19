@@ -106,7 +106,8 @@ assert(typeof TS.getSimulatedFactors    === 'function', 'TreatmentSimulator.getS
 assert(typeof TS.getIndividualReduction === 'function', 'TreatmentSimulator.getIndividualReduction is a function');
 assert(typeof TS.resimulate             === 'function', 'TreatmentSimulator.resimulate is a function');
 assert(typeof TS.isAnimating            === 'function', 'TreatmentSimulator.isAnimating is a function');
-assert(Object.keys(TS).length           === 9,          'Public API has exactly 9 members');
+assert(typeof TS.getEffectDelta         === 'function', 'TreatmentSimulator.getEffectDelta is a function');
+assert(Object.keys(TS).length           === 10,         'Public API has exactly 10 members');
 
 // ─── TEST SUITE 2: Resilience — null DOM ──────────────────────────────────────
 
@@ -229,6 +230,52 @@ const steps = Array.from({ length: 30 }, (_, i) => easeOutCubic(i / 29));
 const isMonotonic = steps.every((v, i) => i === 0 || v >= steps[i - 1]);
 assert(isMonotonic, 'easeOutCubic is monotonically non-decreasing on [0, 1]');
 assert(steps.every(v => v >= 0 && v <= 1), 'All easeOutCubic values are in [0, 1]');
+
+// ─── TEST SUITE 8: getEffectDelta sex-dependent SBP (H10) ──────────────────────
+
+console.log('\n═══ TEST SUITE 8: getEffectDelta sex-dependent SBP ═══');
+{
+    const FX = DRC.CONFIG.SIMULATION_EFFECTS;
+
+    // Test SI mode, male (sex=1): should return siMale delta
+    DRC.UIController.getUnitToggleState = () => true;  // isMetric = true
+    DRC.UIController.readInputs = () => ({ age: 54, sex: 1, race: 0, parentHist: 0, sbp: 120, height: 170, waist: 94, fastGlu: 5.5, cholHDL: 1.3, cholTri: 1.7 });
+
+    const sbpSiMale = TS.getEffectDelta('sbp');
+    assert(sbpSiMale === FX.sbp.siMale, `SI male: getEffectDelta('sbp') = ${sbpSiMale} (expected ${FX.sbp.siMale})`);
+
+    // Test SI mode, female (sex=0): should return siFemale delta
+    DRC.UIController.readInputs = () => ({ age: 54, sex: 0, race: 0, parentHist: 0, sbp: 120, height: 170, waist: 94, fastGlu: 5.5, cholHDL: 1.3, cholTri: 1.7 });
+
+    const sbpSiFemale = TS.getEffectDelta('sbp');
+    assert(sbpSiFemale === FX.sbp.siFemale, `SI female: getEffectDelta('sbp') = ${sbpSiFemale} (expected ${FX.sbp.siFemale})`);
+
+    // Test US mode, male (sex=1): should return usMale delta
+    DRC.UIController.getUnitToggleState = () => false;  // isMetric = false
+    DRC.UIController.readInputs = () => ({ age: 54, sex: 1, race: 0, parentHist: 0, sbp: 120, height: 66, waist: 38, fastGlu: 100, cholHDL: 50, cholTri: 150 });
+
+    const sbpUsMale = TS.getEffectDelta('sbp');
+    assert(sbpUsMale === FX.sbp.usMale, `US male: getEffectDelta('sbp') = ${sbpUsMale} (expected ${FX.sbp.usMale})`);
+
+    // Test US mode, female (sex=0): should return usFemale delta
+    DRC.UIController.readInputs = () => ({ age: 54, sex: 0, race: 0, parentHist: 0, sbp: 120, height: 66, waist: 38, fastGlu: 100, cholHDL: 50, cholTri: 150 });
+
+    const sbpUsFemale = TS.getEffectDelta('sbp');
+    assert(sbpUsFemale === FX.sbp.usFemale, `US female: getEffectDelta('sbp') = ${sbpUsFemale} (expected ${FX.sbp.usFemale})`);
+
+    // Verify sex-independent factors still work
+    DRC.UIController.getUnitToggleState = () => true;
+    const fastGluDelta = TS.getEffectDelta('fastGlu');
+    assert(fastGluDelta === FX.fastGlu.si, `SI mode: getEffectDelta('fastGlu') = ${fastGluDelta} (expected ${FX.fastGlu.si})`);
+
+    DRC.UIController.getUnitToggleState = () => false;
+    const fastGluUs = TS.getEffectDelta('fastGlu');
+    assert(fastGluUs === FX.fastGlu.us, `US mode: getEffectDelta('fastGlu') = ${fastGluUs} (expected ${FX.fastGlu.us})`);
+
+    // Verify female SBP delta is larger in magnitude than male (clinical expectation)
+    assert(Math.abs(FX.sbp.siFemale) > Math.abs(FX.sbp.siMale),
+        'Female SBP delta magnitude > male (clinical: -30.9 vs -17.7 mmHg)');
+}
 
 // ─── Summary ─────────────────────────────────────────────────────────────────
 

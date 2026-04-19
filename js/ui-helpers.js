@@ -66,15 +66,11 @@ DRC.UIHelpers = (() => {
 
     /**
      * Escape a string for safe insertion into HTML/SVG markup.
+     * Delegates to the canonical implementation in DRC.Utils for DRY.
      * @param {string} str — Raw string to escape.
      * @returns {string} HTML-safe string.
      */
-    const escapeHtml = (str) => String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+    const escapeHtml = (str) => DRC.Utils.escapeHtml(str);
 
     /**
      * Refresh Lucide icons after dynamic DOM updates.

@@ -110,10 +110,12 @@ DRC.App = (() => {
         // "Your Risk" = risk based on the original (pre-simulation) slider values
         const rawOriginal     = _getOriginalRawInputs(rawInputs);
         const siValsOriginal  = Model().toSI(rawOriginal, state.isMetric);
-        const riskPctOriginal = Model().computeProbability(siValsOriginal, activeModel) * 100;
+        const _riskOriginal = Model().computeProbability(siValsOriginal, activeModel);
+        const riskPctOriginal = (_riskOriginal != null && isFinite(_riskOriginal)) ? _riskOriginal * 100 : NaN;
 
         // "Your Risk with Chosen Treatments" = current (possibly simulated) risk
-        const riskPctCurrent  = Model().computeProbability(siValsCurrent, activeModel) * 100;
+        const _riskCurrent = Model().computeProbability(siValsCurrent, activeModel);
+        const riskPctCurrent  = (_riskCurrent != null && isFinite(_riskCurrent)) ? _riskCurrent * 100 : NaN;
 
         const logOddsContributions = Model().computeContributions(siValsCurrent, activeModel);
         const marginalSummary = Model().computeMarginalSummary(siValsCurrent, activeModel);
@@ -182,7 +184,8 @@ DRC.App = (() => {
     const onSliderStart = (field) => {
         state.activeField = field;
         const raw = UI().readInputs();
-        state.prevRiskPct = Model().computeProbability(Model().toSI(raw, state.isMetric)) * 100;
+        const _riskSlider = Model().computeProbability(Model().toSI(raw, state.isMetric));
+        state.prevRiskPct = (_riskSlider != null && isFinite(_riskSlider)) ? _riskSlider * 100 : NaN;
     };
 
     /** @type {Object<string, number>} Active badge-clear timeouts per field. */
@@ -204,8 +207,12 @@ DRC.App = (() => {
         const input  = document.getElementById(`${field}-value`);
         if (!slider || !input) return;
 
+        const min = parseFloat(slider.min);
+        const max = parseFloat(slider.max);
+        const step = parseFloat(slider.step) || 1;
         let val = parseFloat(input.value);
-        val = Math.min(Math.max(val, parseFloat(slider.min)), parseFloat(slider.max));
+        if (!isFinite(val)) val = min;
+        val = DRC.UIHelpers.clampAndRound(val, min, max, step);
         input.value  = val;
         slider.value = val;
 
@@ -262,12 +269,14 @@ DRC.App = (() => {
         // Render with precise SI values (no rounding in the model path)
         const activeModel   = getActiveModel();
         const preciseSI     = state.preciseSI || Model().toSI(UI().readInputs(), state.isMetric);
-        const riskPctCurrent = Model().computeProbability(preciseSI, activeModel) * 100;
+        const _riskToggle = Model().computeProbability(preciseSI, activeModel);
+        const riskPctCurrent = (_riskToggle != null && isFinite(_riskToggle)) ? _riskToggle * 100 : NaN;
 
         // Recompute "original" (pre-simulation) risk for the top field
         const rawOriginal     = _getOriginalRawInputs(UI().readInputs());
         const siValsOriginal  = Model().toSI(rawOriginal, state.isMetric);
-        const riskPctOriginal = Model().computeProbability(siValsOriginal, activeModel) * 100;
+        const _riskOrigToggle = Model().computeProbability(siValsOriginal, activeModel);
+        const riskPctOriginal = (_riskOrigToggle != null && isFinite(_riskOrigToggle)) ? _riskOrigToggle * 100 : NaN;
 
         const logOddsContributions = Model().computeContributions(preciseSI, activeModel);
         const marginalSummary = Model().computeMarginalSummary(preciseSI, activeModel);
@@ -321,10 +330,13 @@ DRC.App = (() => {
 
             document.getElementById('sex-toggle').checked        = true; // Default: Male
             document.getElementById('sex-toggle').setAttribute('aria-checked', 'true');
+            document.getElementById('sex-toggle').setAttribute('aria-label', 'Sex: Male');
             document.getElementById('race-toggle').checked      = D.race;
             document.getElementById('race-toggle').setAttribute('aria-checked', String(D.race));
+            document.getElementById('race-toggle').setAttribute('aria-label', D.race ? 'Ethnicity: African American' : 'Ethnicity: Other');
             document.getElementById('parentHist-toggle').checked = D.parentHist;
             document.getElementById('parentHist-toggle').setAttribute('aria-checked', String(D.parentHist));
+            document.getElementById('parentHist-toggle').setAttribute('aria-label', D.parentHist ? 'Parental diabetes history: Yes' : 'Parental diabetes history: No');
         }
 
         CFG.SLIDER_FIELDS.forEach(f => {
@@ -368,6 +380,12 @@ DRC.App = (() => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('change', () => {
                 el.setAttribute('aria-checked', String(el.checked));
+                // WCAG 4.1.2: aria-label must convey current state meaning
+                if (id === 'race-toggle') {
+                    el.setAttribute('aria-label', el.checked ? 'Ethnicity: African American' : 'Ethnicity: Other');
+                } else if (id === 'parentHist-toggle') {
+                    el.setAttribute('aria-label', el.checked ? 'Parental diabetes history: Yes' : 'Parental diabetes history: No');
+                }
                 calculate();
             });
         });
@@ -377,6 +395,8 @@ DRC.App = (() => {
         if (sexToggle) sexToggle.addEventListener('change', () => {
             const isMale = sexToggle.checked;
             sexToggle.setAttribute('aria-checked', String(isMale));
+            // WCAG 4.1.2: aria-label must convey current state meaning
+            sexToggle.setAttribute('aria-label', isMale ? 'Sex: Male' : 'Sex: Female');
             UI().updateWaistSegments(isMale, state.isMetric);
             calculate();
         });
@@ -450,6 +470,7 @@ DRC.App = (() => {
                 if (!target) return;
                 const collapsed = target.classList.toggle('collapsed');
                 btn.classList.toggle('collapsed', collapsed);
+                btn.setAttribute('aria-expanded', String(!collapsed));
                 if (targetId === 'non-mod-section') {
                     document.getElementById('non-mod-summary')?.classList.toggle('visible', collapsed);
                 }

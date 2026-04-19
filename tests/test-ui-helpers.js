@@ -9,6 +9,7 @@ global.window = global;
 global.document = { getElementById: () => null };
 
 require('../js/config.js');
+require('../js/utils.js');
 require('../js/ui-helpers.js');
 
 const { clampAndRound, formatAxisValue, escapeHtml, formatPercent, formatDeltaPercent } = DRC.UIHelpers;
@@ -36,7 +37,7 @@ assert(escapeHtml('<script>alert("xss")</script>') === '&lt;script&gt;alert(&quo
 assert(escapeHtml('Tom & Jerry') === 'Tom &amp; Jerry', 'Ampersand escaped');
 assert(escapeHtml('<div>content</div>') === '&lt;div&gt;content&lt;/div&gt;', 'HTML tags escaped');
 assert(escapeHtml('"quoted"') === '&quot;quoted&quot;', 'Double quotes escaped');
-assert(escapeHtml("'single'") === '&#39;single&#39;', 'Single quotes escaped');
+assert(escapeHtml("'single'") === '&#039;single&#039;', 'Single quotes escaped');
 assert(escapeHtml('normal text') === 'normal text', 'Normal text unchanged');
 assert(escapeHtml('') === '', 'Empty string handled');
 assert(escapeHtml(123) === '123', 'Numbers converted to string');

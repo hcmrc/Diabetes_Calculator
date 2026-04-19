@@ -103,7 +103,11 @@
     "add": "Hinzufügen",
     "export": "Exportieren .xlsx / .drc",
     "import": "Importieren .xlsx / .drc",
-    "scan": "Laborbericht scannen"
+    "scan": "Laborbericht scannen",
+    "undoTreatment": "Behandlung für {factor} rückgängig machen",
+    "undo": "Rückgängig",
+    "confirm": "Bestätigen",
+    "ok": "OK"
   },
   "patientManager": {
     "title": "Meine Profile",
@@ -148,6 +152,11 @@
       "create": "Profil erstellen",
       "continue": "Ohne Speichern fortfahren"
     },
+    "simulationSaveWarning": {
+      "message": "Eine Behandlungssimulation ist aktiv. Was möchten Sie speichern?",
+      "saveOriginal": "Originalwerte speichern",
+      "saveSimulated": "Simulierte Werte speichern"
+    },
     "ocr": {
       "title": "Laborbericht scannen",
       "instructions": "Machen Sie ein Foto oder laden Sie Ihren Laborbericht hoch",
@@ -158,5 +167,8 @@
       "confidence_medium": "Mittlere Konfidenz",
       "confidence_low": "Niedrige Konfidenz"
     }
+  },
+  "aria": {
+    "simulatedSlider": "(simuliert)"
   }
 }

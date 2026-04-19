@@ -15,6 +15,8 @@ window.DRC = window.DRC || {};
 DRC.SettingsPanel = (() => {
     // State
     let _isOpen = false;
+    let _focusTrap = null;
+    let _previousFocusElement = null;
     let _btn = null;
     let _panel = null;
     let _overlay = null;
@@ -157,9 +159,15 @@ DRC.SettingsPanel = (() => {
 
         _panel.classList.add('open');
         _panel.removeAttribute('hidden');
+        _panel.setAttribute('role', 'dialog');
         _overlay.classList.add('visible');
         _btn.setAttribute('aria-expanded', 'true');
         _isOpen = true;
+
+        // Focus trap: store previous focus and activate
+        _previousFocusElement = document.activeElement;
+        _focusTrap = DRC.Utils.createFocusTrap(_panel);
+        _focusTrap.activate();
 
         // Update all states when opening
         _updateDarkModeButtonState();
@@ -181,9 +189,14 @@ DRC.SettingsPanel = (() => {
         _closeModelDropdown();
 
         _panel.classList.remove('open');
+        _panel.removeAttribute('role');
         _overlay.classList.remove('visible');
         _btn.setAttribute('aria-expanded', 'false');
         _isOpen = false;
+
+        // Focus trap: deactivate and restore focus
+        if (_focusTrap) { _focusTrap.deactivate(); _focusTrap = null; }
+        if (_previousFocusElement) { _previousFocusElement.focus(); _previousFocusElement = null; }
 
         setTimeout(() => {
             if (!_isOpen) {

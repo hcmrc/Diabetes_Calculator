@@ -50,7 +50,7 @@
     /* Text */
     --text-primary:     #1d1d1f;
     --text-secondary:   #6e6e73;
-    --text-tertiary:    #636369;
+    --text-tertiary:    #5e5e64;
     --text-on-primary:  #ffffff;
 
     /* Typography Scale – rem units for accessibility (1rem = 16px at browser default) */
@@ -1366,22 +1366,37 @@ body.ocr-modal-open .col-step-label {
 /* Contribution row — hover/click interaction */
 .contrib-row {
     position: relative;
+    border-radius: var(--radius-sm);
+}
+
+.contrib-row-trigger {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: none;
+    background: none;
     cursor: pointer;
+    text-align: left;
+    color: inherit;
+    font: inherit;
     border-radius: var(--radius-sm);
     transition: background 0.15s var(--ease-smooth);
 }
 
-.contrib-row:hover {
+.contrib-row-trigger:hover {
     background: var(--bg-subtle);
 }
 
-.contrib-row:focus-visible {
+.contrib-row-trigger:focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
 }
 
-.contrib-row.expanded {
+.contrib-row.expanded .contrib-row-trigger {
     background: var(--bg-elevated);
+}
+
+.contrib-row.expanded {
     margin-bottom: 6px;
 }
 
@@ -3970,7 +3985,7 @@ body.ocr-modal-open .col-step-label {
     /* Text */
     --text-primary:   #f5f5f7;
     --text-secondary: #a1a1aa;
-    --text-tertiary:  #9898a0;
+    --text-tertiary:  #a8a8b0;
 
     /* Backgrounds - warm dark colors for better readability */
     --bg-page:        #0f0f12;
@@ -4355,11 +4370,11 @@ body.ocr-modal-open .col-step-label {
 }
 
 /* Contribution chart dark mode */
-.dark .contrib-row:hover {
+.dark .contrib-row-trigger:hover {
     background: var(--bg-disabled);
 }
 
-.dark .contrib-row.expanded {
+.dark .contrib-row.expanded .contrib-row-trigger {
     background: var(--bg-elevated);
 }
 
@@ -7728,7 +7743,7 @@ body.tutorial-active {
     }
 
     /* Contribution chart rows — expand touch height */
-    .contrib-row {
+    .contrib-row-trigger {
         min-height: 44px;
     }
 

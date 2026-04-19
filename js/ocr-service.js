@@ -41,6 +41,7 @@
             const script = document.createElement('script');
             script.src = TESSERACT_CDN;
             script.async = true;
+            script.integrity = 'sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F';
             script.crossOrigin = 'anonymous';
 
             script.addEventListener('load', () => {
@@ -73,6 +74,7 @@
             const script = document.createElement('script');
             script.src = PDFJS_CDN;
             script.async = true;
+            script.integrity = 'sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e';
             script.crossOrigin = 'anonymous';
 
             script.addEventListener('load', () => {

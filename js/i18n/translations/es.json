@@ -103,7 +103,11 @@
     "add": "Añadir",
     "export": "Exportar .xlsx / .drc",
     "import": "Importar .xlsx / .drc",
-    "scan": "Escanear Informe Lab"
+    "scan": "Escanear Informe Lab",
+    "undoTreatment": "Deshacer tratamiento para {factor}",
+    "undo": "Deshacer",
+    "confirm": "Confirmar",
+    "ok": "OK"
   },
   "patientManager": {
     "title": "Mis Perfiles",
@@ -148,6 +152,11 @@
       "create": "Crear Perfil",
       "continue": "Continuar Sin Guardar"
     },
+    "simulationSaveWarning": {
+      "message": "Hay una simulación de tratamiento activa. ¿Qué desea guardar?",
+      "saveOriginal": "Guardar valores originales",
+      "saveSimulated": "Guardar valores simulados"
+    },
     "ocr": {
       "title": "Escanear Informe Lab",
       "instructions": "Tome una foto o suba su informe de laboratorio",
@@ -158,5 +167,8 @@
       "confidence_medium": "Confianza media",
       "confidence_low": "Baja confianza"
     }
+  },
+  "aria": {
+    "simulatedSlider": "(simulado)"
   }
 }
