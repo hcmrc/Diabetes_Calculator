@@ -3531,6 +3531,7 @@ body.ocr-modal-open .col-step-label {
 .settings-lang-dropdown {
     position: relative;
     width: 100%;
+    flex: 0 0 100%; /* wraps to own row inside .settings-option flex container */
     background: var(--bg-elevated);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
@@ -3742,6 +3743,7 @@ body.ocr-modal-open .col-step-label {
 .settings-model-dropdown {
     position: relative;
     width: 100%;
+    flex: 0 0 100%; /* wraps to own row inside .settings-option flex container */
     background: var(--bg-elevated);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
@@ -3909,6 +3911,7 @@ body.ocr-modal-open .col-step-label {
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
+    flex-wrap: wrap;
 }
 
 .settings-option-label {
@@ -6115,6 +6118,33 @@ body.tutorial-active {
 
 .dark .tutorial-nav-btn:hover {
     background: var(--bg-hover);
+}
+
+/* Mobile: tutorial nav bar — icon-only to prevent viewport overflow */
+@media (max-width: 480px) {
+    .tutorial-nav-bar {
+        bottom: 16px;
+        padding: 6px 8px;
+        gap: var(--space-1);
+    }
+
+    .tutorial-nav-btn {
+        padding: 6px 8px;
+    }
+
+    /* Hide text labels, keep icons (data-i18n removed dynamically by tutorial.js) */
+    .tutorial-nav-btn span {
+        display: none;
+    }
+
+    /* Truncate long step label ("Section 1 of 4: Navigation") */
+    .tutorial-step-label {
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        padding: 0 4px;
+    }
 }
 
 /* ============================================================================
