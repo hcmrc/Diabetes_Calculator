@@ -942,11 +942,13 @@ DRC.PatientManager = (() => {
             patients.push({ id: origId, name: patient.name + origSuffix, data: result.originalData, riskPct: result.originalData._riskPct, savedAt: new Date().toISOString() });
             _lastBothSaveIds = { originalId: origId, simulatedId: patient.id };
             _persistAndRender();
+            updateNavLabel();
             return;
         }
 
         Object.assign(patient, { data: result, riskPct: result._riskPct, savedAt: new Date().toISOString() });
         _persistAndRender();
+        updateNavLabel();
     };
 
     const deletePatient = (id) => {
