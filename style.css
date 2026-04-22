@@ -8008,7 +8008,7 @@ input.slider--simulated {
 
 /* ===================== MODAL & BUTTON COMPONENTS =====================
  * Styles for accessible modal overlays, dialogs, and buttons used by
- * PatientManager.showConfirm(), showPrompt(), and _showThreeOptionDialog().
+ * PatientManager.showConfirm(), showPrompt(), and _showOptionDialog().
  * Aligned with the main .modal-* design token system.
  */
 .drc-modal-overlay {
