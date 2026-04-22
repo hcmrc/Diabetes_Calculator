@@ -2097,7 +2097,24 @@ body.ocr-modal-open .col-step-label {
     }
 
     .main-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* Allow grid items to shrink below their content's min-content size */
+    .col-panel {
+        min-width: 0;
+    }
+
+    /* Fix nested grid min-content overflow chain */
+    .panel-body {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .panel-body-inner,
+    .treatment-overview-row,
+    .tov-details-inner,
+    .therapy-mini {
+        min-width: 0;
     }
 
     .col-right {
