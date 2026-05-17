@@ -117,8 +117,11 @@ DRC.CONFIG = Object.freeze({
      * Clinical decision thresholds (SI units).
      * Sources: ADA (2024), NCEP ATP III, ACC/AHA (2017).
      *
-     * fastGlu: ADA (2024) — Normal <100 mg/dL (<5.6), Prediabetes 100–124 mg/dL
-     *   (5.6–6.9), Diabetes ≥125 mg/dL (≥6.9 mmol/L).
+     * fastGlu: ADA (2026) — Normal <100 mg/dL (<5.5556 mmol/L), Prediabetes 100–125 mg/dL
+     *   (5.5556–6.9444 mmol/L), Diabetes ≥126 mg/dL (≥7.0 mmol/L).
+     *   See https://doi.org/10.2337/dc26-S002. Threshold `elevated` is expressed as
+     *   100/18 so that an input of exactly 100 mg/dL converts (via 1/18) to a value
+     *   ≥ threshold and is classified as prediabetes in both unit systems.
      * sbp: ACC/AHA (2017) — Normal <120, Elevated 120–129, Hypertension ≥130 mmHg.
      * cholHDL: NCEP ATP III — Low <40 mg/dL (<1.03 mmol/L), High (good) >60 mg/dL
      *   (>1.55 mmol/L). Sex is not a variable in the Schmidt et al. (2005) model,
@@ -130,7 +133,7 @@ DRC.CONFIG = Object.freeze({
      *   high uses the male threshold (102 cm).
      */
     THRESHOLDS: {
-        fastGlu: { elevated: 5.6,  high: 6.9  },
+        fastGlu: { elevated: 100 / 18, high: 7.0  },
         sbp:     { elevated: 120,  high: 130  },
         cholHDL: { low: 1.03,      high: 1.55 },
         cholTri: { elevated: 1.7,  high: 2.3, veryHigh: 5.6 },
