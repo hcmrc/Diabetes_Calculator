@@ -31,13 +31,13 @@ Intercept σ = -9.9808
 
 ### Population Means (ARIC Cohort)
 
-The contribution analysis computes each factor's deviation from the ARIC cohort baseline. The following population means are used, yielding a **baseline population risk of ~10.94%**:
+The contribution analysis computes each factor's deviation from the ARIC cohort baseline. The following population means are used, yielding a **baseline population risk of ~10.32%**:
 
 | Variable | Mean | Unit |
 |----------|------|------|
 | Age | 54 | years |
 | Ethnicity (African-American) | 0.15 | proportion |
-| Family history of diabetes | 0.38 | proportion |
+| Family history of diabetes | 0.2496 | proportion |
 | Systolic blood pressure | 120 | mmHg |
 | Waist circumference | 94.76 | cm |
 | Height | 168 | cm |
