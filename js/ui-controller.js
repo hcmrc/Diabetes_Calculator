@@ -636,27 +636,70 @@ DRC.UIController = (() => {
     const renderCausalityChainInline = (factor, container) => {
         const chain = CFG.CAUSALITY_CHAINS[factor];
         if (!chain || !container) return;
-        container.innerHTML = '';
+        container.replaceChildren();
 
-        const nodesRow = createSafeElement('div', { className: 'chain-nodes-row' });
-
-        chain.nodes.forEach((nodeKey, idx) => {
-            const nodeEl = createSafeElement('div', {
-                className: ['chain-node', idx === chain.riskNode ? 'risk-node' : ''],
-                text: t(nodeKey, nodeKey.split('.').pop())
+        const arrowEl = (text) => {
+            const isBi = text === '↕' || text === '↔';
+            return createSafeElement('div', {
+                className: ['chain-arrow', isBi ? 'chain-arrow-bi' : ''],
+                text: text
             });
-            nodesRow.appendChild(nodeEl);
-
-            if (idx < chain.nodes.length - 1) {
-                const arrow = createSafeElement('div', {
-                    className: 'chain-arrow',
-                    text: '\u2192'
-                });
-                nodesRow.appendChild(arrow);
-            }
+        };
+        const nodeEl = (key, extraClass) => createSafeElement('div', {
+            className: ['chain-node', extraClass || ''],
+            text: t(key, key.split('.').pop())
         });
 
-        container.appendChild(nodesRow);
+        if (Array.isArray(chain.branches)) {
+            const tree = createSafeElement('div', { className: 'chain-tree' });
+            tree.appendChild(nodeEl(chain.root, 'risk-node'));
+
+            const branchesEl = createSafeElement('div', { className: 'chain-branches' });
+            const count = chain.branches.length;
+            chain.branches.forEach((branch, bIdx) => {
+                let firstArrow;
+                if (branch.firstEdge === 'bi') {
+                    firstArrow = '\u2195';
+                } else if (count === 1) {
+                    firstArrow = '\u2193';
+                } else if (bIdx === 0) {
+                    firstArrow = '\u2199';
+                } else if (bIdx === count - 1) {
+                    firstArrow = '\u2198';
+                } else {
+                    firstArrow = '\u2193';
+                }
+                const branchEl = createSafeElement('div', { className: 'chain-branch' });
+                branchEl.appendChild(arrowEl(firstArrow));
+                branch.nodes.forEach((key, idx) => {
+                    branchEl.appendChild(nodeEl(key));
+                    if (idx < branch.nodes.length - 1) branchEl.appendChild(arrowEl('\u2193'));
+                });
+                branchesEl.appendChild(branchEl);
+            });
+            tree.appendChild(branchesEl);
+
+            const tail = chain.tail || [];
+            tail.forEach((key, idx) => {
+                tree.appendChild(arrowEl('\u2193'));
+                tree.appendChild(nodeEl(key, idx === tail.length - 1 ? 'end-node' : ''));
+            });
+
+            container.appendChild(tree);
+        } else {
+            const nodesRow = createSafeElement('div', { className: 'chain-nodes-row' });
+            chain.nodes.forEach((nodeKey, idx) => {
+                const classes = [];
+                if (idx === chain.riskNode) classes.push('risk-node');
+                if (idx === chain.nodes.length - 1) classes.push('end-node');
+                nodesRow.appendChild(nodeEl(nodeKey, classes.join(' ')));
+                if (idx < chain.nodes.length - 1) {
+                    const bi = Array.isArray(chain.bidirectional) && chain.bidirectional.includes(idx);
+                    nodesRow.appendChild(arrowEl(bi ? '\u2194' : '\u2192'));
+                }
+            });
+            container.appendChild(nodesRow);
+        }
         container.classList.add('visible');
     };
 

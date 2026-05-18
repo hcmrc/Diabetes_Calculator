@@ -223,7 +223,14 @@ DRC.CONFIG = Object.freeze({
         waist:   { riskNode: 0, nodes: ['causality.abdominalFat', 'causality.insulinResistance', 'causality.betaCellDysfunction', 'causality.diabetesRisk'] },
         fastGlu: { riskNode: 2, nodes: ['causality.insulinResistance', 'causality.gluconeogenesis', 'causality.fastingGlucose', 'causality.betaCellExhaustion', 'causality.diabetesRisk'] },
         cholHDL: { riskNode: 0, nodes: ['causality.hdlCholesterol', 'causality.pancreaticProtection', 'causality.betaCellDamage', 'causality.diabetesRisk'] },
-        sbp:     { riskNode: 0, nodes: ['causality.bloodPressure', 'causality.insulinResistanceInc', 'causality.betaCellDysfunction', 'causality.diabetesRisk'] },
+        sbp:     {
+            root: 'causality.bloodPressure',
+            branches: [
+                { nodes: ['causality.sympatheticNervousSystem'], firstEdge: 'bi' },
+                { nodes: ['causality.vascularDamage', 'causality.insulinTransport'] }
+            ],
+            tail: ['causality.insulinResistanceInc', 'causality.betaCellDysfunction', 'causality.diabetesRisk']
+        },
         cholTri: { riskNode: 3, nodes: ['causality.insulinResistance', 'causality.lipolysis', 'causality.freeFattyAcids', 'causality.triglycerides'] }
     },
 
